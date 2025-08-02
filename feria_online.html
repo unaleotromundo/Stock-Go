@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feria Online</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="feria_online.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <a href="index.html" class="back-link">&larr; Volver</a>
+            <h1>Feria Online de Comerciantes</h1>
+            <p>Explora los catálogos de nuestros talentosos comerciantes.</p>
+        </header>
+
+        <section class="search-section">
+            <input type="text" id="search-bar" placeholder="Buscar tiendas o productos...">
+            <button id="search-btn"><i class="fas fa-search"></i></button>
+        </section>
+
+        <section class="stores-grid" id="stores-grid">
+            <div class="no-stores-msg">
+                <p>Aún no hay tiendas publicadas en la feria.</p>
+            </div>
+        </section>
+    </div>
+    <script src="feria_online.js"></script>
+</body>
+</html>

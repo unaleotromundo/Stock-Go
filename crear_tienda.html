@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Tienda</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="crear_tienda.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="main-container">
+        <header>
+            <a href="index.html" class="back-link">&larr; Volver</a>
+            <h1>Crear Tu Tienda</h1>
+            <p>Configura la identidad de tu marca en un solo lugar.</p>
+        </header>
+
+        <form id="store-form">
+            <div class="form-section">
+                <h2>Información Básica</h2>
+                <input type="text" id="store-name" placeholder="Nombre de la Tienda" required>
+                <div class="slogan-container">
+                    <input type="text" id="store-slogan" placeholder="Eslogan (ej: 'Hecho con pasión')" required>
+                    <button type="button" class="ai-btn">Generar con IA</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Identidad Visual</h2>
+                <div class="visual-container">
+                    <div class="image-box">
+                        <div class="image-upload-area" id="logo-upload">
+                            <i class="fas fa-camera"></i>
+                            <span>Logo</span>
+                        </div>
+                        <button type="button" class="ai-btn">Generar con IA</button>
+                    </div>
+                    <div class="image-box">
+                        <div class="image-upload-area" id="banner-upload">
+                            <i class="fas fa-camera"></i>
+                            <span>Banner</span>
+                        </div>
+                        <button type="button" class="ai-btn">Generar con IA</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Contacto y Redes Sociales</h2>
+                <input type="email" id="store-email" placeholder="Correo Electrónico de Contacto" required>
+                <input type="url" id="store-website" placeholder="Página Web (opcional)">
+                <div class="social-links-container">
+                    <input type="url" placeholder="Instagram URL">
+                    <input type="url" placeholder="Facebook URL">
+                    <input type="url" placeholder="TikTok URL">
+                </div>
+            </div>
+
+            <div class="qr-container">
+                <button type="button" id="generate-qr-btn">Generar Código QR</button>
+                <div id="qr-code"></div>
+            </div>
+
+            <button type="submit" class="submit-btn">Guardar Tienda</button>
+        </form>
+    </div>
+    <script src="crear_tienda.js"></script>
+</body>
+</html>
