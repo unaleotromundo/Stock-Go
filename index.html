@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mi Flipbook</title>
+<style>
+    body {
+        background-color: #f3f3f3;
+        font-family: Arial, sans-serif;
+    }
+    .flipbook-viewport {
+        overflow: hidden;
+        width: 100%;
+        height: 100vh;
+    }
+    .flipbook-viewport .container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        margin: auto;
+    }
+    .flipbook {
+        width: 800px;
+        height: 600px;
+        left: -400px;
+        top: -300px;
+    }
+    .flipbook .page {
+        width: 400px;
+        height: 600px;
+        background-color: white;
+        background-repeat: no-repeat;
+        background-size: cover;
+    }
+    .flipbook .page-wrapper {
+        -webkit-perspective: 2000px;
+        -moz-perspective: 2000px;
+        -ms-perspective: 2000px;
+        -o-perspective: 2000px;
+        perspective: 2000px;
+    }
+    .flipbook .hard {
+        background-color: #f8f8f8;
+        -webkit-box-shadow: inset 0 0 5px #666;
+        -moz-box-shadow: inset 0 0 5px #666;
+        -o-box-shadow: inset 0 0 5px #666;
+        -ms-box-shadow: inset 0 0 5px #666;
+        box-shadow: inset 0 0 5px #666;
+        font-weight: bold;
+    }
+    .flipbook .page-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+    .flipbook .page-content h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+    .flipbook .page-content p {
+        font-size: 16px;
+        line-height: 1.5;
+        margin-bottom: 20px;
+    }
+    .flipbook .page-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-top: 20px;
+    }
+</style>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
+</head>
+<body>
+
+<div class="flipbook-viewport">
+    <div class="container">
+        <div class="flipbook">
+            <div class="hard">
+                <div class="page-content">
+                    <h2>Mi Libro Interactivo</h2>
+                    <p>Un ejemplo de Flipbook Digital</p>
+                </div>
+            </div>
+            <div class="hard"></div>
+            <div>
+                <div class="page-content">
+                    <h2>Página 1: La Naturaleza</h2>
+                    <p>La naturaleza nos ofrece paisajes impresionantes y una biodiversidad increíble. Es fundamental cuidarla y preservarla.</p>
+                    <img src="https://via.placeholder.com/300x200.png?text=Paisaje+Natural" alt="Paisaje Natural">
+                </div>
+            </div>
+            <div>
+                <div class="page-content">
+                    <h2>Página 2: Explorando el Espacio</h2>
+                    <p>El universo es vasto y lleno de misterios. La exploración espacial nos permite descubrir nuevos mundos y entender nuestro lugar en el cosmos.</p>
+                    <img src="https://via.placeholder.com/300x200.png?text=Galaxia" alt="Galaxia">
+                </div>
+            </div>
+            <div>
+                <div class="page-content">
+                    <h2>Página 3: El Arte de la Programación</h2>
+                    <p>Escribir código es como pintar un lienzo digital. Con lógica y creatividad, podemos construir aplicaciones y sitios web asombrosos.</p>
+                    <img src="https://via.placeholder.com/300x200.png?text=Código+en+Pantalla" alt="Código en Pantalla">
+                </div>
+            </div>
+            <div>
+                <div class="page-content">
+                    <h2>Página 4: La Aventura de Viajar</h2>
+                    <p>Viajar nos enriquece culturalmente y nos permite vivir experiencias inolvidables. Cada destino tiene una historia que contar.</p>
+                    <img src="https://via.placeholder.com/300x200.png?text=Mapa+del+Mundo" alt="Mapa del Mundo">
+                </div>
+            </div>
+            <div class="hard"></div>
+            <div class="hard">
+                 <div class="page-content">
+                    <h2>Fin</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function loadApp() {
+        $('.flipbook').turn({
+            width: 800,
+            height: 600,
+            elevation: 50,
+            gradients: true,
+            autoCenter: true
+        });
+    }
+
+    // Cargar la aplicación
+    loadApp();
+</script>
+
+</body>
+</html>
