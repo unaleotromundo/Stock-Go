@@ -1,626 +1,1261 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>El Hilo de las Nornas | Un Portal Rúnico</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Fuentes: Una para legibilidad (Roboto) y otra para el alma épica (Cinzel Decorative) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  
-  <style>
-    /* --- FUNDAMENTOS Y AMBIENTE --- */
-    :root {
-      /* Paleta de colores inspirada en nuestra saga */
-      --color-background: #0d1a26; /* Azul noche profundo del fiordo */
-      --color-foreground: #f2e8d5; /* Pergamino, hueso, lino crudo */
-      --color-text-main: #c5b8a3;  /* Texto principal, legible y suave */
-      --color-text-header: #e6d9c1; /* Encabezados, más brillante */
-      --color-accent-gold: #d4af37; /* Oro viejo, para detalles y acentos */
-      --color-accent-wood: #6b4f35; /* Madera oscura, para contenedores */
-      --font-display: 'Cinzel Decorative', serif; /* Fuente épica para títulos */
-      --font-body: 'Roboto', sans-serif; /* Fuente legible para el cuerpo */
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor Canvas Pro v2.0</title>
+<!-- 1. OPTIMIZACIÓN: Se elimina la carga masiva de fuentes para cargarlas bajo demanda -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Bebas+Neue&family=Anton&family=Lobster&family=Oswald&family=Poppins&family=Playfair+Display:wght@700&family=Permanent+Marker&family=Rock+Salt&family=Luckiest+Guy&family=Shadows+Into+Light&family=Orbitron:wght@900&family=Archivo+Black&family=Quicksand:wght@700&family=Arizonia&family=Bangers&family=Covered+By+Your+Grace&family=Fredericka+the+Great&family=Indie+Flower&family=Pacifico&family=Press+Start+2P&family=Gloria+Hallelujah&family=Rammetto+One&family=Monoton&family=Rubik+Moonrocks&family=Special+Elite&family=Amatic+SC:wght@700&family=VT323&family=Chewy&family=Black+Ops+One&family=Faster+One&family=Acme&family=Rye&family=Rubik+80s+Fade&family=Sigmar+One&family=UnifrakturCook&family=Sacramento&family=Chango&family=Major+Mono+Display&family=IBM+Plex+Mono:wght@700&family=Poiret+One&family=Unbounded:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --c-cyan: #00B4D8;
+  --c-magenta: #D0006F;
+  --c-yellow: #FFD166;
+  --c-key: #073B4C;
+  --surface: rgba(255, 255, 255, 0.92);
+  --border: rgba(0, 0, 0, 0.08);
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --shadow: 0 4px 24px rgba(0,0,0,0.05);
+  --shadow-active: 0 6px 32px rgba(0,0,0,0.12);
+  --panel-bg: rgba(255, 255, 255, 0.85);
+}
 
-    body {
-      background-color: var(--color-background);
-      color: var(--color-text-main);
-      font-family: var(--font-body);
-      margin: 0;
-      overflow-x: hidden;
-    }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-    .world-background {
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: url('https://www.transparenttextures.com/patterns/dark-wood.png'), 
-                  linear-gradient(to bottom, #0d1a26, #1a2b3c);
-      background-size: auto, cover;
-      z-index: -1;
-    }
+body {
+  font-family: 'Montserrat', sans-serif;
+  background: linear-gradient(135deg, #fbfcfd 0%, #f6f9fb 100%);
+  min-height: 100vh;
+  color: var(--text);
+  overflow: hidden;
+  touch-action: none;
+}
 
-    .world-background::before {
-      content: '';
-      position: absolute; top: 0; left: 0; width: 200%; height: 200%;
-      background: transparent url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="1" cy="1" r="0.4" fill="%23f2e8d5"/></svg>');
-      background-size: 70px 70px;
-      animation: pan-background 150s linear infinite;
-      opacity: 0.08;
-    }
+header {
+  display: flex;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 8px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow);
+  z-index: 100;
+  scrollbar-width: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
 
-    .world-background::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; width: 100%; height: 40%;
-      background: linear-gradient(to top, rgba(13, 26, 38, 1), transparent);
-      animation: mist-flow 45s ease-in-out infinite alternate;
-    }
+header::-webkit-scrollbar {
+  display: none;
+}
 
-    @keyframes pan-background {
-      from { transform: translate(0,0); }
-      to { transform: translate(-50%, -50%); }
-    }
+.icon-btn {
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.1),
+    inset 0 -2px 0 rgba(0,0,0,0.05),
+    inset 0 0 10px rgba(255,255,255,0.5);
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
 
-    @keyframes mist-flow {
-      from { opacity: 0.4; transform: translateY(10%); }
-      to { opacity: 0.7; transform: translateY(0); }
-    }
+/* Colores de fondo CMYK */
+#bgColorBtn { background: var(--c-cyan); }
+#addTextBtn { background: var(--c-magenta); }
+#addImageBtn { background: var(--c-yellow); }
+#generateQrBtn { background: var(--c-key); }
+#exportBtn { background: #E9ECEF; } /* Un color neutral para que los de CMYK destaquen */
+#clearCanvasBtn { background: #3db52d; } /* Novedad: Botón para limpiar */
 
-    .app-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 1rem;
-    }
 
-    /* --- HEADER Y NAVEGACIÓN REDISEÑADOS --- */
-    header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 0.5rem;
-      border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-      margin-bottom: 2rem;
-    }
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: linear-gradient(rgba(255,255,255,0.2), transparent);
+  pointer-events: none;
+}
 
-    .logo-container {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
+.icon-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 
+    0 6px 12px rgba(0,0,0,0.15),
+    inset 0 -2px 0 rgba(0,0,0,0.05),
+    inset 0 0 10px rgba(255,255,255,0.5);
+}
 
-    .logo-rune {
-      font-size: 2.5rem;
-      color: var(--color-accent-gold);
-      text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
-    }
+.icon-btn:active {
+  transform: translateY(1px);
+  box-shadow: 
+    0 2px 4px rgba(0,0,0,0.1),
+    inset 0 -2px 0 rgba(0,0,0,0.05),
+    inset 0 0 10px rgba(255,255,255,0.5);
+}
 
-    header h1 {
-      font-family: var(--font-display);
-      font-size: 1.5rem; /* Ajustado para móviles */
-      color: var(--color-text-header);
-      margin: 0;
-      letter-spacing: 2px;
-    }
+.icon-btn svg {
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1));
+}
 
-    #main-nav {
-      display: flex;
-      gap: 0.5rem;
-    }
+.icon-btn svg path, .icon-btn svg rect, .icon-btn svg circle {
+  fill: #fff;
+  stroke: #fff;
+}
 
-    #main-nav a {
-      color: var(--color-text-main);
-      text-decoration: none;
-      padding: 0.5rem 0.8rem;
-      position: relative;
-      transition: color 0.3s ease;
-      font-size: 0.9rem; /* Ajustado para móviles */
-    }
+#exportBtn .icon-label, #clearCanvasBtn .icon-label {
+    color: var(--text);
+    text-shadow: none;
+}
 
-    #main-nav a::after {
-      content: '';
-      position: absolute; bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 2px;
-      background-color: var(--color-accent-gold);
-      transition: width 0.3s ease;
-    }
+.icon-label {
+  font-size: 9px;
+  font-weight: 600;
+  margin-top: 4px;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+}
 
-    #main-nav a:hover, #main-nav a.active {
-      color: var(--color-text-header);
-    }
-    #main-nav a:hover::after, #main-nav a.active::after {
-      width: 60%;
-    }
+main {
+  position: fixed;
+  top: 70px;
+  left: 0;
+  right: 0;
+  bottom: 50px; /* MODIFICACIÓN: Aumentado para dar espacio al footer y la barra de zoom */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f0f4f8;
+}
 
-    /* --- ESTILOS GENERALES DE SECCIÓN --- */
-    .main-section {
-      background: rgba(10, 20, 30, 0.6);
-      border: 1px solid rgba(107, 79, 53, 0.4);
-      border-radius: 16px;
-      padding: 1.5rem;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-      animation: section-fade-in 0.8s ease forwards;
-    }
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
 
-    @keyframes section-fade-in {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+#flyerCanvas {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  max-width: 100%;
+  max-height: 100%;
+  touch-action: none;
+}
 
-    h2 {
-      font-family: var(--font-display);
-      color: var(--color-text-header);
-      text-align: center;
-      font-size: 2.2rem;
-      margin-top: 0;
-      margin-bottom: 1.5rem;
-      text-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
-    }
+.floating-tools {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column; 
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  z-index: 10;
+  cursor: move;
+  user-select: none;
+  flex-wrap: wrap; 
+}
 
-    /* --- ESTILOS DE COMPONENTES MEJORADOS --- */
-    input[type="text"], button {
-      font-family: var(--font-body);
-      border-radius: 8px;
-      border: 1px solid var(--color-accent-wood);
-      padding: 0.8em 1em;
-      background: rgba(0,0,0,0.2);
-      color: var(--color-foreground);
-    }
-    
-    button {
-      background: var(--color-accent-wood);
-      color: var(--color-text-header);
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.3s, transform 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
+.floating-tools button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  cursor: pointer;
+  border: none;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
 
-    button:hover:not(:disabled) {
-      background: #8a6a4f;
-      transform: translateY(-2px);
-    }
-    
-    button:disabled {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
+.floating-tools button:hover {
+  background: #f1f5f9;
+}
 
-    .tipo-btn {
-      background: transparent;
-      border: 1px solid var(--color-accent-wood);
-    }
-    
-    .tipo-btn.active {
-      background: var(--color-accent-gold);
-      color: var(--color-background);
-      border-color: var(--color-accent-gold);
-      font-weight: bold;
-    }
+#generalTools, #textTools, #imageTools {
+  display: flex;
+  gap: 6px;
+  background: #fff;
+  padding: 6px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
 
-    /* --- CÓDICE RÚNICO (GALERÍA) --- */
-    #galeria-runas {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-    }
-    #galeria-runas > div {
-      flex: 0 0 90px;
-      text-align: center;
-      background: rgba(0,0,0,0.2);
-      border: 1px solid var(--color-accent-wood);
-      border-radius: 8px;
-      padding: 10px 0 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    #galeria-runas > div:hover {
-      box-shadow: 0 4px 16px rgba(212,175,55,0.2);
-      transform: translateY(-3px) scale(1.05);
-      background: var(--color-accent-wood);
-    }
+.popup {
+  display: none;
+  position: fixed;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
 
-    /* --- MODAL --- */
-    .runa-modal-overlay {
-      display: none;
-      position: fixed; z-index: 1000; inset: 0;
-      background: rgba(13, 26, 38, 0.85);
-      backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-      justify-content: center; align-items: center;
-      animation: fadeIn 0.3s;
-    }
-    .runa-modal-overlay.active { display: flex; }
-    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-    
-    .runa-modal {
-      background: var(--color-foreground);
-      color: var(--color-accent-wood);
-      border-radius: 16px;
-      box-shadow: 0 8px 44px rgba(0,0,0,0.5);
-      display: flex; gap: 32px;
-      max-width: 650px; width: 98%;
-      padding: 32px 28px;
-      position: relative;
-      font-family: var(--font-body);
-      animation: modalSlideUp 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
-    }
-    @keyframes modalSlideUp {
-      from { transform: translateY(40px); opacity: 0; }
-      to   { transform: translateY(0); opacity: 1; }
-    }
-    
-    .runa-modal-img {
-      background: #e6d9c1;
-      padding: 10px;
-      border-radius: 12px;
-      font-size: 4em;
-      min-height: 150px;
-      max-width: 150px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    .runa-modal-nombre {
-      font-family: var(--font-display);
-      font-weight: 700;
-      font-size: 1.7em;
-      color: var(--color-accent-wood);
-    }
-    .runa-modal-simbolo {
-      font-size: 2.4em;
-      color: var(--color-accent-wood);
-    }
-    .runa-modal-significado {
-      font-size: 1.1em;
-      color: #8c6d4e;
-      font-weight: 500;
-    }
-    .runa-modal-interpretacion {
-      background: #e9e2d3;
-      border-radius: 7px;
-      padding: 0.8em 1em;
-      color: #3b2d1c;
-    }
-    .runa-modal-extra {
-      font-size: 0.99em;
-      color: #5a4a31;
-    }
-    .runa-modal-close {
-      cursor: pointer;
-      position: absolute;
-      top: 12px; right: 12px;
-      font-size: 1.8em; color: #bca170;
-      background: none; border: none;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      transition: background 0.2s, color 0.2s;
-    }
-    .runa-modal-close:hover {
-      background: #e6d9c1;
-      color: var(--color-accent-wood);
-    }
+.popup-content {
+  background: var(--panel-bg);
+  padding: 24px;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
 
-    /* --- TIRADA --- */
-    .tirada-runas-flex { display: flex; gap: 20px; justify-content: center; align-items: flex-start; flex-wrap: wrap; margin-top: 12px; }
-    .tirada-runa-box {
-      text-align: center;
-      background: rgba(242, 232, 213, 0.1);
-      border: 1px solid var(--color-accent-wood);
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      padding: 12px 8px 10px;
-      min-width: 140px;
-      transition: all 0.2s;
-    }
-    .tirada-runa-box:hover, .tirada-runa-box:focus {
-      box-shadow: 0 4px 16px rgba(212,175,55,0.4);
-      transform: translateY(-3px) scale(1.03);
-      background: rgba(107, 79, 53, 0.5);
-      border-color: var(--color-accent-gold);
-    }
-    .tirada-pos { color: var(--color-text-header); font-weight: bold; }
-    .tirada-simbolo { font-size: 2.1em; color: var(--color-accent-gold); }
-    .tirada-nombre { font-weight: bold; font-size: 1.13em; color: var(--color-text-header); }
-    .tirada-significado { color: var(--color-text-main); }
-    .tirada-adivinacion { background: rgba(0,0,0,0.2); color: var(--color-text-main); padding: 0.8em 0.7em; border-radius: 7px; }
+.popup-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: var(--text);
+  text-align: center;
+  position: relative;
+  padding-bottom: 12px;
+}
 
-    /* Estilos de layout de Tirada y Modal no se modifican, solo se les aplica la nueva piel */
-    .tirada-cruz-layout { display: grid; grid-template-areas: ". arriba ." "izquierda centro derecha" ". abajo ."; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto auto; gap: 8px; justify-items: center; align-items: center; margin-top: 10px; }
-    .tirada-cruz-arriba { grid-area: arriba; } .tirada-cruz-centro { grid-area: centro; } .tirada-cruz-abajo { grid-area: abajo; } .tirada-cruz-izquierda { grid-area: izquierda; } .tirada-cruz-derecha { grid-area: derecha; }
+.popup-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta));
+  border-radius: 3px;
+}
 
-    /* --- RESPONSIVE DESIGN --- */
-    @media (max-width: 768px) {
-      header { flex-direction: column; gap: 1rem; }
-      header h1 { font-size: 1.4rem; }
-      #main-nav { justify-content: center; flex-wrap: wrap; }
-      #main-nav a { padding: 0.5rem; font-size: 0.85rem; }
-      .runa-modal { flex-direction: column; gap: 12px; padding: 20px 10px 16px 10px; align-items: center; max-width: 95vw; }
-      .runa-modal-img { margin: 0 auto 10px auto; font-size: 2.7em; min-width: 120px; min-height: 120px; max-width: 120px; }
-      .runa-modal-info { min-width: 0; width: 97%; }
-      .runa-modal-close { top: 7px; right: 7px; font-size: 1.4em; }
-      .tirada-cruz-layout { grid-template-areas: "arriba" "centro" "izquierda" "derecha" "abajo"; grid-template-columns: 1fr; grid-template-rows: repeat(5, auto); }
-      .tirada-cruz-arriba, .tirada-cruz-centro, .tirada-cruz-abajo, .tirada-cruz-izquierda, .tirada-cruz-derecha { width: 90%; }
-      .tirada-runas-flex { flex-direction: column; align-items: center; }
-      .tirada-runa-box { min-width: 250px; margin-bottom: 15px; }
-    }
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-grow: 1;
+  min-height: 200px;
+}
 
-    footer {
-        text-align: center;
-        padding: 2rem 1rem;
-        margin-top: 2rem;
-        color: rgba(197, 184, 163, 0.5);
-        border-top: 1px solid rgba(212, 175, 55, 0.1);
+.image-thumb {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #e2e8f0;
+}
+
+.image-thumb:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.popup-close {
+  width: 100%;
+  padding: 14px;
+  background: var(--c-key);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 10px;
+}
+
+.popup-close:hover {
+  background: #052a39;
+}
+
+.font-selector {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.font-option {
+  padding: 12px;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+  font-size: 16px;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  text-align: center;
+  font-weight: 500;
+}
+
+.font-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+}
+
+.font-option.selected {
+  background: var(--c-cyan);
+  color: #fff;
+  border-color: rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+}
+
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  padding: 8px 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+  z-index: 90;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 50px; /* MODIFICACIÓN: Altura fija para el footer */
+}
+
+.footer-links { display: flex; gap: 12px; }
+.footer-links a { color: var(--text); text-decoration: none; transition: color 0.2s; font-weight: 500; font-size: 12px; }
+.footer-links a:hover { color: var(--c-cyan); }
+
+.help-message {
+  position: absolute;
+  bottom: 60px; /* MODIFICACIÓN: Ajustado para que aparezca sobre el footer */
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  z-index: 10;
+  animation: fadeInOut 4s forwards;
+  display: none;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; display: none; }
+}
+
+@media (max-width: 768px) {
+  .icon-btn { width: 48px; height: 48px; }
+  .popup-content { padding: 16px; }
+  .font-selector { max-height: 200px; }
+  .floating-tools { top: 10px; right: 10px; transform: scale(0.9); }
+  .icon-label { font-size: 8px; }
+  footer {
+    height: auto; /* Altura automática en móvil */
+    flex-direction: column-reverse; /* El zoom abajo del todo */
+    gap: 8px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .icon-btn { width: 44px; height: 44px; }
+  header { padding: 6px; gap: 4px; }
+  .popup-title { font-size: 18px; }
+  footer { flex-direction: column-reverse; gap: 8px; padding: 6px; }
+  .footer-links { gap: 8px; }
+  .icon-label { font-size: 7px; }
+}
+
+.hidden-input { display: none; }
+
+.upload-card {
+  width: 100%;
+  height: 100px;
+  background-color: #f0f4f8;
+  border: 2px dashed #94a3b8;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 20px;
+}
+
+.upload-card:hover {
+  background-color: #e2e8f0;
+  border-color: #334155;
+  color: #334155;
+}
+
+/* 2. MEJORA API: Estilos para el buscador de imágenes */
+.search-wrapper {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+#imageSearchInput {
+    flex-grow: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 16px;
+    background: #999393;
+}
+
+#imageSearchBtn {
+    padding: 0 20px;
+    background: var(--c-cyan);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .2s;
+}
+#imageSearchBtn:hover {
+    background: #0096b2;
+}
+
+/* Modo día/noche */
+body.dark {
+  --surface: rgba(15, 23, 42, 0.92);
+  --border: rgba(255, 255, 255, 0.1);
+  --text: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --shadow: 0 4px 24px rgba(0,0,0,0.2);
+  --shadow-active: 0 6px 32px rgba(0,0,0,0.3);
+  --panel-bg: rgba(15, 23, 42, 0.85);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+body.dark .icon-btn {
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.1), inset 0 0 10px rgba(255,255,255,0.1);
+}
+
+body.dark .icon-btn svg path, body.dark .icon-btn svg rect, body.dark .icon-btn svg circle {
+  fill: #f1f5f9;
+  stroke: #f1f5f9;
+}
+
+body.dark .icon-label, body.dark #exportBtn .icon-label, body.dark , body.dark #clearCanvasBtn .icon-label {
+  color: #f1f5f9;
+}
+
+body.dark .canvas-container { background: #1e293b; }
+body.dark #flyerCanvas { border: 1px solid #334155; }
+body.dark .popup-content, body.dark .font-selector, body.dark .font-option { background: #1e293b; color: #f1f5f9; border-color: var(--border); }
+body.dark .upload-card { background: #334155; border-color: #475569; color: #cbd5e1; }
+body.dark .search-wrapper input { background: #334155; color: #f1f5f9; border-color: var(--border); }
+/* Modo claro: botón oscuro */
+#themeToggleBtn {
+  background: linear-gradient(145deg, #0f172a, #1e293b); /* Fondo oscuro en modo claro */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.1), inset 0 0 10px rgba(255,255,255,0.1);
+}
+#themeToggleBtn svg path {
+  fill: #f1f5f9; /* Icono claro */
+  stroke: #f1f5f9;
+}
+#themeToggleBtn .icon-label {
+  color: #f1f5f9; /* Texto claro */
+}
+
+/* Modo oscuro: botón claro */
+body.dark #themeToggleBtn {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0); /* Fondo claro en modo oscuro */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 -2px 0 rgba(0,0,0,0.05), inset 0 0 10px rgba(255,255,255,0.5);
+}
+body.dark #themeToggleBtn svg path {
+  fill: #0f172a; /* Icono oscuro */
+  stroke: #0f172a;
+}
+body.dark #themeToggleBtn .icon-label {
+  color: #0f172a; /* Texto oscuro */
+}
+/* Botón de exportar siempre con ícono y texto negro */
+#exportBtn svg path {
+  fill: #000000; /* Negro para el ícono */
+  stroke: #000000;
+}
+#exportBtn .icon-label {
+  color: #000000; /* Negro para el texto */
+}
+
+/* Asegurar que el modo oscuro no lo cambie */
+body.dark #exportBtn svg path {
+  fill: #000000;
+  stroke: #000000;
+}
+body.dark #exportBtn .icon-label {
+  color: #000000;
+}
+
+/* --- INICIO: ESTILOS DE LA BARRA DE ZOOM --- */
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-controls button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text);
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+/* --- INICIO: Estilo para el botón de zoom a la selección y reset --- */
+#resetZoomBtn {
+    width: 45px; /* Más ancho para el texto "100%" */
+    font-size: 12px;
+    border-radius: 16px;
+}
+
+#zoomToSelectionBtn svg {
+    width: 18px;
+    height: 18px;
+    fill: var(--text);
+}
+
+body.dark #zoomToSelectionBtn svg {
+    fill: var(--text);
+}
+
+.zoom-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--border);
+}
+/* --- FIN: Estilo para el botón de zoom a la selección y reset --- */
+
+
+.zoom-controls button:hover:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
+body.dark .zoom-controls button:hover:not(:disabled) {
+    background-color: #334155;
+}
+
+#zoomSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 120px;
+  height: 6px;
+  background: var(--border);
+  outline: none;
+  border-radius: 3px;
+  transition: opacity 0.2s;
+}
+
+#zoomSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--c-cyan);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+}
+
+#zoomSlider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--c-cyan);
+  cursor: pointer;
+  border-radius: 50%;
+  border: 3px solid var(--surface);
+  box-shadow: var(--shadow);
+}
+
+#zoomLevel {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 45px;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+    .zoom-controls {
+        width: 100%;
+        justify-content: center;
     }
-  </style>
+}
+/* --- FIN: ESTILOS DE LA BARRA DE ZOOM --- */
+</style>
 </head>
 <body>
-
-  <!-- CAPA DE FONDO ATMOSFÉRICO -->
-  <div class="world-background"></div>
-
-  <!-- CONTENEDOR PRINCIPAL DE LA APLICACIÓN -->
-  <div class="app-container">
-    <header>
-      <div class="logo-container">
-        <span class="logo-rune">ᛟ</span> <!-- Othala: Herencia, nuestro hogar digital -->
-        <h1>El Hilo de las Nornas</h1>
-      </div>
-      <nav id="main-nav">
-        <a href="#" data-section="inicio" class="active">Inicio</a>
-        <a href="#" data-section="tirada">Oráculo</a>
-        <a href="#" data-section="galeria">Códice Rúnico</a>
-        <a href="#" data-section="saga">La Saga</a>
-      </nav>
-    </header>
-
-    <main>
-      <div class="main-content-wrapper">
-        <section id="inicio" class="main-section">
-          <h2>Un Portal a la Sabiduría Antigua</h2>
-          <p style="text-align: center; font-size: 1.2em; max-width: 700px; margin: 0 auto 2em auto;">
-            Has llegado al fiordo de Bjørndal, un lugar donde el velo entre los mundos es delgado. Aquí, las runas no son solo símbolos, son la voz del destino. Explora su sabiduría, consulta el oráculo o adéntrate en la saga de "El Hilo de las Nornas".
-          </p>
-           <div style="text-align: center;">
-            <button onclick="document.querySelector('[data-section=tirada]').click()">Consultar el Oráculo</button>
-          </div>
-        </section>
-
-        <section id="tirada" class="main-section" style="display:none">
-          <h2>Ritual del Oráculo</h2>
-          <div style="text-align:center; margin-bottom: 2em;">
-            <label for="pregunta" style="font-weight:bold; display:block; margin-bottom: 0.5em;">Graba tu pregunta en el éter:</label>
-            <input type="text" id="pregunta" placeholder="Escribe tu consulta a las Nornas..." style="width:90%;max-width:370px;">
-          </div>
-          <div style="text-align:center;">
-            <p>Elige el ritual que más resuene con tu espíritu.</p>
-            <div class="tipos-tirada" style="display:flex; justify-content:center; gap:10px; margin-bottom:1em;">
-              <button class="tipo-btn active" data-tirada="simple" title="Una respuesta directa y concisa.">Una Runa</button>
-              <button class="tipo-btn" data-tirada="tres" title="Pasado, Presente y Futuro.">Tres Runas</button>
-              <button class="tipo-btn" data-tirada="cruz" title="Análisis profundo de una situación.">Cruz Rúnica</button>
-            </div>
-            <div id="explicacion-tirada" style="margin: 1em auto; max-width:500px; background: rgba(0,0,0,0.1); padding: 1em; border-radius:8px;"></div>
-          </div>
-          <div style="text-align:center; margin-top: 2em;">
-            <button id="iniciar-ritual" disabled>Lanzar las Runas</button>
-            <div id="tirada-resultado" style="margin-top:2em;"></div>
-          </div>
-          <template id="ejemplo-simple"><b>Una Runa:</b> Ideal para una pregunta concreta, te ofrece una guía directa.</template>
-          <template id="ejemplo-tres"><b>Tres Runas:</b> Explora el flujo del tiempo: Pasado, Presente y Futuro de tu consulta.</template>
-          <template id="ejemplo-cruz"><b>Cruz Rúnica:</b> Un análisis profundo: Tú, tu Guía, la Raíz del asunto, el Obstáculo y la Solución.</template>
-        </section>
-
-        <section id="galeria" class="main-section" style="display:none">
-          <h2>Códice de Runas</h2>
-          <div id="galeria-runas"></div>
-        </section>
-
-        <section id="saga" class="main-section" style="display:none">
-          <h2>La Saga: El Hilo de las Nornas</h2>
-          <div style="max-width: 800px; margin: 0 auto; line-height: 1.7;">
-            <p>En el fiordo de Bjørndal, la muerte de un Jarl sin heredero amenaza con desgarrar al clan. Una joven völva, Ingrid, debe interpretar una misteriosa tirada de runas para guiar a su gente a través de una tormenta de ambición, traición y guerra inminente. La fuerza del guerrero Björn y la astucia del comerciante Hakon se enfrentan, pero las runas susurran un secreto que ninguno de los dos puede ver...</p>
-            <p><em>(Aquí se podrá leer la saga completa, capítulo por capítulo, con sus ilustraciones)</em></p>
-          </div>
-        </section>
-      </div>
-    </main>
-    
-    <footer>
-      <p>&copy; 2025 Forjado en colaboración. Un portal al mundo de las runas.</p>
-    </footer>
-  </div>
+<header>
+  <button class="icon-btn" title="Color de fondo" id="bgColorBtn">
+    <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"></path></svg>
+    <span class="icon-label">Fondo</span>
+  </button>
   
-  <div class="runa-modal-overlay" id="runa-modal-overlay" tabindex="-1">
-    <div class="runa-modal" role="dialog" aria-modal="true" aria-labelledby="runa-modal-nombre">
-      <button class="runa-modal-close" id="runa-modal-close" aria-label="Cerrar modal">&times;</button>
-      <div class="runa-modal-img" id="runa-modal-img"></div>
-      <div class="runa-modal-info">
-        <h3 class="runa-modal-nombre" id="runa-modal-nombre"></h3>
-        <div class="runa-modal-significado" id="runa-modal-significado"></div>
-        <div class="runa-modal-interpretacion" id="runa-modal-interpretacion"></div>
-        <div class="runa-modal-extra" id="runa-modal-extra"></div>
+  <button class="icon-btn" title="Agregar texto" id="addTextBtn">
+    <svg viewBox="0 0 24 24"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"></path></svg>
+    <span class="icon-label">Texto</span>
+  </button>
+  
+  <button class="icon-btn" title="Agregar imagen" id="addImageBtn">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM12 5c-3.86 0-7 3.14-7 7s3.14 7 7 7V5z"></path></svg>
+    <span class="icon-label">Imagen</span>
+  </button>
+  
+  <button class="icon-btn" title="Generar QR" id="generateQrBtn">
+    <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 8h8v-8h-8v8zm2-6h4v4h-4v-4z"></path></svg>
+    <span class="icon-label">QR</span>
+  </button>
+  
+  <button class="icon-btn" title="Exportar" id="exportBtn">
+    <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"></path></svg>
+    <span class="icon-label">Exportar</span>
+  </button>
+  
+  <button class="icon-btn" title="Limpiar todo" id="clearCanvasBtn">
+    <svg viewBox="0 0 24 24"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"></path></svg>
+    <span class="icon-label">Limpiar</span>
+  </button>
+  
+  <button class="icon-btn" title="Cambiar tema" id="themeToggleBtn">
+    <svg id="themeIcon" viewBox="0 0 24 24"></svg>
+    <span class="icon-label">Tema</span>
+  </button>
+</header>
+
+<main>
+  <div class="canvas-container">
+    <canvas id="flyerCanvas" width="800" height="1066"></canvas>
+    <div class="floating-tools" id="floatingTools" style="display:none;">
+      <div id="generalTools">
+          <button id="btnSubirCapa" title="Subir capa">↑</button>
+          <button id="btnBajarCapa" title="Bajar capa">↓</button>
+          <button id="btnEnviarFondo" title="Enviar al fondo">⤓</button>
+          <button id="btnEliminar" title="Eliminar">🗑</button>
+      </div>
+      <div id="textTools" style="display: none;">
+          <button id="btnOpenFontPopup" title="Cambiar fuente">Aa</button>
+          <button id="btnOpenTextColorPopup" title="Cambiar color">🎨</button>
+          <button id="btnAlinIzq" title="Alinear izquierda">⚍</button>
+          <button id="btnAlinCen" title="Alinear centro">☰</button>
+          <button id="btnAlinDer" title="Alinear derecha">⚍</button>
+      </div>
+      <div id="imageTools" style="display: none;">
+          <button id="btnApplyFilter" title="Aplicar filtro">✨</button>
+          <button id="btnRemoveFilters" title="Quitar filtros">🚫</button>
       </div>
     </div>
+    <div class="help-message" id="helpMessage">¡Puedes mover, rotar y escalar los objetos!</div>
   </div>
+</main>
 
-  <script>
-    const runas = [
-      { nombre: 'Fehu', simbolo: 'ᚠ', img: 'fehu.png', significado: 'Riqueza, abundancia, inicio de proyectos y recursos.', extra: 'Representa el ganado, la prosperidad material, la energía de inicio y la importancia de valorar lo que ya se posee. Suele indicar oportunidades de ganancia, pero también la necesidad de cuidar y compartir.', interpretacion: "La energía de Fehu te invita a valorar los recursos presentes y a usarlos con sabiduría. Es momento de reconocer la abundancia en tu vida y actuar con generosidad." },
-      { nombre: 'Uruz', simbolo: 'ᚢ', img: 'uruz.png', significado: 'Fuerza vital, poder, salud y energía para superar desafíos.', extra: 'Conectada al buey salvaje, Uruz señala la fuerza bruta, la vitalidad y la capacidad de transformación. Invita a aprovechar el potencial interior y a aceptar los cambios que nos fortifican.', interpretacion: "Uruz representa la fuerza y el coraje que habitan en tu interior. Confía en tu poder para superar cualquier desafío y transforma la adversidad en crecimiento." },
-      { nombre: 'Thurisaz', simbolo: 'ᚦ', img: 'thurisaz.png', significado: 'Desafío, protección, pruebas, oportunidad de aprendizaje.', extra: "Simboliza el martillo de Thor y la puerta entre mundos. Puede presagiar pruebas o confrontaciones, pero también la posibilidad de superarlas con conciencia y protección.", interpretacion: "Thurisaz señala pruebas necesarias para tu evolución. Enfrenta los obstáculos con conciencia; cada desafío es una oportunidad de aprender y fortalecerte." },
-      { nombre: 'Ansuz', simbolo: 'ᚨ', img: 'ansuz.png', significado: 'Palabra, comunicación, inspiración divina, mensajes.', extra: "Ligada a Odín y la sabiduría, Ansuz indica momentos de comunicación importante, mensajes inspiradores o la necesidad de escuchar la intuición.", interpretacion: "Ansuz es la voz de la inspiración. Escucha los mensajes que llegan, comunícate desde el corazón y permite que la verdad se exprese." },
-      { nombre: 'Raidho', simbolo: 'ᚱ', img: 'raidho.png', significado: 'Viaje, movimiento, evolución, camino correcto.', extra: 'Viaje físico o espiritual, la importancia de avanzar y adaptarse. Habla de ciclos, evolución y la necesidad de poner en marcha los proyectos.', interpretacion: "Raidho habla de un viaje, externo o interno. Confía en el proceso, cada paso es parte del aprendizaje. El movimiento te llevará hacia el equilibrio." },
-      { nombre: 'Kenaz', simbolo: 'ᚲ', img: 'kenaz.png', significado: 'Luz, creatividad, revelaciones, apertura de caminos.', extra: 'Simboliza la antorcha, el fuego del conocimiento, la creatividad y la claridad. Revela lo oculto y ayuda a superar la oscuridad.', interpretacion: "Kenaz ilumina lo oculto. Es tiempo de crear, de encender tu fuego interior y de dejar que tu luz guíe tu camino." },
-      { nombre: 'Gebo', simbolo: 'ᚷ', img: 'gebo.png', significado: 'Regalo, intercambio, generosidad, equilibrio en relaciones.', extra: 'Simboliza el dar y recibir, la reciprocidad, los pactos y las alianzas. Puede señalar la llegada de una bendición o la importancia de la cooperación.', interpretacion: "Gebo es el símbolo del regalo y el intercambio sano. Da y recibe con amor, busca el equilibrio en tus relaciones y acepta la ayuda que el universo te ofrece." },
-      { nombre: 'Wunjo', simbolo: 'ᚹ', img: 'wunjo.png', significado: 'Alegría, bienestar, éxito, armonía interior.', extra: 'Representa la alegría compartida, el triunfo después de la dificultad y la llegada de la paz. Habla de plenitud y satisfacción.', interpretacion: "Wunjo anuncia alegría y armonía. Permite que la gratitud y la confianza abran la puerta a la felicidad y el éxito." },
-      { nombre: 'Hagalaz', simbolo: 'ᚺ', img: 'hagalaz.png', significado: 'Cambios bruscos, pruebas, transformación necesaria.', extra: 'La runa del granizo, transformación a través de crisis. Pide aceptar lo inesperado y comprender que todo cambio trae renovación.', interpretacion: "Hagalaz aconseja aceptar los cambios repentinos y ver en ellos una oportunidad de transformación. Después de la tormenta, llega la calma." },
-      { nombre: 'Nauthiz', simbolo: 'ᚾ', img: 'nauthiz.png', significado: 'Necesidad, carencia, resistencia, superación de obstáculos.', extra: 'Simboliza la necesidad, la escasez y la capacidad de resistir. Llama a la paciencia, al aprendizaje a través de las limitaciones y a la superación personal.', interpretacion: "Nauthiz señala momentos de necesidad. Acepta tus limitaciones y aprende de ellas. La paciencia y la resiliencia son tus aliadas." },
-      { nombre: 'Isa', simbolo: 'ᛁ', img: 'isa.png', significado: 'Estancamiento, pausa, paciencia, introspección.', extra: 'Representa el hielo, el tiempo de quietud y reflexión. Puede señalar bloqueos, pero también la oportunidad de meditar y reorientar el rumbo.', interpretacion: "Isa te invita a la quietud y la reflexión. No fuerces el avance, aprovecha este tiempo para meditar y reencontrarte." },
-      { nombre: 'Jera', simbolo: 'ᛃ', img: 'jera.png', significado: 'Ciclo, cosecha, resultados a largo plazo, recompensa.', extra: 'La runa de la cosecha y de los ciclos naturales. Indica que todo llega en su momento, recompensa al esfuerzo sostenido.', interpretacion: "Jera recompensa el esfuerzo sostenido. Todo ciclo llega a su fin y la cosecha será justa. Confía en los tiempos de la vida." },
-      { nombre: 'Eihwaz', simbolo: 'ᛇ', img: 'eihwaz.png', significado: 'Resistencia, transformación, conexión con lo profundo.', extra: 'Simboliza el tejo, la conexión entre mundos y la capacidad de superar pruebas profundas. Ayuda en procesos de transformación interior.', interpretacion: "Eihwaz es transformación profunda. No temas a los cambios radicales; el renacimiento espiritual está cerca." },
-      { nombre: 'Perthro', simbolo: 'ᛈ', img: 'perthro.png', significado: 'Misterio, destino, intuición, secretos revelados.', extra: 'Runa de la suerte, el azar y el destino. Nos habla de lo oculto, de lo que aún no puede conocerse. Invita a confiar en la intuición.', interpretacion: "Perthro revela misterios y secretos. Confía en tu intuición, hay verdades ocultas que pronto saldrán a la luz." },
-      { nombre: 'Algiz', simbolo: 'ᛉ', img: 'algiz.png', significado: 'Protección, guía espiritual, conexión sagrada.', extra: 'Simboliza el ciervo y la protección divina. Es la runa de la defensa ante los peligros y de la conexión con lo espiritual.', interpretacion: "Algiz te protege y conecta con lo sagrado. Deja que la guía espiritual te oriente y protege tu energía." },
-      { nombre: 'Sowilo', simbolo: 'ᛋ', img: 'sowilo.png', significado: 'Éxito, poder solar, claridad, victoria.', extra: 'La runa del sol, victoria sobre la oscuridad, claridad mental y energía renovada. Anuncia éxito y logros.', interpretacion: "Sowilo es el sol que ilumina tu camino. Éxito, claridad y vitalidad llegan a tu vida. Es momento de avanzar con seguridad." },
-      { nombre: 'Tiwaz', simbolo: 'ᛏ', img: 'tiwaz.png', significado: 'Justicia, valentía, sacrificio, integridad.', extra: 'Simboliza la lanza del dios Tyr, la justicia y el sacrificio por el bien común. Llama a actuar con valentía y rectitud.', interpretacion: "Tiwaz exige justicia y sacrificio. Actúa con integridad, sé valiente y defiende lo que es correcto." },
-      { nombre: 'Berkano', simbolo: 'ᛒ', img: 'berkano.png', significado: 'Nacimiento, crecimiento, fertilidad, nuevos comienzos.', extra: 'Runa de la madre, la fertilidad y la protección. Anuncia nacimientos, proyectos nuevos y crecimiento.', interpretacion: "Berkano anuncia nuevos comienzos. Cuida de tus proyectos como una madre y permite que crezcan con amor." },
-      { nombre: 'Ehwaz', simbolo: 'ᛖ', img: 'ehwaz.png', significado: 'Movimiento, progreso, confianza mutua, apoyo.', extra: 'Simboliza el caballo, los viajes y el trabajo en equipo. Habla de confianza, avances y colaboración.', interpretacion: "Ehwaz habla de movimiento y colaboración. Confía en quienes te rodean y avanza hacia tus metas en compañía." },
-      { nombre: 'Mannaz', simbolo: 'ᛗ', img: 'mannaz.png', significado: 'Humanidad, cooperación, autoconocimiento, ayuda.', extra: 'Runa del ser humano, la comunidad y la autorrealización. Llama a la introspección y a la colaboración social.', interpretacion: "Mannaz es la humanidad y el autoconocimiento. Reconoce tu valor y busca el apoyo de la comunidad." },
-      { nombre: 'Laguz', simbolo: 'ᛚ', img: 'laguz.png', significado: 'Intuición, emociones, flujo, adaptabilidad.', extra: 'Runa del agua, la intuición, la adaptabilidad y las emociones profundas. Invita a fluir y a confiar en el proceso emocional.', interpretacion: "Laguz fluye como el agua. Déjate llevar por la intuición y adapta tus emociones con sabiduría." },
-      { nombre: 'Ingwaz', simbolo: 'ᛜ', img: 'ingwaz.png', significado: 'Potencial, paz interna, culminación, descanso.', extra: 'Simboliza la semilla, el potencial oculto y la culminación de procesos. Habla de la importancia del reposo y la integración.', interpretacion: "Ingwaz simboliza paz y culminación. Es tiempo de finalizar procesos y disfrutar del merecido descanso." },
-      { nombre: 'Dagaz', simbolo: 'ᛞ', img: 'dagaz.png', significado: 'Despertar, transformación, nuevos paradigmas.', extra: 'La runa del día, del despertar y de los cambios positivos. Indica un punto de inflexión y la llegada de la claridad.', interpretacion: "Dagaz es despertar y transformación. Estás a punto de vivir un cambio positivo y revelador." },
-      { nombre: 'Othala', simbolo: 'ᛟ', img: 'othala.png', significado: 'Herencia, raíces, legado, pertenencia.', extra: 'Runa de la herencia, las tradiciones y el sentido de pertenencia. Habla de los ancestros y de la transmisión de valores.', interpretacion: "Othala conecta con tus raíces. Honra tu herencia y construye tu propio legado." }
-    ];
+<div class="popup" id="imgGalleryPopup">
+  <div class="popup-content">
+    <div class="popup-title">Galería de Imágenes</div>
+    
+    <!-- 2. MEJORA API: Buscador de imágenes -->
+    <div class="search-wrapper">
+        <input type="text" id="imageSearchInput" placeholder="Busca por palabra (ej: 'fiesta', 'comidas', 'tecnologia')">
+        <button id="imageSearchBtn">Buscar</button>
+    </div>
 
-    function openRunaModalByName(nombreRuna) {
-        const r = runas.find(r => r.nombre === nombreRuna);
-        if (!r) return;
-        const modalOverlay = document.getElementById('runa-modal-overlay');
-        const modalImg = document.getElementById('runa-modal-img');
-        const modalNombre = document.getElementById('runa-modal-nombre');
-        const modalSignificado = document.getElementById('runa-modal-significado');
-        const modalInterpretacion = document.getElementById('runa-modal-interpretacion');
-        const modalExtra = document.getElementById('runa-modal-extra');
-        
-        modalImg.innerHTML = `<img src="img/runas/${r.img}" alt="${r.nombre}" style="max-width:80px; display:block; margin-bottom: 6px;"><span style="font-size:2em;">${r.simbolo}</span>`;
-        modalNombre.textContent = r.nombre;
-        modalSignificado.textContent = r.significado || '';
-        modalInterpretacion.textContent = r.interpretacion || '';
-        modalExtra.textContent = r.extra || '';
-        
-        modalOverlay.classList.add('active');
-        document.body.style.overflow = "hidden";
-        document.getElementById('runa-modal-close').focus();
+    <label for="bgLocalInput" class="upload-card">
+      <span>⬆️</span>
+      Subir tu propia imagen
+    </label>
+    <input type="file" id="bgLocalInput" accept="image/*" class="hidden-input">
+    
+    <div class="image-grid" id="imgFondoGrid"></div>
+    <button class="popup-close">Cerrar</button>
+  </div>
+</div>
+
+<div class="popup" id="fontPopup">
+  <div class="popup-content">
+    <div class="popup-title">Seleccionar fuente</div>
+    <div id="customFontSelector" class="font-selector"></div>
+    <button class="popup-close">Aplicar</button>
+  </div>
+</div>
+
+<div class="popup" id="exportPopup">
+  <div class="popup-content">
+    <div class="popup-title">Exportar Flyer</div>
+    <button class="popup-close" id="btnDescargarJPG">Descargar como JPG</button>
+    <button class="popup-close" id="btnDescargarPDF" style="margin-top: 10px;">Descargar como PDF</button>
+  </div>
+</div>
+
+<footer>
+  <div>Hecho con 💜 por OtroMundo</div>
+  
+  <!-- INICIO: ZOOM CONTROLS MEJORADO -->
+  <div class="zoom-controls">
+      <button id="zoomOutBtn" title="Alejar">-</button>
+      <input type="range" id="zoomSlider" min="0.2" max="3" step="0.05" value="1">
+      <button id="zoomInBtn" title="Acercar">+</button>
+      <button id="resetZoomBtn" title="Restaurar vista">100%</button>
+      <button id="zoomToSelectionBtn" title="Enfocar selección" disabled>
+          <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14zM7 9h5v1H7z"/></svg>
+      </button>
+      <div id="zoomLevel">100%</div>
+  </div>
+  <!-- FIN: ZOOM CONTROLS MEJORADO -->
+
+  <div class="footer-links">
+    <a href="https://unaleotromundo.github.io/otromundo/" target="_blank">GitHub</a>
+    <a href="https://wa.me/59894691690?text=Hola%20%F0%9F%91%8B%20Quisiera%20informaci%C3%B3n">Contacto</a>
+  </div>
+</footer>
+
+<script>
+// --- CONFIGURACIÓN ---
+const UNSPLASH_ACCESS_KEY = 'Xj3SNeQvEW2iW-s3L0vLZgBGrve7ZUFVUGPF_hXLjFI'; 
+
+const fontFamilies = {
+  "Montserrat": "'Montserrat', Arial, sans-serif",
+  "Bebas Neue": "'Bebas Neue', Arial, sans-serif",
+  "Anton": "'Anton', Arial, sans-serif",
+  "Archivo Black": "'Archivo Black', Arial, sans-serif",
+  "Oswald": "'Oswald', Arial, sans-serif",
+  "Poppins": "'Poppins', Arial, sans-serif",
+  "Lobster": "'Lobster', cursive",
+  "Playfair Display": "'Playfair Display', serif",
+  "Permanent Marker": "'Permanent Marker', cursive",
+  "Rock Salt": "'Rock Salt', cursive",
+  "Luckiest Guy": "'Luckiest Guy', cursive",
+  "Shadows Into Light": "'Shadows Into Light', cursive",
+  "Orbitron": "'Orbitron', sans-serif",
+  "Quicksand": "'Quicksand', Arial, sans-serif",
+  "Arizonia": "'Arizonia', cursive",
+  "Bangers": "'Bangers', cursive",
+  "Covered By Your Grace": "'Covered By Your Grace', cursive",
+  "Fredericka the Great": "'Fredericka the Great', cursive",
+  "Indie Flower": "'Indie Flower', cursive",
+  "Pacifico": "'Pacifico', cursive",
+  "Press Start 2P": "'Press Start 2P', monospace",
+  "Gloria Hallelujah": "'Gloria Hallelujah', cursive",
+  "Rammetto One": "'Rammetto One', cursive",
+  "Monoton": "'Monoton', cursive",
+  "Rubik Moonrocks": "'Rubik Moonrocks', cursive",
+  "Special Elite": "'Special Elite', monospace",
+  "Amatic SC": "'Amatic SC', cursive",
+  "VT323": "'VT323', monospace",
+  "Chewy": "'Chewy', cursive",
+  "Black Ops One": "'Black Ops One', cursive",
+  "Faster One": "'Faster One', cursive",
+  "Acme": "'Acme', sans-serif",
+  "Rye": "'Rye', cursive",
+  "Rubik 80s Fade": "'Rubik 80s Fade', cursive",
+  "Sigmar One": "'Sigmar One', cursive",
+  "UnifrakturCook": "'UnifrakturCook', cursive",
+  "Sacramento": "'Sacramento', cursive",
+  "Chango": "'Chango', cursive",
+  "Major Mono Display": "'Major Mono Display', monospace",
+  "IBM Plex Mono": "'IBM Plex Mono', monospace",
+  "Poiret One": "'Poiret One', cursive",
+  "Unbounded": "'Unbounded', sans-serif"
+};
+
+const canvas = new fabric.Canvas('flyerCanvas', { 
+    preserveObjectStacking: true, 
+    selection: true, 
+    allowTouchScrolling: true, 
+    enableRetinaScaling: true, 
+    devicePixelRatio: window.devicePixelRatio || 1,
+    // --- INICIO: NUEVA CONFIGURACIÓN DEL CANVAS ---
+    selectionColor: 'rgba(0, 180, 216, 0.3)',
+    selectionBorderColor: 'rgba(0, 180, 216, 0.8)',
+    selectionLineWidth: 2,
+    hoverCursor: 'move', // Cursor al pasar sobre un objeto
+    defaultCursor: 'grab' // Cursor por defecto para el paneo
+    // --- FIN: NUEVA CONFIGURACIÓN DEL CANVAS ---
+});
+canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+fabric.Textbox.prototype.textBaseline = 'alphabetic';
+
+// --- FUNCIONES MEJORADAS Y NUEVAS ---
+
+function saveCanvasState() {
+  try {
+    const json = canvas.toJSON();
+    localStorage.setItem('savedCanvas', JSON.stringify(json));
+    showHelpMessage("Progreso guardado automáticamente.", 1500);
+  } catch (error) { console.error('No se pudo guardar el estado del canvas:', error); }
+}
+
+function loadCanvasState() {
+  const savedState = localStorage.getItem('savedCanvas');
+  if (savedState) {
+    canvas.loadFromJSON(savedState, canvas.renderAll.bind(canvas));
+    showHelpMessage("¡Bienvenido de vuelta! Se cargó tu último diseño.", 3000);
+  }
+}
+
+async function searchUnsplashImages(query) {
+  if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY === 'TU_CLAVE_DE_API_DE_UNSPLASH') {
+    alert('Por favor, configura tu clave de API de Unsplash en el script.');
+    return;
+  }
+  const imgGrid = document.getElementById('imgFondoGrid');
+  imgGrid.innerHTML = '<p>Buscando imágenes...</p>';
+  try {
+    const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=12&client_id=${UNSPLASH_ACCESS_KEY}`);
+    if (!response.ok) throw new Error(`Error de Unsplash: ${response.statusText}`);
+    const data = await response.json();
+    imgGrid.innerHTML = '';
+    if (data.results.length === 0) {
+      imgGrid.innerHTML = '<p>No se encontraron resultados. Intenta otra búsqueda.</p>';
+      return;
     }
-
-    function activarModalEnTiradas() {
-        document.querySelectorAll('.tirada-runa-box').forEach(box => {
-            const nombre = box.querySelector('.tirada-nombre')?.textContent;
-            if (nombre) {
-                box.style.cursor = "pointer";
-                box.setAttribute('role', 'button');
-                box.setAttribute('aria-label', `Ver detalles de la runa ${nombre}`);
-                box.tabIndex = 0;
-                box.addEventListener('click', () => openRunaModalByName(nombre));
-                box.addEventListener('keydown', (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                        openRunaModalByName(nombre);
-                        e.preventDefault();
-                    }
-                });
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      // SPA Navigation
-      const navLinks = document.querySelectorAll('#main-nav a[data-section]');
-      const sections = document.querySelectorAll('.main-section');
-      navLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          const sectionId = link.getAttribute('data-section');
-          navLinks.forEach(l => l.classList.remove('active'));
-          link.classList.add('active');
-          sections.forEach(sec => {
-            sec.style.display = sec.id === sectionId ? '' : 'none';
-          });
-        });
-      });
-
-      // Galería
-      const galeria = document.getElementById('galeria-runas');
-      if(galeria) {
-          galeria.innerHTML = runas.map(r => `
-            <div data-nombre="${r.nombre}" tabindex="0" role="button" aria-label="Ver detalles de ${r.nombre}">
-              <span style="font-size:2.4em;display:block;">${r.simbolo}</span>
-              <img src="img/runas/${r.img}" alt="${r.nombre}" style="max-width:40px;display:block;margin:4px auto 8px;">
-              <span style="font-weight:bold; font-size:0.9em;">${r.nombre}</span>
-            </div>
-          `).join('');
-          galeria.querySelectorAll('div[data-nombre]').forEach(div => {
-            div.addEventListener('click', () => openRunaModalByName(div.dataset.nombre));
-            div.addEventListener('keydown', e => {
-              if (e.key === "Enter" || e.key === " ") { openRunaModalByName(div.dataset.nombre); e.preventDefault(); }
-            });
-          });
-      }
-
-      // Modal Logic
-      const modalOverlay = document.getElementById('runa-modal-overlay');
-      const closeModalBtn = document.getElementById('runa-modal-close');
-      const closeModal = () => {
-        modalOverlay.classList.remove('active');
-        document.body.style.overflow = "";
-      };
-      closeModalBtn.addEventListener('click', closeModal);
-      modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
-      document.addEventListener('keydown', e => { if (e.key === "Escape" && modalOverlay.classList.contains('active')) closeModal(); });
-
-      // Tirada Logic
-      const tiradaBtns = document.querySelectorAll('.tipo-btn');
-      const explicacion = document.getElementById('explicacion-tirada');
-      const preguntaInput = document.getElementById('pregunta');
-      const tirarBtn = document.getElementById('iniciar-ritual');
-      const tiradaResultado = document.getElementById('tirada-resultado');
-      const templates = {
-        simple: document.getElementById('ejemplo-simple').innerHTML,
-        tres: document.getElementById('ejemplo-tres').innerHTML,
-        cruz: document.getElementById('ejemplo-cruz').innerHTML
-      };
-      let tipoSeleccionado = 'simple';
-      explicacion.innerHTML = templates[tipoSeleccionado];
-
-      tiradaBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          tipoSeleccionado = btn.dataset.tirada;
-          explicacion.innerHTML = templates[tipoSeleccionado];
-          tiradaBtns.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-        });
-      });
-
-      preguntaInput.addEventListener('input', () => {
-        tirarBtn.disabled = preguntaInput.value.trim().length === 0;
-      });
-
-      function sacarRunas(n) {
-        const baraja = [...runas];
-        const extraidas = [];
-        for (let i = 0; i < n && baraja.length > 0; i++) {
-          const idx = Math.floor(Math.random() * baraja.length);
-          extraidas.push(baraja.splice(idx, 1)[0]);
-        }
-        return extraidas;
-      }
-
-      tirarBtn.addEventListener('click', () => {
-        tiradaResultado.innerHTML = '';
-        tiradaResultado.style.opacity = 0;
-
-        setTimeout(() => {
-          if (tipoSeleccionado === 'simple') {
-            const [runa] = sacarRunas(1);
-            tiradaResultado.innerHTML = `<div class="tirada-runas-flex"><div class="tirada-runa-box"><span class="tirada-simbolo">${runa.simbolo}</span><span class="tirada-nombre">${runa.nombre}</span><img src="img/runas/${runa.img}" alt="${runa.nombre}" style="max-width:90px;display:block;margin:10px auto;"><div class="tirada-significado">${runa.significado}</div><div class="tirada-adivinacion"><b>Interpretación:</b><br>${runa.interpretacion}</div></div></div>`;
-          } else if (tipoSeleccionado === 'tres') {
-            const [r1, r2, r3] = sacarRunas(3);
-            const pos = ['Pasado', 'Presente', 'Futuro'];
-            tiradaResultado.innerHTML = `<div class="tirada-runas-flex">${[r1,r2,r3].map((r,i) => `<div class="tirada-runa-box"><div class="tirada-pos">${pos[i]}</div><span class="tirada-simbolo">${r.simbolo}</span><span class="tirada-nombre">${r.nombre}</span><img src="img/runas/${r.img}" alt="${r.nombre}" style="max-width:70px;display:block;margin:10px auto;"><div class="tirada-adivinacion">${r.interpretacion}</div></div>`).join('')}</div>`;
-          } else if (tipoSeleccionado === 'cruz') {
-            const extraidas = sacarRunas(5);
-            const pos = [ { label: 'Tú / Ahora', class: 'tirada-cruz-centro' }, { label: 'Guía', class: 'tirada-cruz-arriba' }, { label: 'Raíz', class: 'tirada-cruz-abajo' }, { label: 'Obstáculo', class: 'tirada-cruz-izquierda' }, { label: 'Futuro', class: 'tirada-cruz-derecha' }];
-            tiradaResultado.innerHTML = `<div class="tirada-cruz-layout">${extraidas.map((r, i) => `<div class="${pos[i].class} tirada-runa-box"><div class="tirada-pos">${pos[i].label}</div><span class="tirada-simbolo">${r.simbolo}</span><span class="tirada-nombre">${r.nombre}</span><img src="img/runas/${r.img}" alt="${r.nombre}" style="max-width:70px;display:block;margin:10px auto;"><div class="tirada-adivinacion" style="font-size:0.9em">${r.interpretacion}</div></div>`).join('')}</div>`;
-          }
-          activarModalEnTiradas();
-          tiradaResultado.style.transition = 'opacity 0.5s';
-          tiradaResultado.style.opacity = 1;
-        }, 300); // Pequeño delay para la animación
-      });
+    data.results.forEach(photo => {
+      const img = document.createElement("img");
+      img.src = photo.urls.small;
+      img.className = "image-thumb";
+      img.alt = photo.alt_description;
+      img.addEventListener("click", () => addImageToCanvas(photo.urls.regular));
+      imgGrid.appendChild(img);
     });
-  </script>
+  } catch(error) {
+    console.error("Error al buscar imágenes:", error);
+    imgGrid.innerHTML = `<p>Error al cargar imágenes. Revisa la consola.</p>`;
+  }
+}
+
+// MEJORA TIPOGRAFÍA: Sistema de carga de fuentes rediseñado para máxima fiabilidad.
+async function loadAndApplyFont(fontName, fontFamily) {
+  // 1. Comprueba si la fuente ya está disponible en el navegador. Si es así, la aplica y termina.
+  if (document.fonts.check(`1em "${fontName}"`)) {
+    applyFont(fontFamily, fontName);
+    return;
+  }
+
+  // 2. Si no está cargada, muestra un mensaje al usuario.
+  showHelpMessage(`Cargando fuente: ${fontName}...`, 1500);
+
+  // 3. Inyecta el <link> de Google Fonts en el <head> para que el navegador sepa dónde buscar la fuente.
+  const link = document.createElement('link');
+  const formattedFontName = fontName.replace(/ /g, '+');
+  // Se piden varios pesos para dar más flexibilidad a futuro.
+  // La URL ahora se construye correctamente en una sola línea.
+  link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+  link.onload = () => applyFont(fontFamily);
+}
+
+function applyFont(fontFamily) {
+  const active = canvas.getActiveObject();
+  if (active && active.type === "textbox") {
+    active.set("fontFamily", fontFamily);
+    canvas.renderAll();
+  }
+}
+
+function addImageToCanvas(url) {
+  fabric.Image.fromURL(url, (img) => {
+    const scale = Math.min((canvas.width * 0.6) / img.width, (canvas.height * 0.6) / img.height);
+    img.scale(scale).set({ left: canvas.width / 2, top: canvas.height / 2, originX: "center", originY: "center", hasControls: true, crossOrigin: 'anonymous' });
+    canvas.add(img).setActiveObject(img).renderAll();
+    showHelpMessage("Imagen agregada. Puedes moverla, rotarla y escalarla.", 3000);
+    document.getElementById('imgGalleryPopup').style.display = 'none';
+  }, { crossOrigin: 'anonymous' });
+}
+
+function adjustCanvasSize() {
+  const container = document.querySelector('.canvas-container');
+  const aspectRatio = 800 / 1066;
+  let newWidth = container.clientWidth * 0.95;
+  let newHeight = newWidth / aspectRatio;
+  
+  if (newHeight > container.clientHeight * 0.95) {
+    newHeight = container.clientHeight * 0.95;
+    newWidth = newHeight * aspectRatio;
+  }
+  
+  canvas.setWidth(newWidth).setHeight(newHeight).renderAll();
+}
+
+function showHelpMessage(message, duration = 4000) {
+  const helpElement = document.getElementById('helpMessage');
+  helpElement.textContent = message;
+  helpElement.style.display = 'block';
+  helpElement.style.animation = 'none'; // Reset animation
+  void helpElement.offsetWidth; // Trigger reflow
+  helpElement.style.animation = `fadeInOut ${duration / 1000}s forwards`;
+}
+
+function renderFontOptions() {
+  const container = document.getElementById("customFontSelector");
+  if (container.children.length > 0) return; // Render only once
+  
+  Object.keys(fontFamilies).forEach(fontName => {
+    const div = document.createElement("div");
+    div.className = "font-option";
+    div.textContent = fontName;
+    div.style.fontFamily = fontFamilies[fontName] || fontName;
+    div.addEventListener("click", () => {
+      document.querySelectorAll('.font-option').forEach(o => o.classList.remove('selected'));
+      div.classList.add('selected');
+      loadAndApplyFont(fontName, fontFamilies[fontName] || fontName);
+    });
+    container.appendChild(div);
+  });
+}
+
+// --- EVENT LISTENERS ---
+window.addEventListener('load', () => {
+  adjustCanvasSize();
+  loadCanvasState();
+});
+window.addEventListener('resize', adjustCanvasSize);
+
+// Guardado automático
+canvas.on({ 'object:modified': saveCanvasState, 'object:added': saveCanvasState, 'object:removed': saveCanvasState });
+
+// Botones del Header
+document.getElementById('addImageBtn').addEventListener('click', () => {
+  document.getElementById('imgGalleryPopup').style.display = 'flex';
+  if (document.getElementById('imgFondoGrid').innerHTML === '') {
+      searchUnsplashImages('abstract background'); // Carga inicial
+  }
+});
+
+document.getElementById('bgLocalInput').addEventListener('change', function(e) {
+  if (!e.target.files || !e.target.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = (event) => addImageToCanvas(event.target.result);
+  reader.readAsDataURL(e.target.files[0]);
+  e.target.value = "";
+});
+
+document.getElementById('bgColorBtn').addEventListener('click', () => {
+  const picker = document.createElement('input');
+  picker.type = 'color';
+  picker.value = canvas.backgroundColor;
+  picker.oninput = () => canvas.setBackgroundColor(picker.value, canvas.renderAll.bind(canvas));
+  picker.onchange = saveCanvasState; // Guardar estado al confirmar color
+  picker.click();
+});
+
+document.getElementById('addTextBtn').addEventListener('click', () => {
+  const textObj = new fabric.Textbox("Tu texto aquí", { left: canvas.width / 2, top: canvas.height / 2, fontSize: 40, fill: '#333', fontFamily: fontFamilies["Montserrat"], originX: "center", originY: "center", editable: true, width: canvas.width * 0.8, textAlign: 'center' });
+  canvas.add(textObj).setActiveObject(textObj).renderAll();
+});
+
+document.getElementById('generateQrBtn').addEventListener('click', () => {
+  const tel = prompt("Ingresa número de WhatsApp (ej: 094123456):", "");
+  if (tel && tel.match(/^\d{6,}$/)) {
+    const url = `https://wa.me/598${tel}?text=¡Hola!%20Vi%20tu%20flyer%20y%20me%20interesa%20saber%20más`;
+    const qr = new QRious({ value: url, size: 300 });
+    addImageToCanvas(qr.toDataURL());
+  } else {
+    alert("Por favor, ingresa un número de WhatsApp válido.");
+  }
+});
+
+document.getElementById('clearCanvasBtn').addEventListener('click', () => {
+    if(confirm('¿Estás seguro de que quieres borrar todo el diseño? Esta acción no se puede deshacer.')) {
+        canvas.clear();
+        canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+        localStorage.removeItem('savedCanvas');
+    }
+});
+
+// Botones de exportación y popups
+document.getElementById('exportBtn').addEventListener('click', () => document.getElementById('exportPopup').style.display = 'flex');
+document.querySelectorAll('.popup-close').forEach(btn => btn.addEventListener('click', () => btn.closest('.popup').style.display = 'none'));
+document.getElementById('btnDescargarJPG').addEventListener('click', () => {
+  const url = canvas.toDataURL({ format: "jpeg", quality: 0.95, multiplier: 2 });
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "flyer.jpg";
+  link.click();
+});
+document.getElementById('btnDescargarPDF').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
+  pdf.addImage(canvas.toDataURL({ format: "jpeg", quality: 1.0, multiplier: 2 }), "JPEG", 0, 0, canvas.width, canvas.height);
+  pdf.save("flyer.pdf");
+});
+
+// Lógica de herramientas flotantes
+const floatingTools = document.getElementById('floatingTools');
+const textTools = document.getElementById('textTools');
+const imageTools = document.getElementById('imageTools');
+const zoomToSelectionBtn = document.getElementById('zoomToSelectionBtn');
+
+const updateTools = (e) => {
+    const target = e?.selected?.[0]; // Usar optional chaining para evitar errores al deseleccionar
+    if (target) {
+        floatingTools.style.display = 'flex';
+        textTools.style.display = target.type === 'textbox' ? 'flex' : 'none';
+        imageTools.style.display = target.type === 'image' ? 'flex' : 'none';
+        zoomToSelectionBtn.disabled = false; // Habilitar el botón de zoom a selección
+    } else {
+        floatingTools.style.display = 'none';
+        zoomToSelectionBtn.disabled = true; // Deshabilitar si no hay nada seleccionado
+    }
+};
+canvas.on('selection:created', updateTools);
+canvas.on('selection:updated', updateTools);
+canvas.on('selection:cleared', () => updateTools(null)); // Llamar a la función con null para limpiar
+
+
+// Acciones de las herramientas flotantes
+document.getElementById('btnSubirCapa').addEventListener('click', () => canvas.getActiveObject() && canvas.bringForward(canvas.getActiveObject()));
+document.getElementById('btnBajarCapa').addEventListener('click', () => canvas.getActiveObject() && canvas.sendBackwards(canvas.getActiveObject()));
+document.getElementById('btnEnviarFondo').addEventListener('click', () => canvas.getActiveObject() && canvas.sendToBack(canvas.getActiveObject()));
+document.getElementById('btnEliminar').addEventListener('click', () => canvas.getActiveObject() && canvas.remove(canvas.getActiveObject()));
+document.getElementById('btnAlinIzq').addEventListener('click', () => canvas.getActiveObject()?.set("textAlign", "left").setCoords() && canvas.renderAll());
+document.getElementById('btnAlinCen').addEventListener('click', () => canvas.getActiveObject()?.set("textAlign", "center").setCoords() && canvas.renderAll());
+document.getElementById('btnAlinDer').addEventListener('click', () => canvas.getActiveObject()?.set("textAlign", "right").setCoords() && canvas.renderAll());
+document.getElementById('btnOpenFontPopup').addEventListener('click', () => {
+  renderFontOptions();
+  document.getElementById('fontPopup').style.display = 'flex';
+});
+document.getElementById('btnOpenTextColorPopup').addEventListener('click', () => {
+  const active = canvas.getActiveObject();
+  if (active?.type === 'textbox') {
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.value = active.fill;
+    picker.oninput = () => { active.set("fill", picker.value); canvas.renderAll(); };
+    picker.onchange = saveCanvasState;
+    picker.click();
+  }
+});
+
+// Lógica de búsqueda de imágenes
+document.getElementById('imageSearchBtn').addEventListener('click', () => {
+    const query = document.getElementById('imageSearchInput').value;
+    if(query.trim()) searchUnsplashImages(query);
+});
+document.getElementById('imageSearchInput').addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') searchUnsplashImages(e.target.value);
+});
+
+// Filtros de imagen
+const filters = [ new fabric.Image.filters.Grayscale(), new fabric.Image.filters.Sepia(), new fabric.Image.filters.Invert(), new fabric.Image.filters.Vintage(), new fabric.Image.filters.Kodachrome(), new fabric.Image.filters.Technicolor(), new fabric.Image.filters.Brownie(), new fabric.Image.filters.Polaroid(), new fabric.Image.filters.Brightness({ brightness: 0.2 }), new fabric.Image.filters.Contrast({ contrast: 0.2 }) ];
+let currentFilterIndex = 0;
+document.getElementById('btnApplyFilter').addEventListener('click', () => {
+  const obj = canvas.getActiveObject();
+  if (obj?.type === 'image') {
+    currentFilterIndex = (currentFilterIndex + 1) % filters.length;
+    obj.filters = [filters[currentFilterIndex]];
+    obj.applyFilters();
+    canvas.renderAll();
+    showHelpMessage(`Filtro aplicado: ${filters[currentFilterIndex].type}`);
+  }
+});
+document.getElementById('btnRemoveFilters').addEventListener('click', () => {
+  const obj = canvas.getActiveObject();
+  if (obj?.type === 'image') {
+    obj.filters = [];
+    obj.applyFilters();
+    canvas.renderAll();
+    currentFilterIndex = 0;
+  }
+});
+
+// Modo día/noche
+function updateToggleIcon() {
+  const icon = document.getElementById('themeIcon');
+  if (document.body.classList.contains('dark')) {
+    icon.innerHTML = '<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
+  } else {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+  }
+}
+
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+  updateToggleIcon();
+  canvas.renderAll();
+}
+
+const savedTheme = localStorage.getItem('theme');
+if (savedTheme === 'dark') {
+  document.body.classList.add('dark');
+}
+updateToggleIcon();
+
+document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+
+
+// --- INICIO: LÓGICA DE LA BARRA DE ZOOM MEJORADA ---
+const zoomSlider = document.getElementById('zoomSlider');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+const zoomLevel = document.getElementById('zoomLevel');
+const resetZoomBtn = document.getElementById('resetZoomBtn');
+
+const MIN_ZOOM = parseFloat(zoomSlider.min);
+const MAX_ZOOM = parseFloat(zoomSlider.max);
+const ZOOM_STEP = 0.1;
+
+function updateZoomUI() {
+    const zoom = canvas.getZoom();
+    zoomSlider.value = zoom;
+    zoomLevel.textContent = `${Math.round(zoom * 100)}%`;
+}
+
+function setCanvasZoom(newZoom, point) {
+    const clampedZoom = Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM));
+    canvas.zoomToPoint(point, clampedZoom);
+    updateZoomUI();
+}
+
+function zoomToSelection() {
+    const obj = canvas.getActiveObject();
+    if (!obj) return;
+    const objRect = obj.getBoundingRect();
+    if (objRect.width === 0 || objRect.height === 0) return;
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    const zoom = Math.min(canvasWidth / objRect.width, canvasHeight / objRect.height) * 0.90;
+    const clampedZoom = Math.max(MIN_ZOOM, Math.min(zoom, MAX_ZOOM));
+    const objCenter = obj.getCenterPoint();
+    const panX = (canvasWidth / 2) - (objCenter.x * clampedZoom);
+    const panY = (canvasHeight / 2) - (objCenter.y * clampedZoom);
+    canvas.setViewportTransform([clampedZoom, 0, 0, clampedZoom, panX, panY]);
+    updateZoomUI();
+    canvas.renderAll();
+}
+
+function resetCanvasView() {
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    updateZoomUI();
+    canvas.renderAll();
+}
+
+zoomInBtn.addEventListener('click', () => {
+    const center = { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+    setCanvasZoom(canvas.getZoom() + ZOOM_STEP, center);
+});
+
+zoomOutBtn.addEventListener('click', () => {
+    const center = { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+    setCanvasZoom(canvas.getZoom() - ZOOM_STEP, center);
+});
+
+zoomSlider.addEventListener('input', (e) => {
+    const center = { x: canvas.getWidth() / 2, y: canvas.getHeight() / 2 };
+    setCanvasZoom(parseFloat(e.target.value), center);
+});
+
+resetZoomBtn.addEventListener('click', resetCanvasView);
+zoomToSelectionBtn.addEventListener('click', zoomToSelection);
+
+window.addEventListener('load', () => {
+    resetCanvasView();
+});
+// --- FIN: LÓGICA DE LA BARRA DE ZOOM MEJORADA ---
+
+
+// --- INICIO: LÓGICA DE PANEO (ARRASTRAR VISTA) ---
+let isPanning = false;
+let lastPosX = 0;
+let lastPosY = 0;
+
+canvas.on('mouse:down', function(opt) {
+  const evt = opt.e;
+  // Inicia el paneo si el clic no fue sobre un objeto
+  if (!opt.target) {
+    isPanning = true;
+    canvas.setCursor('grabbing'); // Cambia el cursor a mano cerrada
+    lastPosX = evt.clientX;
+    lastPosY = evt.clientY;
+  }
+});
+
+canvas.on('mouse:move', function(opt) {
+  if (isPanning) {
+    const evt = opt.e;
+    const vpt = this.viewportTransform;
+    // Mueve el viewport por la diferencia de posición del ratón
+    vpt[4] += evt.clientX - lastPosX;
+    vpt[5] += evt.clientY - lastPosY;
+    this.requestRenderAll(); // Solicita un re-renderizado
+    lastPosX = evt.clientX;
+    lastPosY = evt.clientY;
+  }
+});
+
+canvas.on('mouse:up', function(opt) {
+  // Al soltar el clic, desactiva el paneo y restaura el cursor
+  isPanning = false;
+  canvas.setCursor(canvas.hoverCursor);
+});
+// --- FIN: LÓGICA DE PANEO (ARRASTRAR VISTA) ---
+
+</script>
 </body>
 </html>
