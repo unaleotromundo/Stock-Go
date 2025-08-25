@@ -1,574 +1,1600 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editor Canvas Pro v2.0</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Bebas+Neue&family=Anton&family=Lobster&family=Oswald&family=Poppins&family=Playfair+Display:wght@700&family=Permanent+Marker&family=Rock+Salt&family=Luckiest+Guy&family=Shadows+Into+Light&family=Orbitron:wght@900&family=Archivo+Black&family=Quicksand:wght@700&family=Arizonia&family=Bangers&family=Covered+By+Your+Grace&family=Fredericka+the+Great&family=Indie+Flower&family=Pacifico&family=Press+Start+2P&family=Gloria+Hallelujah&family=Rammetto+One&family=Monoton&family=Rubik+Moonrocks&family=Special+Elite&family=Amatic+SC:wght@700&family=VT323&family=Chewy&family=Black+Ops+One&family=Faster+One&family=Acme&family=Rye&family=Rubik+80s+Fade&family=Sigmar+One&family=UnifrakturCook&family=Sacramento&family=Chango&family=Major+Mono+Display&family=IBM+Plex+Mono:wght@700&family=Poiret+One&family=Unbounded:wght@700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<style>
-:root {
-  --c-cyan: #00B4D8;
-  --c-magenta: #D0006F;
-  --c-yellow: #FFD166;
-  --c-key: #073B4C;
-  --surface: rgba(255, 255, 255, 0.92);
-  --border: rgba(0, 0, 0, 0.08);
-  --text: #0f172a;
-  --text-secondary: #64748b;
-  --shadow: 0 4px 24px rgba(0,0,0,0.05);
-  --shadow-active: 0 6px 32px rgba(0,0,0,0.12);
-  --panel-bg: rgba(255, 255, 255, 0.85);
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feria Virtual - Conecta tu negocio</title>
+    <!-- Los estilos se quedan en el head para evitar el "flash" de contenido sin estilo -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cyan: #06b6d4;
+            --magenta: #c026d3;
+            --yellow: #eab308;
+            --black: #1f2937;
+            --light: #f9fafb;
+            --gray: #e5e7eb;
+            --error: #ef4444;
+            --success: #10b981;
+            --whatsapp: #25D366;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, #f0f9ff, #fdf2f8);
+            color: #1f2937;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="%2306b6d4" stroke-width="0.5" opacity="0.1"/></svg>');
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 100%);
+            padding: 1rem 1.5rem; /* Ajustado para móviles */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            position: sticky; top: 0; z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        
+        .logo { display: flex; align-items: center; gap: 0.75rem; font-size: 1.5rem; font-weight: 800; color: white; text-decoration: none; }
+        .logo i { font-size: 1.75rem; }
+        
+        .nav-container { display: flex; gap: 1.5rem; }
+        .nav-link {
+            color: white; text-decoration: none; display: flex; align-items: center;
+            gap: 0.5rem; font-weight: 500; padding: 0.5rem 1rem; border-radius: 50px; transition: all 0.3s;
+        }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.2); }
+        
+        .user-dropdown { position: relative; }
+        .dropdown-menu {
+            display: none; position: absolute; right: 0; top: 100%;
+            background: white; min-width: 200px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            border-radius: 0.5rem; overflow: hidden; z-index: 1000;
+        }
+        .dropdown-menu a { display: block; padding: 0.75rem 1rem; color: var(--black); text-decoration: none; transition: all 0.2s; }
+        .dropdown-menu a:hover { background: var(--light); color: var(--cyan); }
+        .dropdown-menu a i { margin-right: 0.5rem; width: 20px; text-align: center; }
+        .dropdown-divider { height: 1px; background: var(--gray); margin: 0.25rem 0; }
+        
+        .section { display: none; padding: 2rem 1rem; max-width: 1200px; margin: 0 auto; width: 100%; animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .active-section { display: block; }
+        
+        .hero {
+            flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 3rem 1rem; text-align: center; max-width: 900px; margin: 0 auto;
+        }
+        .hero h1 {
+            font-size: 2.5rem; font-weight: 800; margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2;
+        }
+        .hero p { font-size: 1.1rem; color: #4b5563; margin-bottom: 2.5rem; max-width: 700px; line-height: 1.6; }
+        .buttons { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 3rem; }
+        
+        .btn {
+            font-weight: 600; padding: 1rem 2rem; border-radius: 50px; position: relative;
+            overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s ease;
+            z-index: 1; text-align: center; display: inline-flex; align-items: center;
+            gap: 0.75rem; font-size: 1rem; border: none; cursor: pointer; text-decoration: none;
+        }
+        .btn-primary { background-color: var(--magenta); color: white; }
+        .btn-secondary { background-color: var(--cyan); color: white; }
+        .btn-whatsapp { background-color: var(--whatsapp); color: white; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 8px 12px rgba(0,0,0,0.15); }
+        
+        .profile-container { display: flex; flex-wrap: wrap; gap: 2rem; }
+        .profile-card {
+            background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 2rem; flex: 1; min-width: 300px; border-top: 5px solid var(--cyan);
+            position: relative;
+        }
+        .profile-header {
+            display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+            padding-bottom: 1.5rem; border-bottom: 1px solid var(--gray);
+        }
+        .profile-pic {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 100%);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 2.5rem; overflow: hidden; position: relative; flex-shrink: 0;
+        }
+        .profile-pic img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-pic-edit-overlay {
+            position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            color: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .profile-card.edit-mode .profile-pic:hover .profile-pic-edit-overlay { opacity: 1; }
+        .profile-info h2 { font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .profile-info p { color: #4b5563; }
+        .profile-details { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        .detail-item { background: var(--light); padding: 1.5rem; border-radius: 0.8rem; }
+        .detail-item h3 { color: var(--cyan); margin-bottom: 0.5rem; }
+        
+        .products-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem;}
+        .section-title {
+            font-size: 2rem; font-weight: 700;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.5rem; }
+        
+        .product-card {
+            background: white; border-radius: 1rem; overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: all 0.3s ease;
+        }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+        .product-image {
+            height: 200px; background: linear-gradient(135deg, #f0f9ff, #fdf2f8);
+            display: flex; align-items: center; justify-content: center;
+            color: #9ca3af; font-size: 3rem; background-size: contain;
+            background-position: center; background-repeat: no-repeat;
+            cursor: pointer;
+        }
+        .product-info { padding: 1.5rem; }
+        .product-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .product-price { font-size: 1.5rem; font-weight: 700; color: var(--success); margin-bottom: 1rem; }
+        .product-description { color: #4b5563; margin-bottom: 1rem; font-size: 0.9rem; }
+        .product-vendor { display: flex; align-items: center; gap: 0.5rem; color: #6b7280; font-size: 0.9rem; margin-top: 1rem; }
+        .product-vendor a { color: inherit; text-decoration: none; transition: color 0.2s; }
+        .product-vendor a:hover { color: var(--cyan); text-decoration: underline; }
+        .product-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .action-btn {
+            flex: 1; padding: 0.5rem; border-radius: 0.5rem;
+            background: var(--light); border: none; cursor: pointer; transition: all 0.3s;
+        }
+        .action-btn:hover { background: var(--cyan); color: white; }
+        
+        .form-container {
+            background: white; border-radius: 1.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            padding: 2rem; max-width: 600px; margin: 0 auto; border-top: 5px solid var(--magenta);
+            position: relative;
+        }
+        .form-title { font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--magenta); text-align: center; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--black); }
+        .form-control {
+            width: 100%; padding: 0.75rem 1rem; border: 1px solid #ddd;
+            border-radius: 0.5rem; font-size: 1rem; transition: all 0.2s;
+        }
+        .form-control:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2); }
+        .form-control[readonly] { background-color: #f3f4f6; cursor: not-allowed; }
+        .form-footer { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
+        
+        .footer {
+            background: linear-gradient(135deg, var(--cyan) 0%, var(--magenta) 100%); color: white;
+            text-align: center; padding: 2rem; margin-top: auto;
+        }
+        
+        .login-modal, .global-loading {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .login-modal { display: none; }
+        .login-box {
+            background: white; border-radius: 1.5rem; padding: 2rem;
+            width: 90%; max-width: 500px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: modalAppear 0.4s ease; position: relative;
+        }
+        .close-modal-btn {
+            position: absolute; top: 1rem; right: 1rem; background: none; border: none;
+            font-size: 1.2rem; color: #9ca3af; cursor: pointer; transition: all 0.2s ease;
+        }
+        .close-modal-btn:hover { color: #1f2937; transform: scale(1.1); }
+        @keyframes modalAppear { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .login-header h2 {
+            font-size: 1.8rem; margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .login-message { margin: 1rem 0; padding: 0.75rem; border-radius: 0.5rem; text-align: center; display: none; }
+        .login-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .login-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        
+        .product-image-upload {
+            border: 2px dashed var(--gray); border-radius: 0.5rem; padding: 2rem; text-align: center;
+            cursor: pointer; transition: all 0.3s; position: relative; min-height: 150px;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+        }
+        .preview-image { max-width: 100%; max-height: 200px; border-radius: 0.5rem; }
+        
+        .toast {
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            padding: 1rem 2rem; border-radius: 0.5rem; color: white; font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 3000; animation: slideIn 0.3s ease-out;
+        }
+        .toast-success { background-color: var(--success); }
+        .toast-error { background-color: var(--error); }
+        @keyframes slideIn { from { bottom: -100px; opacity: 0; } to { bottom: 2rem; opacity: 1; } }
+        .fade-out { animation: fadeOut 0.5s ease-out forwards; }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        
+        .edit-btn-container {
+            position: absolute; top: 1.5rem; right: 1.5rem;
+            background: var(--light); border: 1px solid var(--gray); color: var(--black);
+            width: 40px; height: 40px; border-radius: 50%;
+            font-size: 1rem; cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .edit-btn-container:hover { background: var(--cyan); color: white; transform: scale(1.1); }
+        body[data-theme="dark"] .edit-btn-container { background: #4b5563; border-color: #6b7280; }
+        
+        .vendor-page-header {
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+            gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid var(--cyan); padding-bottom: 1rem;
+        }
+        .vendor-page-header .btn { padding: 0.75rem 1.5rem; font-size: 1rem; }
+    </style>
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    <style>
+        /* --- ESTILOS RESPONSIVE Y MEJORAS --- */
+        .hamburger-menu {
+            display: none; /* Oculto por defecto en escritorio */
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 1001; /* Encima de la navegación */
+        }
+        
+        @media (max-width: 768px) {
+            .hamburger-menu {
+                display: block;
+            }
+            .nav-container {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                background: rgba(31, 41, 55, 0.95);
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 2rem;
+            }
+            .nav-container.active {
+                display: flex; /* Se muestra al hacer clic en la hamburguesa */
+            }
+            .nav-link {
+                font-size: 1.5rem;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero p {
+                font-size: 1.1rem;
+            }
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .products-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            .header-actions {
+                justify-content: center;
+            }
+        }
+        /* --- FIN ESTILOS RESPONSIVE --- */
 
-body {
-  font-family: 'Montserrat', sans-serif;
-  background: linear-gradient(135deg, #fbfcfd 0%, #f6f9fb 100%);
-  min-height: 100vh;
-  color: var(--text);
-  overflow: hidden;
-  touch-action: none;
-}
+        /* --- OTROS ESTILOS GLOBALES --- */
+        nav a.active {
+            background: linear-gradient(135deg, #06b6d4, #c026d3); color: white !important;
+            border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        nav a { transition: all 0.3s ease; padding: 0.5rem 1rem; display: inline-block; }
 
-header {
-  display: flex;
-  overflow-x: auto;
-  gap: 6px;
-  padding: 8px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(12px);
-  box-shadow: var(--shadow);
-  z-index: 100;
-  scrollbar-width: none;
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-}
+        /* --- THEME STYLES --- */
+        body[data-theme="dark"] {
+            --black: #f9fafb; --light: #1f2937; --gray: #374151;
+            background: linear-gradient(135deg, #1e293b, #111827); color: #e5e7eb;
+        }
+        body[data-theme="dark"] .profile-card, body[data-theme="dark"] .form-container,
+        body[data-theme="dark"] .product-card, body[data-theme="dark"] .login-box,
+        body[data-theme="dark"] .dropdown-menu { background-color: #374151; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        body[data-theme="dark"] .hero p, body[data-theme="dark"] .profile-info p,
+        body[data-theme="dark"] .product-description, body[data-theme="dark"] .product-vendor { color: #9ca3af; }
+        body[data-theme="dark"] .form-control { background-color: #4b5563; border-color: #6b7280; color: white; }
+        body[data-theme="dark"] .form-control::placeholder { color: #9ca3af; }
+        body[data-theme="dark"] .form-control[readonly] { background-color: #374151; }
+        body[data-theme="dark"] .dropdown-menu a:hover { background: #4b5563; }
 
-header::-webkit-scrollbar { display: none; }
+        .theme-toggle {
+            position: fixed; bottom: 20px; right: 20px; z-index: 3001;
+            width: 50px; height: 50px; border-radius: 50%;
+            background: var(--light); color: var(--black); border: 2px solid var(--gray);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; transition: all 0.3s ease; overflow: hidden;
+        }
+        .theme-toggle:hover { transform: scale(1.1) rotate(15deg); }
+        .theme-toggle .fa-sun { display: none; }
+        .theme-toggle .fa-moon { display: block; }
+        body[data-theme="dark"] .theme-toggle .fa-sun { display: block; }
+        body[data-theme="dark"] .theme-toggle .fa-moon { display: none; }
 
-.icon-btn {
-  flex: 0 0 auto;
-  width: 54px;
-  height: 54px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 -2px 0 rgba(0,0,0,0.05), inset 0 0 10px rgba(255,255,255,0.5);
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
+        /* --- CHATBOT STYLES --- */
+        .chatbot-floating { position: fixed; bottom: 20px; left: 20px; z-index: 3000; }
+        .chatbot-toggle {
+            background: linear-gradient(135deg, var(--cyan, #06b6d4), var(--magenta, #c026d3));
+            border: none; color: white; padding: 1rem; border-radius: 50%;
+            width: 60px; height: 60px; font-size: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            cursor: pointer; transition: transform 0.3s ease; display: flex;
+            align-items: center; justify-content: center; z-index: 3001;
+        }
+        .chatbot-container-floating {
+            width: 360px; height: 520px; background: white; border-radius: 16px;
+            overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+            transform-origin: bottom left; transform: scale(0.9); opacity: 0;
+            transition: opacity 0.25s ease; display: none; visibility: hidden; pointer-events: none;
+        }
+        .chatbot-container-floating.visible { display: block; visibility: visible; pointer-events: auto; opacity: 1; }
+        .chatbot-iframe-floating { width: 100%; height: calc(100% - 54px); border: none; display: block; }
+        .chatbot-header-floating {
+            background: linear-gradient(135deg, var(--cyan, #06b6d4), var(--magenta, #c026d3));
+            color: white; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .chatbot-header-floating h3 { font-size: 1rem; font-weight: 700; }
+        .close-chatbot-btn { background: none; border: none; color: white; font-size: 1.15rem; cursor: pointer; }
+        @media (max-width: 480px) {
+            .chatbot-container-floating { width: 92vw; height: 70vh; }
+            .chatbot-floating { bottom: 12px; left: 12px; }
+        }
 
-.icon-btn.active {
-    border-color: var(--c-cyan);
-    box-shadow: 0 0 0 2px var(--c-cyan), inset 0 2px 4px rgba(0,0,0,0.1);
-}
+        /* LIGHTBOX STYLES */
+        .image-lightbox {
+            display: none; position: fixed; z-index: 4000; left: 0; top: 0;
+            width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
+            justify-content: center; align-items: center; animation: fadeIn 0.3s ease;
+        }
+        .lightbox-content { max-width: 90vw; max-height: 85vh; }
+        .lightbox-close {
+            position: absolute; top: 20px; right: 35px; color: #fff;
+            font-size: 40px; font-weight: bold; transition: 0.3s; cursor: pointer;
+        }
+        .lightbox-close:hover { color: #bbb; }
 
-.icon-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: #f8f9fa;
-}
-#undoBtn svg path, #redoBtn svg path {
-    fill: #333;
-    stroke: #333;
-}
-body.dark #undoBtn svg path, body.dark #redoBtn svg path {
-    fill: #f1f5f9;
-    stroke: #f1f5f9;
-}
+        /* ESTILOS PARA EDICIÓN DE PERFIL */
+        .profile-card.edit-mode .detail-item p,
+        .profile-card.edit-mode .profile-info h2 { display: none; }
+        .profile-card.edit-mode .detail-item .editable,
+        .profile-card.edit-mode .profile-info .editable { display: block; }
+        .editable { display: none; width: 100%; }
 
+        #profilePicModal .login-box { max-width: 600px; }
+        .avatar-selection {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 1rem; margin-top: 1.5rem;
+        }
+        .avatar-item {
+            width: 80px; height: 80px; border-radius: 50%;
+            cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 3px solid transparent;
+        }
+        .avatar-item:hover { transform: scale(1.1); box-shadow: 0 0 10px var(--cyan); }
+        .avatar-item img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover;}
+        
+        /* --- Estilos para los botones de acción del header --- */
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los botones pasen a la siguiente línea si no caben */
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: flex-end;
+        }
 
-#zoomModeBtn svg path {
-    fill: #333;
-    stroke: #333;
-}
-body.dark #zoomModeBtn svg path {
-    fill: #f1f5f9;
-    stroke: #f1f5f9;
-}
+        .btn-small {
+            font-size: 0.9rem !important;
+            padding: 0.75rem 1.25rem !important; /* Hacemos el padding más pequeño */
+            gap: 0.5rem;
+        }
 
-#bgColorBtn { background: var(--c-cyan); }
-#addTextBtn { background: var(--c-magenta); }
-#addImageBtn { background: var(--c-yellow); }
-#generateQrBtn { background: var(--c-key); }
-#exportBtn { background: #E9ECEF; }
-#clearCanvasBtn { background: #3db52d; }
+        .header-actions label.btn {
+            cursor: pointer;
+            margin-bottom: 0;
+        }
+        
+        /* --- ESTILOS PARA EL MODAL DE EXPORTACIÓN (SIMPLIFICADO) --- */
+        .export-options-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 2rem;
+            justify-content: center;
+        }
 
-.icon-btn::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 100%;
-  background: linear-gradient(rgba(255,255,255,0.2), transparent);
-  pointer-events: none;
-}
+        .export-option-card {
+            flex-basis: 250px;
+            padding: 2rem 1.5rem;
+            border: 1px solid var(--gray);
+            border-radius: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
-.icon-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15), inset 0 -2px 0 rgba(0,0,0,0.05), inset 0 0 10px rgba(255,255,255,0.5); }
-.icon-btn:active:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1), inset 0 -2px 0 rgba(0,0,0,0.05), inset 0 0 10px rgba(255,255,255,0.5); }
+        .export-option-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--cyan);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.15);
+        }
 
-.icon-btn svg { width: 24px; height: 24px; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.1)); }
-.icon-btn svg path, .icon-btn svg rect, .icon-btn svg circle { fill: #fff; stroke: #fff; }
-#exportBtn .icon-label, #clearCanvasBtn .icon-label, #undoBtn .icon-label, #redoBtn .icon-label { color: var(--text); text-shadow: none; }
-.icon-label { font-size: 9px; font-weight: 600; margin-top: 4px; text-align: center; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
+        .export-option-card i { color: var(--cyan); margin-bottom: 1rem; }
+        .export-option-card h3 { margin-bottom: 0.5rem; color: var(--black); }
+        .export-option-card p { font-size: 0.9rem; color: #6b7280; }
 
-main {
-  position: fixed;
-  top: 70px;
-  left: 0;
-  right: 0;
-  bottom: 38px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f0f4f8;
-}
-
-.canvas-wrapper {
-    position: relative;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-.canvas-wrapper > canvas, .canvas-wrapper .canvas-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-#backgroundCanvas {
-    border: 1px solid #e2e8f0;
-    z-index: 1;
-}
-.canvas-container {
-    z-index: 2;
-}
-body.dark #backgroundCanvas {
-    border: 1px solid #334155;
-}
-
-.floating-tools {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column; 
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid var(--border);
-  z-index: 10;
-  cursor: move;
-  user-select: none;
-  flex-wrap: wrap; 
-}
-
-.floating-tools button { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; border: none; font-size: 16px; transition: all 0.2s ease; }
-.floating-tools button:hover { background: #f1f5f9; }
-#generalTools, #textTools, #imageTools { display: flex; gap: 6px; background: #fff; padding: 6px; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
-
-.popup { display: none; position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
-.popup-content { background: var(--panel-bg); padding: 24px; border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3); backdrop-filter: blur(20px); border: 1px solid var(--border); display: flex; flex-direction: column; }
-.popup-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; color: var(--text); text-align: center; position: relative; padding-bottom: 12px; }
-.popup-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 60px; height: 3px; background: linear-gradient(90deg, var(--c-cyan), var(--c-magenta)); border-radius: 3px; }
-.image-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; flex-grow: 1; }
-.image-thumb { width: 100%; height: 100px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border); cursor: pointer; transition: all 0.2s ease; background-color: #e2e8f0; }
-.image-thumb:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
-.popup-close { width: 100%; padding: 14px; background: var(--c-key); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
-.popup-close:hover { background: #052a39; }
-
-.font-selector { max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; padding: 8px; display: grid; gap: 8px; margin-bottom: 16px; }
-.font-option { padding: 12px; border-radius: 8px; background: #f8fafc; cursor: pointer; font-size: 16px; border: 1px solid transparent; transition: all 0.15s ease; text-align: center; font-weight: 500; }
-.font-option:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.06); }
-.font-option.selected { background: var(--c-cyan); color: #fff; border-color: rgba(0,0,0,0.06); box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3); }
-
-footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel-bg); backdrop-filter: blur(12px); padding: 8px 20px; font-size: 12px; color: var(--text-secondary); border-top: 1px solid var(--border); z-index: 90; display: flex; justify-content: space-between; align-items: center; height: 38px; }
-.footer-links { display: flex; gap: 12px; }
-.footer-links a { color: var(--text); text-decoration: none; transition: color 0.2s; font-weight: 500; font-size: 12px; }
-.footer-links a:hover { color: var(--c-cyan); }
-
-.help-message { position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); color: white; padding: 8px 16px; border-radius: 20px; font-size: 14px; z-index: 10; animation: fadeInOut 4s forwards; display: none; }
-@keyframes fadeInOut { 0% { opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { opacity: 0; display: none; } }
-
-@media (max-width: 768px) { .icon-btn { width: 48px; height: 48px; } .popup-content { padding: 16px; } .font-selector { max-height: 200px; } .floating-tools { top: 10px; right: 10px; transform: scale(0.9); } .icon-label { font-size: 8px; } footer { flex-direction: column; gap: 4px; padding: 6px; height: auto; } }
-@media (max-width: 480px) { .icon-btn { width: 44px; height: 44px; } header { padding: 6px; gap: 4px; } .popup-title { font-size: 18px; } footer { flex-direction: column; gap: 4px; padding: 6px; } .footer-links { gap: 8px; } .icon-label { font-size: 7px; } }
-
-.hidden-input { display: none; }
-.upload-card { width: 100%; min-height: 100px; background-color: #f0f4f8; border: 2px dashed #94a3b8; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: #64748b; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s ease; margin-bottom: 20px; }
-.upload-card:hover { background-color: #e2e8f0; border-color: #334155; color: #334155; }
-.search-wrapper { display: flex; gap: 8px; margin-bottom: 20px; }
-#imageSearchInput { flex-grow: 1; padding: 12px; border-radius: 10px; border: 1px solid var(--border); font-size: 16px; background: #999393; }
-#imageSearchBtn { padding: 0 20px; background: var(--c-cyan); color: white; border: none; border-radius: 10px; cursor: pointer; transition: background .2s; }
-#imageSearchBtn:hover { background: #0096b2; }
-
-body.dark { --surface: rgba(15, 23, 42, 0.92); --border: rgba(255, 255, 255, 0.1); --text: #f1f5f9; --text-secondary: #94a3b8; --shadow: 0 4px 24px rgba(0,0,0,0.2); --shadow-active: 0 6px 32px rgba(0,0,0,0.3); --panel-bg: rgba(15, 23, 42, 0.85); background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
-body.dark .icon-btn { background: linear-gradient(145deg, #1e293b, #0f172a); box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.1), inset 0 0 10px rgba(255,255,255,0.1); }
-body.dark .icon-btn svg path, body.dark .icon-btn svg rect, body.dark .icon-btn svg circle { fill: #f1f5f9; stroke: #f1f5f9; }
-body.dark .icon-label, body.dark #exportBtn .icon-label, body.dark , body.dark #clearCanvasBtn .icon-label, body.dark #undoBtn .icon-label, body.dark #redoBtn .icon-label { color: #f1f5f9; }
-body.dark .canvas-wrapper { background: #1e293b; }
-body.dark #backgroundCanvas { border: 1px solid #334155; }
-body.dark .popup-content, body.dark .font-selector, body.dark .font-option { background: #1e293b; color: #f1f5f9; border-color: var(--border); }
-body.dark .upload-card { background: #334155; border-color: #475569; color: #cbd5e1; }
-body.dark .search-wrapper input { background: #334155; color: #f1f5f9; border-color: var(--border); }
-#themeToggleBtn { background: linear-gradient(145deg, #0f172a, #1e293b); box-shadow: 0 4px 8px rgba(0,0,0,0.3), inset 0 -2px 0 rgba(0,0,0,0.1), inset 0 0 10px rgba(255,255,255,0.1); }
-#themeToggleBtn svg path { fill: #f1f5f9; stroke: #f1f5f9; }
-#themeToggleBtn .icon-label { color: #f1f5f9; }
-body.dark #themeToggleBtn { background: linear-gradient(145deg, #ffffff, #f0f0f0); box-shadow: 0 4px 8px rgba(0,0,0,0.1), inset 0 -2px 0 rgba(0,0,0,0.05), inset 0 0 10px rgba(255,255,255,0.5); }
-body.dark #themeToggleBtn svg path { fill: #0f172a; stroke: #0f172a; }
-body.dark #themeToggleBtn .icon-label { color: #0f172a; }
-#exportBtn svg path { fill: #000000; stroke: #000000; }
-#exportBtn .icon-label { color: #000000; }
-body.dark #exportBtn svg path { fill: #000000; stroke: #000000; }
-body.dark #exportBtn .icon-label { color: #000000; }
-
-#resetViewBtn { position: absolute; bottom: 20px; right: 20px; z-index: 101; background: var(--panel-bg); backdrop-filter: blur(8px); border-radius: 20px; box-shadow: var(--shadow-active); border: 1px solid var(--border); padding: 8px 16px; font-size: 14px; font-weight: 600; color: var(--text); cursor: pointer; display: none; transition: opacity 0.3s, transform 0.3s; }
-#resetViewBtn:hover { transform: scale(1.05); }
-
-#dragDropOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 180, 216, 0.7); z-index: 9999; display: none; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; text-align: center; pointer-events: none; }
-#dragDropOverlay::before { content: 'Suelta tu imagen aquí'; padding: 20px; border: 3px dashed white; border-radius: 20px; }
-
-#bgPopup .popup-options { display: flex; flex-direction:column; gap: 16px; margin-bottom: 24px; }
-#bgPopup .popup-options > * { flex: 1; }
-#pickColorBtn { width:100%; padding: 14px; background: var(--c-key); color: white; border: none; border-radius: 12px; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s; }
-#pickColorBtn:hover { background: #052a39; }
-
-#welcomeOverlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px; }
-.welcome-content { background: var(--surface); color: var(--text); padding: 32px; border-radius: 24px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; text-align: center; border: 1px solid var(--border); box-shadow: var(--shadow-active); }
-.welcome-content h1 { font-size: 28px; margin-bottom: 12px; }
-.welcome-content > p { font-size: 16px; color: var(--text-secondary); margin-bottom: 28px; }
-.tutorial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; text-align: left; margin-bottom: 32px; }
-.tutorial-item { display: flex; align-items: center; gap: 16px; }
-.tutorial-item .icon-preview { flex-shrink: 0; width: 48px; height: 48px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.tutorial-item .icon-preview svg { width: 24px; height: 24px; }
-.tutorial-item strong { font-size: 16px; margin-bottom: 4px; color: var(--text); }
-.tutorial-item p { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
-.welcome-actions { display: flex; gap: 12px; justify-content: center; }
-.welcome-actions button { padding: 12px 24px; font-size: 16px; font-weight: 600; border-radius: 12px; border: none; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-.welcome-actions button:hover { transform: translateY(-2px); box-shadow: var(--shadow-active); }
-#showIdeasBtn { background-color: #E9ECEF; color: var(--c-key); }
-#startEditingBtn { background-color: var(--c-cyan); color: white; }
-#ideas-list { text-align: left; padding-left: 20px; line-height: 1.8; }
-@media (max-width: 768px) { .welcome-content { padding: 24px; } .welcome-content h1 { font-size: 24px; } }
-
-#tutorialBtn { position: absolute; bottom: 20px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background-color: var(--c-magenta); color: white; border: none; font-size: 28px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 101; box-shadow: var(--shadow-active); transition: transform 0.2s; }
-#tutorialBtn:hover { transform: scale(1.1); }
-</style>
+        /* --- ESTILOS BASE Y PULIDOS PARA EL PDF GENERADO --- */
+        .pdf-catalog-container {
+            width: 210mm; /* Ancho de A4 para referencia */
+            box-sizing: border-box;
+            padding: 15mm;
+            --pdf-primary-color: #1f2937;
+            --pdf-secondary-color: #06b6d4;
+            --pdf-text-color: #333;
+            --pdf-bg-color: #ffffff;
+            font-family: 'Roboto', sans-serif;
+            color: var(--pdf-text-color);
+            background-color: var(--pdf-bg-color);
+        }
+        .pdf-header {
+            padding-bottom: 10mm;
+            border-bottom: 2px solid var(--pdf-secondary-color);
+            margin-bottom: 10mm;
+            text-align: center;
+            page-break-after: avoid;
+        }
+        .pdf-header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--pdf-primary-color);
+            margin: 0 0 5mm 0;
+        }
+        .pdf-header p {
+            font-size: 11pt;
+            font-style: italic;
+            max-width: 80%;
+            margin: 0 auto;
+            color: var(--pdf-text-color);
+        }
+        .pdf-products-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10mm;
+            justify-content: space-between;
+        }
+        .pdf-product-item {
+            width: calc(50% - 5mm); /* Dos columnas con espaciado perfecto */
+            page-break-inside: avoid; /* Instrucción clave para evitar cortes */
+            margin-bottom: 10mm;
+            border: 1px solid #eeeeee;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .pdf-image-container {
+            width: 100%;
+            aspect-ratio: 4 / 3; /* Proporción profesional para las imágenes */
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b0b0b0;
+        }
+        .pdf-product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* La clave para no distorsionar imágenes */
+        }
+        .pdf-product-info {
+            padding: 5mm;
+            flex-grow: 1; /* Asegura que todas las tarjetas tengan la misma altura */
+        }
+        .pdf-product-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13pt;
+            font-weight: 700;
+            color: var(--pdf-primary-color);
+            margin: 0 0 2mm 0;
+        }
+        .pdf-product-price {
+            font-size: 15pt;
+            font-weight: 700;
+            color: var(--pdf-secondary-color);
+            margin: 0 0 4mm 0;
+        }
+        .pdf-product-description {
+            font-size: 9pt;
+            line-height: 1.5;
+        }
+        .pdf-footer {
+            padding-top: 5mm;
+            margin-top: 10mm;
+            text-align: center;
+            font-size: 8pt;
+            color: #999;
+            border-top: 1px solid #eee;
+            page-break-before: auto;
+        }
+    </style>
 </head>
 <body>
+    <header class="header">
+        <a href="#" class="logo" onclick="showSection('home')">
+            <i class="fas fa-store"></i>
+            <span>Feria Virtual</span>
+        </a>
+        <nav class="nav-container" id="navContainer">
+            <a href="#" class="nav-link" onclick="showSection('home')">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="#" class="nav-link" onclick="showSection('products')">
+                <i class="fas fa-shopping-bag"></i>
+                <span>Productos</span>
+            </a>
+            <a href="#" class="nav-link" onclick="showSection('profile')" id="profileLink" style="display: none;">
+                <i class="fas fa-user"></i>
+                <span>Mi Perfil</span>
+            </a>
+            <a href="#" class="nav-link" onclick="showSection('my-store')" id="storeLink" style="display: none;">
+                <i class="fas fa-store"></i>
+                <span>Mi Puesto</span>
+            </a>
+            <div id="authContainer">
+                <a href="#" class="nav-link" onclick="showLogin()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Iniciar sesión</span>
+                </a>
+            </div>
+        </nav>
+        <button class="hamburger-menu" id="hamburgerMenu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </header>
 
-<div id="welcomeOverlay">
-    <div class="welcome-content">
-        <h1>¡Bienvenido a Editor Canvas Pro!</h1>
-        <p>Tu herramienta creativa para diseñar flyers de forma fácil y rápida. Aquí tienes una guía de las herramientas principales:</p>
-        <div class="tutorial-grid">
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: #E9ECEF;"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z" fill="#333" stroke="#333"/></svg></div> <div> <strong>Deshacer/Rehacer</strong> <p>Corrige errores fácilmente. Usa los botones o Ctrl+Z/Ctrl+Y para volver atrás o adelante.</p> </div> </div>
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: #E9ECEF;"><svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.96 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z" fill="#333" stroke="#333"/></svg></div> <div> <strong>Adelante</strong> <p>Si deshiciste algo por error, puedes usar este botón o Ctrl+Y para rehacer la acción.</p> </div> </div>
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: var(--c-cyan);"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div> <div> <strong>Fondo</strong> <p>Elige un color sólido o selecciona un fondo de la galería para empezar.</p> </div> </div>
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: var(--c-magenta);"><svg viewBox="0 0 24 24"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg></div> <div> <strong>Texto</strong> <p>Añade y personaliza texto. Ahora puedes ponerle un fondo de color para resaltarlo.</p> </div> </div>
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: var(--c-yellow);"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM12 5c-3.86 0-7 3.14-7 7s3.14 7 7 7V5z"/></svg></div> <div> <strong>Imagen</strong> <p>Sube tus imágenes, arrástralas al lienzo o busca en una galería gratuita.</p> </div> </div>
-            <div class="tutorial-item"> <div class="icon-preview" style="background-color: var(--c-key);"><svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 8h8v-8h-8v8zm2-6h4v4h-4v-4z"/></svg></div> <div> <strong>Código QR</strong> <p>Genera un QR para tu WhatsApp y añádelo a tu diseño para que te contacten fácilmente.</p> </div> </div>
+    <main>
+        <section id="home" class="section active-section">
+            <div class="hero">
+                <h1>Conecta tu pequeño negocio con el mundo</h1>
+                <p>Una feria virtual donde los comerciantes pueden mostrar sus productos y los clientes pueden descubrir tesoros locales</p>
+                <div class="buttons">
+                    <button class="btn btn-primary" onclick="showSection('register')">
+                        <i class="fas fa-store"></i> Registrar mi puesto
+                    </button>
+                    <button class="btn btn-secondary" onclick="showSection('products')">
+                        <i class="fas fa-search"></i> Explorar productos
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section id="products" class="section">
+            <div class="products-header">
+                <h2 class="section-title">Productos Destacados</h2>
+            </div>
+            <div class="products-grid" id="productsGrid"></div>
+        </section>
+
+        <section id="vendor-page" class="section">
+            <div class="vendor-page-header">
+                <h2 class="section-title">Puesto: <span id="vendorPageTitle"></span></h2>
+                <div class="vendor-actions" style="display: flex; gap: 1rem;">
+                    <a href="#" id="vendorWhatsappBtn" class="btn btn-whatsapp" style="display: none;" target="_blank" rel="noopener noreferrer">
+                        <i class="fab fa-whatsapp"></i> Chatear
+                    </a>
+                    <button class="btn btn-secondary" onclick="showSection('products')">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </button>
+                </div>
+            </div>
+            <div class="products-grid" id="vendorProductsGrid"></div>
+        </section>
+
+        <section id="profile" class="section">
+            <h2 class="section-title">Mi Perfil</h2>
+            <div class="profile-container">
+                <div class="profile-card" id="profileCard">
+                    <button id="editProfileBtn" class="edit-btn-container" onclick="toggleProfileEditMode(true)">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <div class="profile-header">
+                        <div class="profile-pic" id="profilePicContainer" onclick="if(document.getElementById('profileCard').classList.contains('edit-mode')) showProfilePicModal();">
+                            <i class="fas fa-user"></i>
+                            <div class="profile-pic-edit-overlay">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                        </div>
+                        <div class="profile-info">
+                            <h2 id="userName">Nombre del Comerciante</h2>
+                            <input type="text" id="userNameInput" class="form-control editable">
+                            <p id="userEmail">correo@ejemplo.com</p>
+                        </div>
+                    </div>
+                    <div class="profile-details">
+                        <div class="detail-item">
+                            <h3>Información de contacto</h3>
+                            <p><i class="fas fa-phone"></i> <span id="userPhone"></span></p>
+                            <input type="text" id="userPhoneInput" class="form-control editable" placeholder="Ej: 5491112345678">
+                        </div>
+                        <div class="detail-item">
+                            <h3>Mi negocio</h3>
+                            <p><i class="fas fa-store"></i> <span id="userBusiness"></span></p>
+                        </div>
+                        <div class="detail-item">
+                            <h3>Estadísticas</h3>
+                            <p><i class="fas fa-box"></i> <span id="userProducts">0</span> productos publicados</p>
+                        </div>
+                        <div class="detail-item">
+                            <h3>Miembro desde</h3>
+                            <p><i class="fas fa-calendar"></i> <span id="userSince"></span></p>
+                        </div>
+                    </div>
+                    <div id="profileFormFooter" class="form-footer" style="display: none;">
+                        <button class="btn btn-secondary" onclick="toggleProfileEditMode(false)">Cancelar</button>
+                        <button class="btn btn-primary" onclick="saveProfileInfo()">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="my-store" class="section">
+            <h2 class="section-title">Gestión de mi Puesto</h2>
+            <div class="form-container" id="storeFormContainer">
+                <button id="editStoreBtn" class="edit-btn-container" onclick="toggleStoreEditMode(true)">
+                    <i class="fas fa-pencil-alt"></i>
+                </button>
+                <h3 class="form-title">Información del Puesto</h3>
+                <div class="form-group">
+                    <label for="storeName">Nombre del puesto</label>
+                    <input type="text" id="storeName" class="form-control" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="storeDescription">Descripción</label>
+                    <textarea id="storeDescription" class="form-control" rows="3" readonly></textarea>
+                </div>
+                <div id="storeFormFooter" class="form-footer" style="display: none;">
+                    <button class="btn btn-secondary" onclick="toggleStoreEditMode(false)">Cancelar</button>
+                    <button class="btn btn-primary" onclick="saveStoreInfo()">Guardar Cambios</button>
+                </div>
+            </div>
+            <div class="products-header" style="margin-top: 3rem;">
+                <h2 class="section-title">Mis Productos</h2>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="showExportModal()">
+                        <i class="fas fa-file-export"></i> Crear Catálogo / Respaldo
+                    </button>
+                    <button class="btn btn-primary" onclick="showProductModal()"><i class="fas fa-plus"></i> Nuevo Producto</button>
+                </div>
+            </div>
+            <div class="products-grid" id="myProductsGrid"></div>
+        </section>
+
+        <section id="register" class="section">
+            <h2 class="section-title">Registro de Comerciante</h2>
+            <div class="form-container">
+                <h3 class="form-title">Crea tu cuenta de comerciante</h3>
+                <div id="registerMessage" class="login-message"></div>
+                <div class="form-group">
+                    <label for="regName">Nombre completo</label>
+                    <input type="text" id="regName" class="form-control" placeholder="Tu nombre">
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Correo electrónico</label>
+                    <input type="email" id="regEmail" class="form-control" placeholder="tu@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Contraseña</label>
+                    <input type="password" id="regPassword" class="form-control" placeholder="Mínimo 6 caracteres">
+                </div>
+                <div class="form-group">
+                    <label for="regBusiness">Nombre del negocio</label>
+                    <input type="text" id="regBusiness" class="form-control" placeholder="Ej: Artesanías El Sol">
+                </div>
+                <div class="form-group">
+                    <label for="regPhone">Teléfono de contacto (con cód. de país)</label>
+                    <input type="text" id="regPhone" class="form-control" placeholder="Ej: 5491112345678">
+                </div>
+                <div class="form-group">
+                    <label for="regDescription">Descripción del negocio</label>
+                    <textarea id="regDescription" class="form-control" rows="3" placeholder="Qué vendes, tu historia, etc."></textarea>
+                </div>
+                <div class="form-footer">
+                    <button class="btn btn-secondary" onclick="showSection('home')">Cancelar</button>
+                    <button class="btn btn-primary" onclick="registerMerchant()">Registrarme</button>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Modals and other fixed elements -->
+    <div class="login-modal" id="loginModal">
+        <div class="login-box">
+            <button type="button" class="close-modal-btn" onclick="hideLogin()"><i class="fas fa-times"></i></button>
+            <div class="login-header">
+                <h2>Acceso Comerciantes</h2>
+                <p>Ingresa para gestionar tu puesto</p>
+            </div>
+            <div id="loginMessage" class="login-message"></div>
+            <div class="form-group">
+                <label for="loginEmail">Correo Electrónico</label>
+                <input type="email" id="loginEmail" class="form-control" placeholder="tu@email.com">
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Contraseña</label>
+                <input type="password" id="loginPassword" class="form-control" placeholder="Tu contraseña">
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="login()"><i class="fas fa-sign-in-alt"></i> Iniciar Sesión</button>
         </div>
-        <div class="welcome-actions"> <button id="showIdeasBtn">Ver Ideas</button> <button id="startEditingBtn">Empezar a Diseñar</button> </div>
     </div>
-</div>
 
-<header>
-    <button class="icon-btn" title="Deshacer (Ctrl+Z)" id="undoBtn" disabled> <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg> <span class="icon-label">Atrás</span> </button>
-    <button class="icon-btn" title="Rehacer (Ctrl+Y)" id="redoBtn" disabled> <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.96 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg> <span class="icon-label">Rehacer</span> </button>
-    <button class="icon-btn" title="Zoom" id="zoomModeBtn"> <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg> <span class="icon-label">Zoom</span> </button>
-    <button class="icon-btn" title="Fondo" id="bgColorBtn"> <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg> <span class="icon-label">Fondo</span> </button>
-    <button class="icon-btn" title="Agregar texto" id="addTextBtn"> <svg viewBox="0 0 24 24"><path d="M2.5 4v3h5v12h3V7h5V4h-13zm19 5h-9v3h3v7h3v-7h3V9z"/></svg> <span class="icon-label">Texto</span> </button>
-    <button class="icon-btn" title="Agregar imagen" id="addImageBtn"> <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM12 5c-3.86 0-7 3.14-7 7s3.14 7 7 7V5z"/></svg> <span class="icon-label">Imagen</span> </button>
-    <button class="icon-btn" title="Generar QR" id="generateQrBtn"> <svg viewBox="0 0 24 24"><path d="M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zm8-12v8h8V3h-8zm6 6h-4V5h4v4zm-6 8h8v-8h-8v8zm2-6h4v4h-4v-4z"/></svg> <span class="icon-label">QR</span> </button>
-    <button class="icon-btn" title="Exportar" id="exportBtn"> <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg> <span class="icon-label">Exportar</span> </button>
-    <button class="icon-btn" title="Limpiar todo" id="clearCanvasBtn"> <svg viewBox="0 0 24 24"><path d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14V4zM6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12z"/></svg> <span class="icon-label">Limpiar</span> </button>
-    <button class="icon-btn" title="Cambiar tema" id="themeToggleBtn"> <svg id="themeIcon" viewBox="0 0 24 24"></svg> <span class="icon-label">Tema</span> </button>
-</header>
-
-<main>
-    <div class="canvas-wrapper">
-        <canvas id="backgroundCanvas"></canvas>
-        <div class="canvas-container">
-            <canvas id="flyerCanvas"></canvas>
+    <div class="login-modal" id="profilePicModal">
+        <div class="login-box">
+            <button type="button" class="close-modal-btn" onclick="hideModal('profilePicModal')"><i class="fas fa-times"></i></button>
+            <div class="login-header">
+                <h2>Actualizar foto de perfil</h2>
+            </div>
+            <div class="form-group">
+                <label>Subir una foto</label>
+                <div class="product-image-upload" id="profilePicUploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Haz clic o arrastra una imagen aquí</p>
+                </div>
+                <input type="file" id="profilePicInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="form-group">
+                <label>O elige un avatar</label>
+                <div class="avatar-selection" id="avatarSelection"></div>
+            </div>
+            <div class="form-footer">
+                <button class="btn btn-secondary" onclick="hideModal('profilePicModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveProfilePic()">Guardar Foto</button>
+            </div>
         </div>
     </div>
-    <div class="floating-tools" id="floatingTools" style="display:none;">
-        <div id="generalTools"> <button id="btnSubirCapa" title="Subir capa">↑</button> <button id="btnBajarCapa" title="Bajar capa">↓</button> <button id="btnEnviarFondo" title="Enviar al fondo">⤓</button> <button id="btnEliminar" title="Eliminar">🗑</button> </div>
-        <div id="textTools" style="display: none;"> <button id="btnOpenFontPopup" title="Cambiar fuente">Aa</button> <button id="btnOpenTextColorPopup" title="Cambiar color">🎨</button> <button id="btnSetTextBg" title="Fondo de texto">Bg</button> <button id="btnAlinIzq" title="Alinear izquierda">⚍</button> <button id="btnAlinCen" title="Alinear centro">☰</button> <button id="btnAlinDer" title="Alinear derecha">⚍</button> </div>
-        <div id="imageTools" style="display: none;"> <button id="btnApplyFilter" title="Aplicar filtro">✨</button> <button id="btnRemoveFilters" title="Quitar filtros">🚫</button> </div>
+
+    <div class="login-modal" id="productModal">
+        <div class="login-box">
+            <button type="button" class="close-modal-btn" onclick="hideModal('productModal')"><i class="fas fa-times"></i></button>
+            <div class="login-header">
+                <h2 id="productModalTitle">Agregar Nuevo Producto</h2>
+            </div>
+            <div id="productModalMessage" class="login-message"></div>
+            <div class="form-group">
+                <label for="productName">Nombre del Producto</label>
+                <input type="text" id="productName" class="form-control" placeholder="Ej: Tazas Artesanales">
+            </div>
+            <div class="form-group">
+                <label for="productPrice">Precio ($)</label>
+                <input type="number" id="productPrice" class="form-control" placeholder="1500">
+            </div>
+            <div class="form-group">
+                <label for="productDescription">Descripción</label>
+                <textarea id="productDescription" class="form-control" rows="3" placeholder="Describe tu producto"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Imagen del Producto</label>
+                <div class="product-image-upload" id="productImageUploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Haz clic o arrastra una imagen aquí</p>
+                </div>
+                <input type="file" id="productImageInput" accept="image/*" style="display: none;">
+            </div>
+            <div class="form-footer">
+                <button class="btn btn-secondary" onclick="hideModal('productModal')">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveProduct()">Guardar Producto</button>
+            </div>
+        </div>
     </div>
-    <div class="help-message" id="helpMessage">¡Puedes mover, rotar y escalar los objetos!</div>
-    <button id="resetViewBtn">Restaurar Vista</button>
-    <button id="tutorialBtn" title="Ver Tutorial">?</button>
-</main>
+    
+    <!-- Modal de Exportación de Catálogo (SIMPLIFICADO) -->
+    <div class="login-modal" id="exportModal" style="display: none;">
+        <div class="login-box" id="exportBox" style="max-width: 650px;">
+            <button type="button" class="close-modal-btn" onclick="hideModal('exportModal')"><i class="fas fa-times"></i></button>
+            <div id="exportStep1">
+                <div class="login-header">
+                    <h2>Exportar tu Catálogo</h2>
+                    <p>Elige el formato que mejor se adapte a tu necesidad.</p>
+                </div>
+                <div class="export-options-container">
+                    <div class="export-option-card" onclick="generatePdf()">
+                        <i class="fas fa-magic fa-2x"></i>
+                        <h3>Catálogo Profesional (PDF)</h3>
+                        <p>Generado con IA para un diseño único y profesional.</p>
+                    </div>
+                    <div class="export-option-card" onclick="exportCatalogToJSON_Wrapper()">
+                        <i class="fas fa-file-code fa-2x"></i>
+                        <h3>Copia de Seguridad (JSON)</h3>
+                        <p>Un archivo técnico para guardar y respaldar tus datos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="popup" id="bgPopup"> <div class="popup-content"> <div class="popup-title">Elige tu Fondo</div> <div class="popup-options"> <button id="pickColorBtn">🎨 Elegir un Color</button> </div> <hr style="border: none; border-top: 1px solid var(--border); margin: 0 0 20px;"> <p style="text-align: center; color: var(--text-secondary); margin-bottom: 16px;">O selecciona un fondo prediseñado:</p> <div class="image-grid" id="bgGrid"></div> <button class="popup-close">Cerrar</button> </div> </div>
-<div class="popup" id="imgGalleryPopup"> <div class="popup-content"> <div class="popup-title">Añadir Imagen</div> <div class="search-wrapper"> <input type="text" id="imageSearchInput" placeholder="Busca en la galería online (ej: 'fiesta')"> <button id="imageSearchBtn">Buscar</button> </div> <label for="imgLocalInput" class="upload-card"> <span>⬆️</span> Subir tu propia imagen <br><small>o arrástrala aquí</small></label> <div class="image-grid" id="imgFondoGrid"></div> <button class="popup-close">Cerrar</button> </div> </div>
-<div class="popup" id="fontPopup"> <div class="popup-content"> <div class="popup-title">Seleccionar fuente</div> <div id="customFontSelector" class="font-selector"></div> <button class="popup-close">Aplicar</button> </div> </div>
-<div class="popup" id="exportPopup"> <div class="popup-content"> <div class="popup-title">Exportar Flyer</div> <button class="popup-close" id="btnDescargarJPG">Descargar como JPG</button> <button class="popup-close" id="btnDescargarPDF" style="margin-top: 10px;">Descargar como PDF</button> </div> </div>
-<div class="popup" id="ideasPopup"> <div class="popup-content"> <div class="popup-title">💡 Ideas para tu Próximo Diseño</div> <ol id="ideas-list"> <li>Anuncios de eventos locales como ferias o festivales.</li> <li>Flyers para clases o talleres que estés ofreciendo.</li> <li>Promociones de negocios locales, como descuentos o inauguraciones.</li> <li>Anuncios de servicios profesionales, como asesorías o consultorías.</li> <li>Carteles de búsqueda de mascotas perdidas o encontrados.</li> <li>Invitaciones para eventos especiales, como bodas o cumpleaños.</li> <li>Anuncios de conciertos o presentaciones de bandas.</li> <li>Promociones de productos nuevos o en oferta.</li> <li>Anuncios de talleres de arte o cursos creativos.</li> <li>Carteles de recaudación de fondos para causas benéficas.</li> <li>Flyers para actividades deportivas, como clases de yoga o torneos.</li> <li>Anuncios de servicios de catering o comida a domicilio.</li> <li>Promociones de spas o servicios de bienestar.</li> <li>Anuncios de ofertas en tiendas o comercios locales.</li> <li>Carteles de eventos de networking o encuentros profesionales.</li> <li>Anuncios de clases de idiomas o talleres de aprendizaje.</li> <li>Flyers de servicios de fotografía o videografía.</li> <li>Promociones de eventos de temporada, como Navidad o Halloween.</li> <li>Anuncios de servicios de limpieza o mantenimiento.</li> <li>Carteles para campañas de concientización sobre temas importantes.</li> </ol> <button class="popup-close">Cerrar</button> </div> </div>
 
-<input type="file" id="imgLocalInput" accept="image/*" class="hidden-input">
-<input type="color" id="hiddenColorPicker" class="hidden-input">
-<div id="dragDropOverlay"></div>
+    <footer class="footer">
+        <p>Únete a la comunidad de pequeños comerciantes que ya están creciendo con Feria Virtual</p>
+        <p class="copyright">&copy; 2025 Feria Virtual. Todos los derechos reservados.</p>
+    </footer>
 
-<footer> <div>Hecho con 💜 por OtroMundo</div> <div class="footer-links"> <a href="https://unaleotromundo.github.io/otromundo/" target="_blank">GitHub</a> <a href="https://wa.me/59894691690?text=Hola%20%F0%9F%91%8B%20Quisiera%20informaci%C3%B3n">Contacto</a> </div> </footer>
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <i class="fas fa-moon"></i>
+        <i class="fas fa-sun"></i>
+    </button>
+    
+    <div class="chatbot-floating" id="chatbotFloatingContainer" aria-live="polite">
+        <div class="chatbot-container-floating" id="chatbotContainer" aria-hidden="true">
+            <div class="chatbot-header-floating">
+                <h3>Asistente de marketing</h3>
+                <button class="close-chatbot-btn" type="button" onclick="toggleChatbot()" aria-label="Cerrar chat">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <iframe class="chatbot-iframe-floating" src="https://cdn.botpress.cloud/webchat/v3.2/shareable.html?configUrl=https://files.bpcontent.cloud/2025/08/13/17/20250813172155-WZV5LKVX.json" loading="lazy" allow="microphone; geolocation; fullscreen" title="Chat Asistente de marketing"></iframe>
+        </div>
+        <button class="chatbot-toggle" id="chatbotToggleBtn" type="button" onclick="toggleChatbot()" aria-expanded="false" aria-controls="chatbotContainer">
+            <i class="fas fa-comment-dots"></i>
+        </button>
+    </div>
+
+    <div id="imageLightbox" class="image-lightbox" onclick="hideImageLightbox()">
+        <span class="lightbox-close" onclick="hideImageLightbox()">&times;</span>
+        <img class="lightbox-content" id="lightboxImg">
+    </div>
+
+    <!-- Scripts movidos al final y con 'defer' para carga no bloqueante -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 
 <script>
-// --- CONFIGURACIÓN ---
-const UNSPLASH_ACCESS_KEY = 'Xj3SNeQvEW2iW-s3L0vLZgBGrve7ZUFVUGPF_hXLjFI';
-const PREDESIGNED_BACKGROUNDS = [ 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600', 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600', 'https://images.unsplash.com/photo-1513151233558-d860c5398176?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600', 'https://images.unsplash.com/photo-1500462918059-b1a0cb512f1d?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600', 'https://images.unsplash.com/photo-1563291074-2bf8677a69c2?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600', 'https://images.unsplash.com/photo-1487088678257-3a541e6e3922?ixlib=rb-4.0.3&q=85&fm=jpg&crop=entropy&cs=srgb&w=600' ];
-const fontFamilies = { "Montserrat": "'Montserrat', Arial, sans-serif", "Bebas Neue": "'Bebas Neue', Arial, sans-serif", "Anton": "'Anton', Arial, sans-serif", "Archivo Black": "'Archivo Black', Arial, sans-serif", "Oswald": "'Oswald', Arial, sans-serif", "Poppins": "'Poppins', Arial, sans-serif", "Lobster": "'Lobster', cursive", "Playfair Display": "'Playfair Display', serif", "Permanent Marker": "'Permanent Marker', cursive", "Rock Salt": "'Rock Salt', cursive", "Luckiest Guy": "'Luckiest Guy', cursive", "Shadows Into Light": "'Shadows Into Light', cursive", "Orbitron": "'Orbitron', sans-serif", "Quicksand": "'Quicksand', Arial, sans-serif", "Arizonia": "'Arizonia', cursive", "Bangers": "'Bangers', cursive", "Covered By Your Grace": "'Covered By Your Grace', cursive", "Fredericka the Great": "'Fredericka the Great', cursive", "Indie Flower": "'Indie Flower', cursive", "Pacifico": "'Pacifico', cursive", "Press Start 2P": "'Press Start 2P', monospace", "Gloria Hallelujah": "'Gloria Hallelujah', cursive", "Rammetto One": "'Rammetto One', cursive", "Monoton": "'Monoton', cursive", "Rubik Moonrocks": "'Rubik Moonrocks', cursive", "Special Elite": "'Special Elite', monospace", "Amatic SC": "'Amatic SC', cursive", "VT323": "'VT323', monospace", "Chewy": "'Chewy', cursive", "Black Ops One": "'Black Ops One', cursive", "Faster One": "'Faster One', cursive", "Acme": "'Acme', sans-serif", "Rye": "'Rye', cursive", "Rubik 80s Fade": "'Rubik 80s Fade', cursive", "Sigmar One": "'Sigmar One', cursive", "UnifrakturCook": "'UnifrakturCook', cursive", "Sacramento": "'Sacramento', cursive", "Chango": "'Chango', cursive", "Major Mono Display": "'Major Mono Display', monospace", "IBM Plex Mono": "'IBM Plex Mono', monospace", "Poiret One": "'Poiret One', cursive", "Unbounded": "'Unbounded', sans-serif" };
+    document.addEventListener('DOMContentLoaded', () => {
 
-const backgroundCanvas = new fabric.StaticCanvas('backgroundCanvas', { renderOnAddRemove: false });
-const canvas = new fabric.Canvas('flyerCanvas', { preserveObjectStacking: true, selection: true, allowTouchScrolling: true, enableRetinaScaling: true, devicePixelRatio: window.devicePixelRatio || 1, selectionColor: 'rgba(0, 180, 216, 0.3)', selectionBorderColor: 'rgba(0, 180, 216, 0.8)', selectionLineWidth: 2, hoverCursor: 'move', defaultCursor: 'default' });
-fabric.Textbox.prototype.textBaseline = 'alphabetic';
-
-// --- FUNCIONES BÁSICAS ---
-async function searchUnsplashImages(query) { if (!UNSPLASH_ACCESS_KEY || UNSPLASH_ACCESS_KEY === 'TU_CLAVE_DE_API_DE_UNSPLASH') { alert('Por favor, configura tu clave de API de Unsplash en el script.'); return; } const imgGrid = document.getElementById('imgFondoGrid'); imgGrid.innerHTML = '<p>Buscando imágenes...</p>'; try { const response = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=12&client_id=${UNSPLASH_ACCESS_KEY}`); if (!response.ok) throw new Error(`Error de Unsplash: ${response.statusText}`); const data = await response.json(); imgGrid.innerHTML = ''; if (data.results.length === 0) { imgGrid.innerHTML = '<p>No se encontraron resultados. Intenta otra búsqueda.</p>'; return; } data.results.forEach(photo => { const img = document.createElement("img"); img.src = photo.urls.small; img.className = "image-thumb"; img.alt = photo.alt_description; img.addEventListener("click", () => addImageToCanvas(photo.urls.regular)); imgGrid.appendChild(img); }); } catch(error) { console.error("Error al buscar imágenes:", error); imgGrid.innerHTML = `<p>Error al cargar imágenes. Revisa la consola.</p>`; } }
-async function loadAndApplyFont(fontName, fontFamily) { if (document.fonts.check(`1em "${fontName}"`)) { applyFont(fontFamily, fontName); return; } showHelpMessage(`Cargando fuente: ${fontName}...`, 1500); const link = document.createElement('link'); const formattedFontName = fontName.replace(/ /g, '+'); link.href = `https://fonts.googleapis.com/css2?family=${formattedFontName}:wght@400;700&display=swap`; link.rel = 'stylesheet'; document.head.appendChild(link); link.onload = () => applyFont(fontFamily); }
-function applyFont(fontFamily) { const active = canvas.getActiveObject(); if (active && active.type === "textbox") { active.set("fontFamily", fontFamily); canvas.renderAll(); } }
-function addImageToCanvas(url) { fabric.Image.fromURL(url, (img) => { const scale = Math.min((canvas.width * 0.6) / img.width, (canvas.height * 0.6) / img.height); img.scale(scale).set({ left: canvas.width / 2, top: canvas.height / 2, originX: "center", originY: "center", hasControls: true, crossOrigin: 'anonymous' }); canvas.add(img).setActiveObject(img).renderAll(); showHelpMessage("Imagen agregada.", 3000); document.getElementById('imgGalleryPopup').style.display = 'none'; }, { crossOrigin: 'anonymous' }); }
-function adjustCanvasSize() { const wrapper = document.querySelector('.canvas-wrapper'); const main = document.querySelector('main'); const aspectRatio = 800 / 1066; let newWidth = main.clientWidth * 0.95; let newHeight = newWidth / aspectRatio; if (newHeight > main.clientHeight * 0.95) { newHeight = main.clientHeight * 0.95; newWidth = newHeight * aspectRatio; } wrapper.style.width = `${newWidth}px`; wrapper.style.height = `${newHeight}px`; canvas.setWidth(newWidth).setHeight(newHeight).renderAll(); backgroundCanvas.setWidth(newWidth).setHeight(newHeight).renderAll(); setCanvasBackgroundColor('#ffffff'); }
-function showHelpMessage(message, duration = 4000) { const helpElement = document.getElementById('helpMessage'); helpElement.textContent = message; helpElement.style.display = 'block'; helpElement.style.animation = 'none'; void helpElement.offsetWidth; helpElement.style.animation = `fadeInOut ${duration / 1000}s forwards`; }
-function renderFontOptions() { const container = document.getElementById("customFontSelector"); if (container.children.length > 0) return; Object.keys(fontFamilies).forEach(fontName => { const div = document.createElement("div"); div.className = "font-option"; div.textContent = fontName; div.style.fontFamily = fontFamilies[fontName] || fontName; div.addEventListener("click", () => { document.querySelectorAll('.font-option').forEach(o => o.classList.remove('selected')); div.classList.add('selected'); loadAndApplyFont(fontName, fontFamilies[fontName] || fontName); }); container.appendChild(div); }); }
-
-// --- EVENT LISTENERS GENERALES ---
-window.addEventListener('load', () => { adjustCanvasSize(); loadCanvasState(); enterSelectMode(); });
-window.addEventListener('resize', adjustCanvasSize);
-document.getElementById('addImageBtn').addEventListener('click', () => { document.getElementById('imgGalleryPopup').style.display = 'flex'; document.getElementById('imgFondoGrid').innerHTML = ''; });
-document.getElementById('imgLocalInput').addEventListener('change', function(e) { if (!e.target.files || !e.target.files[0]) return; const reader = new FileReader(); reader.onload = (event) => addImageToCanvas(event.target.result); reader.readAsDataURL(e.target.files[0]); e.target.value = ""; });
-document.getElementById('addTextBtn').addEventListener('click', () => { const textObj = new fabric.Textbox("Tu texto aquí", { left: canvas.width / 2, top: canvas.height / 2, fontSize: 40, fill: '#333', fontFamily: fontFamilies["Montserrat"], originX: "center", originY: "center", editable: true, width: canvas.width * 0.8, textAlign: 'center' }); canvas.add(textObj).setActiveObject(textObj).renderAll(); });
-document.getElementById('generateQrBtn').addEventListener('click', () => { const tel = prompt("Ingresa número de WhatsApp (ej: 094123456):", ""); if (tel && tel.match(/^\d{6,}$/)) { const url = `https://wa.me/598${tel}?text=¡Hola!%20Vi%20tu%20flyer%20y%20me%20interesa%20saber%20más`; const qr = new QRious({ value: url, size: 300 }); addImageToCanvas(qr.toDataURL()); } else { alert("Por favor, ingresa un número de WhatsApp válido."); } });
-document.getElementById('exportBtn').addEventListener('click', () => document.getElementById('exportPopup').style.display = 'flex');
-document.querySelectorAll('.popup-close').forEach(btn => btn.addEventListener('click', () => btn.closest('.popup').style.display = 'none'));
-document.getElementById('btnDescargarJPG').addEventListener('click', () => { prepareAndExport('jpeg'); });
-document.getElementById('btnDescargarPDF').addEventListener('click', () => { prepareAndExport('pdf'); });
-const floatingTools = document.getElementById('floatingTools'), textTools = document.getElementById('textTools'), imageTools = document.getElementById('imageTools');
-const updateTools = (e) => { const target = e?.selected?.[0]; floatingTools.style.display = target ? 'flex' : 'none'; if (target) { textTools.style.display = target.type === 'textbox' ? 'flex' : 'none'; imageTools.style.display = target.type === 'image' ? 'flex' : 'none'; } };
-canvas.on({'selection:created': updateTools, 'selection:updated': updateTools, 'selection:cleared': updateTools});
-document.getElementById('btnSubirCapa').addEventListener('click', () => { const obj = canvas.getActiveObject(); if(obj) { canvas.bringForward(obj); canvas.renderAll(); saveState(); }});
-document.getElementById('btnBajarCapa').addEventListener('click', () => { const obj = canvas.getActiveObject(); if(obj) { canvas.sendBackwards(obj); canvas.renderAll(); saveState(); }});
-document.getElementById('btnEnviarFondo').addEventListener('click', () => { const obj = canvas.getActiveObject(); if(obj) { canvas.sendToBack(obj); canvas.renderAll(); saveState(); }});
-document.getElementById('btnEliminar').addEventListener('click', () => { canvas.getActiveObjects().forEach(obj => canvas.remove(obj)); canvas.discardActiveObject().renderAll(); });
-document.getElementById('btnAlinIzq').addEventListener('click', () => { canvas.getActiveObject()?.set("textAlign", "left").setCoords(); canvas.renderAll(); saveState(); });
-document.getElementById('btnAlinCen').addEventListener('click', () => { canvas.getActiveObject()?.set("textAlign", "center").setCoords(); canvas.renderAll(); saveState(); });
-document.getElementById('btnAlinDer').addEventListener('click', () => { canvas.getActiveObject()?.set("textAlign", "right").setCoords(); canvas.renderAll(); saveState(); });
-document.getElementById('btnOpenFontPopup').addEventListener('click', () => { renderFontOptions(); document.getElementById('fontPopup').style.display = 'flex'; });
-document.getElementById('btnOpenTextColorPopup').addEventListener('click', () => { const active = canvas.getActiveObject(); if (active?.type === 'textbox') { const picker = document.createElement('input'); picker.type = 'color'; picker.value = active.fill; picker.oninput = () => { active.set("fill", picker.value); canvas.renderAll(); }; picker.onchange = () => saveState(); picker.click(); } });
-document.getElementById('imageSearchBtn').addEventListener('click', () => { const query = document.getElementById('imageSearchInput').value; if(query.trim()) searchUnsplashImages(query); });
-document.getElementById('imageSearchInput').addEventListener('keyup', (e) => { if (e.key === 'Enter') searchUnsplashImages(e.target.value); });
-const filters = [ new fabric.Image.filters.Grayscale(), new fabric.Image.filters.Sepia(), new fabric.Image.filters.Invert(), new fabric.Image.filters.Vintage(), new fabric.Image.filters.Kodachrome(), new fabric.Image.filters.Technicolor(), new fabric.Image.filters.Brownie(), new fabric.Image.filters.Polaroid(), new fabric.Image.filters.Brightness({ brightness: 0.2 }), new fabric.Image.filters.Contrast({ contrast: 0.2 }) ];
-let currentFilterIndex = 0;
-document.getElementById('btnApplyFilter').addEventListener('click', () => { const obj = canvas.getActiveObject(); if (obj?.type === 'image') { currentFilterIndex = (currentFilterIndex + 1) % filters.length; obj.filters = [filters[currentFilterIndex]]; obj.applyFilters(); canvas.renderAll(); saveState(); } });
-document.getElementById('btnRemoveFilters').addEventListener('click', () => { const obj = canvas.getActiveObject(); if (obj?.type === 'image') { obj.filters = []; obj.applyFilters(); canvas.renderAll(); saveState(); } });
-function updateToggleIcon() { const icon = document.getElementById('themeIcon'); if (document.body.classList.contains('dark')) { icon.innerHTML = '<path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>'; } else { icon.innerHTML = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>'; } }
-function toggleTheme() { document.body.classList.toggle('dark'); localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light'); updateToggleIcon(); canvas.renderAll(); }
-const savedTheme = localStorage.getItem('theme'); if (savedTheme === 'dark') { document.body.classList.add('dark'); }
-updateToggleIcon();
-document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
-
-// --- LÓGICA DEL TUTORIAL Y BIENVENIDA ---
-const welcomeOverlay = document.getElementById('welcomeOverlay'), startEditingBtn = document.getElementById('startEditingBtn'), showIdeasBtn = document.getElementById('showIdeasBtn'), ideasPopup = document.getElementById('ideasPopup'), tutorialBtn = document.getElementById('tutorialBtn');
-window.addEventListener('load', () => { if (!localStorage.getItem('tutorialShown')) { welcomeOverlay.style.display = 'flex'; } });
-startEditingBtn.addEventListener('click', () => { welcomeOverlay.style.display = 'none'; localStorage.setItem('tutorialShown', 'true'); });
-showIdeasBtn.addEventListener('click', () => { welcomeOverlay.style.display = 'none'; ideasPopup.style.display = 'flex'; localStorage.setItem('tutorialShown', 'true'); });
-tutorialBtn.addEventListener('click', () => { welcomeOverlay.style.display = 'flex'; });
-
-// --- LÓGICA DE FONDOS REESTRUCTURADA ---
-const hiddenColorPicker = document.getElementById('hiddenColorPicker');
-function setCanvasBackgroundFromUrl(url) { fabric.Image.fromURL(url, (img) => { backgroundCanvas.setBackgroundImage(img, backgroundCanvas.renderAll.bind(backgroundCanvas), { scaleX: backgroundCanvas.width / img.width, scaleY: backgroundCanvas.height / img.height, selectable: false, evented: false }); document.getElementById('bgPopup').style.display = 'none'; saveState(); }, { crossOrigin: 'anonymous' }); }
-function setCanvasBackgroundColor(color) { backgroundCanvas.setBackgroundImage(null, backgroundCanvas.renderAll.bind(backgroundCanvas)); backgroundCanvas.setBackgroundColor(color, backgroundCanvas.renderAll.bind(backgroundCanvas)); }
-function renderBackgroundOptions() { const bgGrid = document.getElementById('bgGrid'); if (bgGrid.children.length > 0) return; PREDESIGNED_BACKGROUNDS.forEach(url => { const img = document.createElement("img"); img.src = url; img.className = "image-thumb"; img.addEventListener("click", () => setCanvasBackgroundFromUrl(url)); bgGrid.appendChild(img); }); }
-document.getElementById('bgColorBtn').addEventListener('click', () => { renderBackgroundOptions(); document.getElementById('bgPopup').style.display = 'flex'; });
-document.getElementById('pickColorBtn').addEventListener('click', () => { document.getElementById('bgPopup').style.display = 'none'; hiddenColorPicker.value = backgroundCanvas.backgroundColor; hiddenColorPicker.click(); });
-hiddenColorPicker.addEventListener('input', () => { setCanvasBackgroundColor(hiddenColorPicker.value); });
-
-// --- LÓGICA DE ARRASTRAR Y SOLTAR ---
-const dragDropOverlay = document.getElementById('dragDropOverlay');
-['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => { window.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false); });
-let dragCounter = 0;
-window.addEventListener('dragenter', () => { dragCounter++; dragDropOverlay.style.display = 'flex' });
-window.addEventListener('dragleave', () => { dragCounter--; if (dragCounter === 0) { dragDropOverlay.style.display = 'none'; } });
-window.addEventListener('drop', (e) => { dragDropOverlay.style.display = 'none'; dragCounter = 0; const files = e.dataTransfer.files; if (files.length > 0) { const file = files[0]; if (file.type.startsWith('image/')) { const reader = new FileReader(); reader.onload = (event) => addImageToCanvas(event.target.result); reader.readAsDataURL(file); } } });
-
-// --- SISTEMA DE ZOOM ---
-let currentMode = 'select';
-const zoomModeBtn = document.getElementById('zoomModeBtn'), resetViewBtn = document.getElementById('resetViewBtn');
-function enterSelectMode() { currentMode = 'select'; canvas.selection = true; canvas.defaultCursor = 'default'; canvas.hoverCursor = 'move'; canvas.getObjects().forEach(obj => obj.selectable = true); zoomModeBtn.classList.remove('active'); canvas.discardActiveObject().renderAll(); }
-function enterZoomMode() { currentMode = 'zoom'; canvas.selection = false; canvas.defaultCursor = 'crosshair'; canvas.hoverCursor = 'crosshair'; canvas.getObjects().forEach(obj => obj.selectable = false); zoomModeBtn.classList.add('active'); canvas.discardActiveObject().renderAll(); }
-function resetCanvasView() { canvas.setViewportTransform([1, 0, 0, 1, 0, 0]); resetViewBtn.style.display = 'none'; canvas.renderAll(); }
-zoomModeBtn.addEventListener('click', () => { if (currentMode === 'zoom') { enterSelectMode(); } else { enterZoomMode(); } });
-resetViewBtn.addEventListener('click', resetCanvasView);
-canvas.on('mouse:down', function(opt) { if (currentMode === 'zoom') { const pointer = canvas.getPointer(opt.e); const zoom = opt.e.altKey ? canvas.getZoom() / 1.3 : canvas.getZoom() * 1.3; canvas.zoomToPoint(pointer, zoom); resetViewBtn.style.display = 'block'; } });
-
-// --- LÓGICA DESHACER/REHACER, TECLAS Y FONDO DE TEXTO ---
-let undoStack = [], redoStack = [];
-const historyLimit = 12;
-let isStateAction = false;
-const undoBtn = document.getElementById('undoBtn'), redoBtn = document.getElementById('redoBtn');
-
-function updateHistoryButtons() { undoBtn.disabled = undoStack.length <= 1; redoBtn.disabled = redoStack.length === 0; }
-function saveState() {
-    if (isStateAction) return;
-    const jsonState = { canvas: canvas.toJSON(), background: backgroundCanvas.toJSON() };
-    try { localStorage.setItem('savedCanvas', JSON.stringify(jsonState)); } catch (error) { console.error('No se pudo guardar el estado del canvas:', error); }
-    redoStack = [];
-    if (undoStack.length > historyLimit) { undoStack.shift(); }
-    undoStack.push(jsonState);
-    updateHistoryButtons();
-}
-function loadState(state) {
-    isStateAction = true;
-    canvas.loadFromJSON(state.canvas, () => {
-        backgroundCanvas.loadFromJSON(state.background, () => {
-            canvas.renderAll();
-            backgroundCanvas.renderAll();
-            isStateAction = false;
-            updateHistoryButtons();
-        });
-    });
-}
-function undo() { if (undoStack.length > 1) { redoStack.push(undoStack.pop()); const lastState = undoStack[undoStack.length - 1]; loadState(lastState); } }
-function redo() { const stateToLoad = redoStack.pop(); if (stateToLoad) { undoStack.push(stateToLoad); loadState(stateToLoad); } }
-function loadCanvasState() {
-    const savedState = localStorage.getItem('savedCanvas');
-    if (savedState) {
-        const state = JSON.parse(savedState);
-        undoStack = [state];
-        loadState(state);
-        showHelpMessage("¡Bienvenido de vuelta!", 3000);
-    } else {
-        saveState();
-    }
-}
-
-document.getElementById('clearCanvasBtn').addEventListener('click', () => {
-    if(confirm('¿Estás seguro de que quieres borrar todo el diseño?')) {
-        canvas.clear();
-        setCanvasBackgroundColor('#ffffff');
-        resetCanvasView();
-        saveState();
-    }
-});
-
-canvas.on({'object:modified': saveState, 'object:added': saveState, 'object:removed': saveState });
-hiddenColorPicker.addEventListener('change', saveState);
-
-undoBtn.addEventListener('click', undo);
-redoBtn.addEventListener('click', redo);
-
-window.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey) {
-        if (e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
-        if (e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); }
-        return;
-    }
-    const activeObject = canvas.getActiveObject();
-    if (activeObject && document.activeElement.tagName !== 'INPUT' && !activeObject.isEditing) {
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-            e.preventDefault();
-            canvas.getActiveObjects().forEach(obj => canvas.remove(obj));
-            canvas.discardActiveObject().renderAll();
-            saveState();
-        }
-        
-        const moveStep = 2;
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-            canvas.getActiveObjects().forEach(obj => {
-                switch (e.key) {
-                    case 'ArrowLeft': obj.left -= moveStep; break;
-                    case 'ArrowRight': obj.left += moveStep; break;
-                    case 'ArrowUp': obj.top -= moveStep; break;
-                    case 'ArrowDown': obj.top += moveStep; break;
-                }
-                obj.setCoords();
-            });
-            canvas.renderAll();
-        }
-    }
-});
-window.addEventListener('keyup', (e) => { if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && canvas.getActiveObject() && !canvas.getActiveObject().isEditing) { saveState(); } });
-
-document.getElementById('btnSetTextBg').addEventListener('click', () => {
-    const activeObj = canvas.getActiveObject();
-    if (activeObj && activeObj.type === 'textbox') {
-        const picker = document.createElement('input');
-        picker.type = 'color';
-        picker.value = activeObj.backgroundColor || '#00000000';
-        
-        picker.oninput = () => {
-            activeObj.set("backgroundColor", picker.value);
-            canvas.renderAll();
-        };
-        picker.onchange = saveState;
-        picker.click();
-    }
-});
-
-function prepareAndExport(format) {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        canvas.discardActiveObject();
-        canvas.renderAll();
-    }
-
-    const tempCanvasEl = document.createElement('canvas');
-    const multiplier = 3;
-    tempCanvasEl.width = canvas.width * multiplier;
-    tempCanvasEl.height = canvas.height * multiplier;
-    const tempCtx = tempCanvasEl.getContext('2d');
-
-    const bgImage = backgroundCanvas.toDataURL({format: 'png', multiplier: multiplier});
-    const fgImage = canvas.toDataURL({format: 'png', multiplier: multiplier});
-
-    const bg = new Image();
-    bg.onload = () => {
-        tempCtx.drawImage(bg, 0, 0);
-        const fg = new Image();
-        fg.onload = () => {
-            tempCtx.drawImage(fg, 0, 0);
-            
-            const dataUrl = tempCanvasEl.toDataURL({ format: `image/${format}`, quality: 1.0 });
-
-            if (format === 'pdf') {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
-                pdf.addImage(dataUrl, 'JPEG', 0, 0, canvas.width, canvas.height);
-                pdf.save("flyer.pdf");
-            } else {
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = `flyer.${format}`;
-                link.click();
-            }
-
-            if (activeObject) {
-                canvas.setActiveObject(activeObject);
-                canvas.renderAll();
-            }
-        };
-        fg.src = fgImage;
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAlqGoYrHkASbhmE2aBKIOXqkkNBBEEiGU",
+      authDomain: "feria-online-ec7c6.firebaseapp.com",
+      projectId: "feria-online-ec7c6",
+      storageBucket: "feria-online-ec7c6.firebasestorage.app",
+      messagingSenderId: "1001881267179",
+      appId: "1:1001881267179:web:fc5ac0fd940964537887ae",
+      measurementId: "G-GQZZQMNVPH"
     };
-    bg.src = bgImage;
-}
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    // --- VARIABLES GLOBALES ---
+    let currentUser = null;
+    let isMerchant = false;
+    let currentMerchantData = null;
+
+    let selectedProductFile = null;
+    let selectedProfilePicFile = null;
+    let selectedAvatarUrl = null;
+
+    const profileLink = document.getElementById('profileLink');
+    const storeLink = document.getElementById('storeLink');
+    const authContainer = document.getElementById('authContainer');
+    
+    // --- NAVEGACIÓN Y VISIBILIDAD DE SECCIONES ---
+    window.showSection = function(sectionId) {
+        document.querySelectorAll('.section').forEach(section => section.classList.remove('active-section'));
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) targetSection.classList.add('active-section');
+        
+        document.getElementById('navContainer').classList.remove('active');
+        
+        if (sectionId === 'products') loadProducts();
+        if (sectionId === 'my-store' && isMerchant) loadMyProducts();
+    }
+    
+    window.showLogin = function() { document.getElementById('loginModal').style.display = 'flex'; }
+    window.hideLogin = function() { document.getElementById('loginModal').style.display = 'none'; }
+    window.hideModal = function(modalId) { document.getElementById(modalId).style.display = 'none'; }
+
+    window.showProductModal = function(productId = null) {
+        const modal = document.getElementById('productModal');
+        const title = document.getElementById('productModalTitle');
+        resetProductForm();
+        modal.style.display = 'flex';
+        
+        if (productId) {
+            title.textContent = 'Editar Producto';
+            modal.dataset.productId = productId;
+            loadProductForEdit(productId);
+        } else {
+            title.textContent = 'Agregar Nuevo Producto';
+            delete modal.dataset.productId;
+        }
+    }
+
+    // --- CARGA DE DATOS (PRODUCTOS) ---
+    async function loadProducts(containerId = 'productsGrid', filter = {}) {
+        const productsGrid = document.getElementById(containerId);
+        productsGrid.innerHTML = `<div>Cargando productos...</div>`;
+        try {
+            let query = db.collection('products').where('published', '==', true);
+            if (filter.vendorId) {
+                query = query.where('vendorId', '==', filter.vendorId);
+            }
+            const snapshot = await query.orderBy('createdAt', 'desc').get();
+            productsGrid.innerHTML = '';
+            if (snapshot.empty) {
+                productsGrid.innerHTML = `<div>No hay productos para mostrar.</div>`;
+                return;
+            }
+            snapshot.forEach(doc => renderProductCard(productsGrid, { id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error loading products:", error);
+            productsGrid.innerHTML = `<div>Error al cargar productos.</div>`;
+        }
+    }
+
+    async function loadMyProducts() {
+        if (!currentUser) return;
+        const productsGrid = document.getElementById('myProductsGrid');
+        productsGrid.innerHTML = `<div>Cargando tus productos...</div>`;
+        try {
+            const snapshot = await db.collection('products').where('vendorId', '==', currentUser.uid).orderBy('createdAt', 'desc').get();
+            productsGrid.innerHTML = '';
+            if (snapshot.empty) {
+                productsGrid.innerHTML = '<div>Aún no has agregado productos.</div>';
+                return;
+            }
+            snapshot.forEach(doc => renderMyProductCard(productsGrid, { id: doc.id, ...doc.data() }));
+        } catch (error) { console.error("Error loading user products:", error); }
+    }
+    
+    // --- AUTENTICACIÓN Y REGISTRO ---
+    window.registerMerchant = async function() {
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value;
+        const business = document.getElementById('regBusiness').value.trim();
+        const phone = document.getElementById('regPhone').value.trim();
+        const description = document.getElementById('regDescription').value.trim();
+        const msgEl = document.getElementById('registerMessage');
+        
+        if (!name || !email || !password || !business) return showMessage(msgEl, 'Por favor completa todos los campos requeridos.', 'error');
+        if (password.length < 6) return showMessage(msgEl, 'La contraseña debe tener al menos 6 caracteres.', 'error');
+
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+            await db.collection('merchants').doc(user.uid).set({
+                name, email, business, phone, description,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showMessage(msgEl, '¡Registro exitoso! Redirigiendo...', 'success');
+        } catch (error) { showMessage(msgEl, 'Error en el registro.', 'error'); }
+    }
+
+    window.login = async function() {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+        const msgEl = document.getElementById('loginMessage');
+        if (!email || !password) return showMessage(msgEl, 'Por favor completa todos los campos.', 'error');
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            showMessage(msgEl, '¡Bienvenido!', 'success');
+            setTimeout(() => {
+                hideLogin();
+                showSection('profile');
+            }, 1000);
+        } catch (error) { showMessage(msgEl, 'Correo o contraseña incorrectos.', 'error'); }
+    }
+
+    window.logout = function() { auth.signOut(); }
+
+    // --- GESTIÓN DE PERFIL Y PUESTO ---
+    async function updateUserProfile(userId) {
+        try {
+            const doc = await db.collection('merchants').doc(userId).get();
+            if (!doc.exists) return;
+
+            currentMerchantData = doc.data();
+            const productsSnapshot = await db.collection('products').where('vendorId', '==', userId).get();
+            
+            document.getElementById('userName').textContent = currentMerchantData.name;
+            document.getElementById('userEmail').textContent = currentMerchantData.email;
+            document.getElementById('userPhone').textContent = currentMerchantData.phone || 'No especificado';
+            document.getElementById('userBusiness').textContent = currentMerchantData.business;
+            document.getElementById('userProducts').textContent = `${productsSnapshot.size} productos publicados`;
+            const createdAt = currentMerchantData.createdAt?.toDate();
+            document.getElementById('userSince').textContent = createdAt ? new Date(createdAt).toLocaleDateString() : 'N/A';
+            
+            const profilePicContainer = document.getElementById('profilePicContainer');
+            if (currentMerchantData.profilePic) {
+                profilePicContainer.innerHTML = `<img src="${currentMerchantData.profilePic}" alt="Foto de perfil" loading="lazy"><div class="profile-pic-edit-overlay"><i class="fas fa-camera"></i></div>`;
+            } else {
+                 profilePicContainer.innerHTML = `<i class="fas fa-user"></i><div class="profile-pic-edit-overlay"><i class="fas fa-camera"></i></div>`;
+            }
+
+            document.getElementById('storeName').value = currentMerchantData.business;
+            document.getElementById('storeDescription').value = currentMerchantData.description;
+            
+        } catch (error) { console.error("Error loading profile:", error); }
+    }
+    
+    // --- GESTIÓN DE PRODUCTOS ---
+    function setupImageUpload(areaId, inputId, fileVariableSetter) {
+        const uploadArea = document.getElementById(areaId);
+        const fileInput = document.getElementById(inputId);
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileVariableSetter(file);
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadArea.innerHTML = `<img src="${event.target.result}" class="preview-image" loading="lazy">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    async function loadProductForEdit(productId) {
+        try {
+            const doc = await db.collection('products').doc(productId).get();
+            if (doc.exists) {
+                const product = doc.data();
+                document.getElementById('productName').value = product.name;
+                document.getElementById('productPrice').value = product.price;
+                document.getElementById('productDescription').value = product.description;
+                if (product.imageBase64) {
+                    document.getElementById('productImageUploadArea').innerHTML = `<img src="${product.imageBase64}" class="preview-image">`;
+                    document.getElementById('productImageUploadArea').dataset.existingImage = product.imageBase64;
+                }
+            }
+        } catch (error) { console.error("Error loading product for edit:", error); } 
+    }
+
+    window.saveProduct = async function() {
+        const isEditing = !!document.getElementById('productModal').dataset.productId;
+        const productData = { name: document.getElementById('productName').value, price: parseFloat(document.getElementById('productPrice').value), description: document.getElementById('productDescription').value, vendorId: currentUser.uid, vendorName: document.getElementById('userBusiness').textContent };
+        
+        let imageBase64 = document.getElementById('productImageUploadArea').dataset.existingImage || null;
+        if (selectedProductFile) {
+            const compressedFile = await imageCompression(selectedProductFile, { maxSizeMB: 0.5, maxWidthOrHeight: 800 });
+            imageBase64 = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(compressedFile);
+            });
+        }
+        productData.imageBase64 = imageBase64;
+
+        const docRef = isEditing ? db.collection('products').doc(document.getElementById('productModal').dataset.productId) : db.collection('products').doc();
+        if (!isEditing) productData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        productData.published = true;
+        await docRef.set(productData, { merge: true });
+        
+        showToast('Producto guardado.', 'success');
+        hideModal('productModal');
+        loadMyProducts();
+    }
+
+    function resetProductForm() {
+        document.getElementById('productName').value = '';
+        document.getElementById('productPrice').value = '';
+        document.getElementById('productDescription').value = '';
+        document.getElementById('productImageUploadArea').innerHTML = '<i class="fas fa-cloud-upload-alt"></i><p>Haz clic o arrastra una imagen aquí</p>';
+        document.getElementById('productImageInput').value = '';
+        selectedProductFile = null;
+    }
+
+    // --- RENDERIZADO DE ELEMENTOS ---
+    function renderProductCard(container, product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="product-image" ${product.imageBase64 ? `style="background-image: url('${product.imageBase64}')" onclick="showImageLightbox('${product.imageBase64}')"` : ''}>
+                ${!product.imageBase64 ? '<i class="fas fa-shopping-bag"></i>' : ''}
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${product.name}</h3>
+                <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                <p class="product-description">${product.description || ''}</p>
+                <div class="product-vendor">
+                    <i class="fas fa-store"></i>
+                    <a href="#" onclick="event.preventDefault(); showVendorPage('${product.vendorId}', '${product.vendorName}')">${product.vendorName || ''}</a>
+                </div>
+            </div>`;
+        container.appendChild(card);
+    }
+
+    function renderMyProductCard(container, product) {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <div class="product-image" style="${product.imageBase64 ? `background-image: url('${product.imageBase64}')` : ''}" ${product.imageBase64 ? `onclick="showImageLightbox('${product.imageBase64}')"` : ''}></div>
+            <div class="product-info">
+                <h3 class="product-title">${product.name}</h3>
+                <div class="product-price">$${(product.price || 0).toFixed(2)}</div>
+                <div class="product-actions">
+                    <button class="action-btn" onclick="showProductModal('${product.id}')"><i class="fas fa-edit"></i></button>
+                    <button class="action-btn" onclick="deleteProduct('${product.id}')"><i class="fas fa-trash"></i></button>
+                    <button class="action-btn" onclick="toggleProductStatus('${product.id}', ${!product.published})"><i class="fas fa-eye${product.published ? '' : '-slash'}"></i></button>
+                </div>
+            </div>`;
+        container.appendChild(card);
+    }
+    
+    window.deleteProduct = async function(id) { if (confirm('¿Eliminar producto?')) { await db.collection('products').doc(id).delete(); loadMyProducts(); } }
+    window.toggleProductStatus = async function(id, status) { await db.collection('products').doc(id).update({ published: status }); loadMyProducts(); }
+    
+    window.showVendorPage = async function(vendorId, vendorName) {
+        showSection('vendor-page');
+        document.getElementById('vendorPageTitle').textContent = vendorName;
+        const whatsappBtn = document.getElementById('vendorWhatsappBtn');
+        whatsappBtn.style.display = 'none';
+
+        try {
+            const doc = await db.collection('merchants').doc(vendorId).get();
+            if (doc.exists && doc.data().phone) {
+                const phone = doc.data().phone.replace(/[^0-9]/g, '');
+                if(phone) {
+                    whatsappBtn.href = `https://wa.me/${phone}`;
+                    whatsappBtn.style.display = 'inline-flex';
+                }
+            }
+        } catch (error) { console.error("Error fetching vendor phone:", error); }
+        
+        loadProducts('vendorProductsGrid', { vendorId: vendorId });
+    }
+
+    window.toggleStoreEditMode = function(isEditing) {
+        document.getElementById('storeName').readOnly = !isEditing;
+        document.getElementById('storeDescription').readOnly = !isEditing;
+        document.getElementById('editStoreBtn').style.display = isEditing ? 'none' : 'block';
+        document.getElementById('storeFormFooter').style.display = isEditing ? 'flex' : 'none';
+        
+        if (!isEditing && currentMerchantData) {
+            document.getElementById('storeName').value = currentMerchantData.business;
+            document.getElementById('storeDescription').value = currentMerchantData.description;
+        }
+    }
+
+    window.saveStoreInfo = async function() {
+        const newData = { business: document.getElementById('storeName').value, description: document.getElementById('storeDescription').value };
+        await db.collection('merchants').doc(currentUser.uid).update(newData);
+        await updateUserProfile(currentUser.uid); 
+        toggleStoreEditMode(false);
+        showToast('Información del puesto actualizada.', 'success');
+    }
+
+    window.toggleProfileEditMode = function(isEditing) {
+        const card = document.getElementById('profileCard');
+        card.classList.toggle('edit-mode', isEditing);
+        document.getElementById('editProfileBtn').style.display = isEditing ? 'none' : 'block';
+        document.getElementById('profileFormFooter').style.display = isEditing ? 'flex' : 'none';
+
+        if (isEditing) {
+            document.getElementById('userNameInput').value = document.getElementById('userName').textContent;
+            const currentPhone = document.getElementById('userPhone').textContent;
+            document.getElementById('userPhoneInput').value = currentPhone === 'No especificado' ? '' : currentPhone;
+        }
+    }
+    
+    window.saveProfileInfo = async function() {
+        const newData = {
+            name: document.getElementById('userNameInput').value.trim(),
+            phone: document.getElementById('userPhoneInput').value.trim()
+        };
+        await db.collection('merchants').doc(currentUser.uid).update(newData);
+        await updateUserProfile(currentUser.uid);
+        toggleProfileEditMode(false);
+        showToast('Perfil actualizado.', 'success');
+    }
+
+    window.showProfilePicModal = function() {
+        document.getElementById('profilePicModal').style.display = 'flex';
+        selectedProfilePicFile = null;
+        selectedAvatarUrl = null;
+        document.getElementById('profilePicUploadArea').innerHTML = '<i class="fas fa-cloud-upload-alt"></i><p>Haz clic para subir</p>';
+    }
+
+    window.saveProfilePic = async function() {
+        let picUrl = null;
+        if (selectedProfilePicFile) {
+            const compressedFile = await imageCompression(selectedProfilePicFile, { maxSizeMB: 0.2, maxWidthOrHeight: 400 });
+            picUrl = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(compressedFile);
+            });
+        } else if (selectedAvatarUrl) {
+            picUrl = selectedAvatarUrl;
+        }
+        
+        if(picUrl) {
+            await db.collection('merchants').doc(currentUser.uid).update({ profilePic: picUrl });
+            await updateUserProfile(currentUser.uid);
+            hideModal('profilePicModal');
+            showToast('Foto de perfil actualizada.', 'success');
+        } else {
+            showToast('No seleccionaste ninguna imagen.', 'error');
+        }
+    }
+
+    function populateAvatars() {
+        const container = document.getElementById('avatarSelection');
+        container.innerHTML = '';
+        const avatars = ['male', 'female', 'human', 'identicon', 'bottts', 'avataaars', 'jdenticon', 'micah'];
+        avatars.forEach(seed => {
+            const avatarUrl = `https://api.dicebear.com/8.x/pixel-art/svg?seed=${seed}&radius=50`;
+            const avatarItem = document.createElement('div');
+            avatarItem.className = 'avatar-item';
+            avatarItem.innerHTML = `<img src="${avatarUrl}" alt="Avatar ${seed}" loading="lazy">`;
+            avatarItem.onclick = () => {
+                selectedAvatarUrl = avatarUrl;
+                selectedProfilePicFile = null;
+                document.getElementById('profilePicUploadArea').innerHTML = `<img src="${avatarUrl}" class="preview-image">`;
+                document.querySelectorAll('.avatar-item').forEach(el => el.style.borderColor = 'transparent');
+                avatarItem.style.borderColor = 'var(--cyan)';
+            };
+            container.appendChild(avatarItem);
+        });
+    }
+
+    // --- FUNCIONES DE IMPORTACIÓN Y EXPORTACIÓN ---
+    window.exportCatalogToJSON = async function() {
+        if (!currentUser) {
+            showToast('Debes iniciar sesión para exportar tu catálogo.', 'error');
+            return;
+        }
+        showToast('Preparando la exportación...', 'success');
+        try {
+            const snapshot = await db.collection('products').where('vendorId', '==', currentUser.uid).get();
+            if (snapshot.empty) {
+                showToast('No tienes productos para exportar.', 'error');
+                return;
+            }
+            const productsToExport = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    name: data.name,
+                    price: data.price,
+                    description: data.description,
+                    imageBase64: data.imageBase64 || null,
+                    published: data.published
+                };
+            });
+            const jsonString = JSON.stringify(productsToExport, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `catalogo-feria-virtual-${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Catálogo exportado exitosamente.', 'success');
+        } catch (error) {
+            console.error("Error exportando a JSON:", error);
+            showToast('Hubo un error al exportar el catálogo.', 'error');
+        }
+    }
+    
+    // --- LÓGICA DEL MODAL DE EXPORTACIÓN Y GENERADOR PDF CON IA ---
+
+    window.showExportModal = function() {
+        document.getElementById('exportModal').style.display = 'flex';
+    }
+
+    // Wrapper para la función original de exportar JSON
+    window.exportCatalogToJSON_Wrapper = function() {
+        hideModal('exportModal');
+        exportCatalogToJSON();
+    }
+    
+    // NUEVA FUNCIÓN: Llama a la API de Gemini
+    async function generateCatalogWithAI(merchantData, products) {
+        const API_KEY = "AIzaSyB8yQBcJSmdTPKK7t-dUVPXBsCUc_ees7c";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+        
+        const simplifiedProducts = products.map(p => ({ name: p.name, description: p.description })).slice(0, 10);
+
+        const prompt = `
+        Eres un diseñador gráfico y copywriter experto para la plataforma "Feria Virtual".
+        Tu tarea es crear un concepto de diseño y textos para un catálogo en PDF.
+
+        DATOS DEL NEGOCIO:
+        - Nombre: "${merchantData.business}"
+        - Descripción: "${merchantData.description}"
+        - Productos: ${JSON.stringify(simplifiedProducts)}
+
+        INSTRUCCIONES:
+        Analiza el nombre, la descripción y los productos para entender la identidad de la marca.
+        Devuelve SOLAMENTE un objeto JSON válido con la siguiente estructura:
+        {
+          "catalogTitle": "Un título creativo y atractivo para el catálogo",
+          "introText": "Un párrafo corto (20-30 palabras) que capture la esencia del negocio",
+          "design": {
+            "concept": "Describe el estilo en 2-3 palabras (ej: 'Minimalista y Terroso', 'Vibrante y Moderno', 'Elegante y Místico')",
+            "googleFontPair": {
+              "headings": "Nombre de fuente de Google Fonts para títulos (ej: 'Montserrat')",
+              "body": "Nombre de fuente de Google Fonts para el cuerpo (ej: 'Roboto')"
+            },
+            "colorPalette": {
+              "primary": "#XXXXXX (un color dominante y oscuro para títulos)",
+              "secondary": "#XXXXXX (un color de acento vibrante para precios y detalles)",
+              "text": "#XXXXXX (un color de texto legible, usualmente un gris oscuro)",
+              "background": "#XXXXXX (un color de fondo, usualmente blanco o un tono muy claro)"
+            }
+          }
+        }
+        NO incluyas ninguna otra palabra, explicación o formato markdown en tu respuesta.`;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+            });
+
+            if (!response.ok) {
+                // Capturamos el texto del error para más detalles
+                const errorBody = await response.text();
+                throw new Error(`Error en la API de Gemini: ${response.status} ${response.statusText} - ${errorBody}`);
+            }
+
+            const data = await response.json();
+            const jsonString = data.candidates[0].content.parts[0].text;
+            const cleanedJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanedJsonString);
+
+        } catch (error) {
+            console.error("Error al contactar la IA:", error);
+            showToast("No se pudo generar el diseño con IA. Se usará un estilo por defecto.", "error");
+            return null;
+        }
+    }
+
+    // NUEVA FUNCIÓN: Carga fuentes de Google y aplica estilos dinámicos
+    function applyDynamicStyles(design) {
+        const fontLink = document.createElement('link');
+        fontLink.id = 'dynamic-google-font';
+        fontLink.href = `https://fonts.googleapis.com/css2?family=${design.googleFontPair.headings.replace(/ /g, '+')}:wght@700&family=${design.googleFontPair.body.replace(/ /g, '+')}:wght@400&display=swap`;
+        fontLink.rel = 'stylesheet';
+
+        const existingFontLink = document.getElementById('dynamic-google-font');
+        if (existingFontLink) existingFontLink.remove();
+        document.head.appendChild(fontLink);
+
+        const styleSheet = document.createElement("style");
+        styleSheet.id = 'dynamic-pdf-styles';
+        styleSheet.innerText = `
+            .pdf-catalog-container.dynamic-style {
+                --pdf-primary-color: ${design.colorPalette.primary};
+                --pdf-secondary-color: ${design.colorPalette.secondary};
+                --pdf-text-color: ${design.colorPalette.text};
+                --pdf-bg-color: ${design.colorPalette.background};
+                font-family: '${design.googleFontPair.body}', sans-serif;
+            }
+            .pdf-catalog-container.dynamic-style .pdf-header h1,
+            .pdf-catalog-container.dynamic-style .pdf-product-title {
+                font-family: '${design.googleFontPair.headings}', sans-serif;
+            }
+        `;
+        const existingStyle = document.getElementById('dynamic-pdf-styles');
+        if (existingStyle) existingStyle.remove();
+        
+        document.head.appendChild(styleSheet);
+    }
+    
+    // FUNCIÓN PRINCIPAL (MODIFICADA): Orquesta todo el proceso
+    window.generatePdf = async function() {
+        if (!currentUser || !currentMerchantData) {
+            showToast('Debes iniciar sesión para generar un catálogo.', 'error');
+            return;
+        }
+
+        hideModal('exportModal');
+        showToast('Generando catálogo con IA, por favor espera...', 'success');
+
+        try {
+            const snapshot = await db.collection('products')
+                                     .where('vendorId', '==', currentUser.uid)
+                                     .where('published', '==', true)
+                                     .get();
+            if (snapshot.empty) {
+                showToast('No tienes productos publicados para el catálogo.', 'error');
+                return;
+            }
+            const products = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+            
+            let aiDesign = await generateCatalogWithAI(currentMerchantData, products);
+
+            if (!aiDesign) {
+                aiDesign = {
+                    catalogTitle: currentMerchantData.business,
+                    introText: "Descubre nuestra colección de productos únicos, hechos con dedicación y pasión.",
+                    design: {
+                        googleFontPair: { headings: "Montserrat", body: "Roboto" },
+                        colorPalette: { primary: "#1f2937", secondary: "#06b6d4", text: "#333333", background: "#ffffff" }
+                    }
+                };
+            }
+
+            applyDynamicStyles(aiDesign.design);
+
+            let catalogHtml = `
+                <div class="pdf-catalog-container dynamic-style">
+                    <header class="pdf-header">
+                        <h1>${aiDesign.catalogTitle}</h1>
+                        <p>${aiDesign.introText}</p>
+                    </header>
+                    <main class="pdf-products-grid">`;
+            products.forEach(product => {
+                catalogHtml += `
+                    <div class="pdf-product-item">
+                        <div class="pdf-image-container">
+                            ${product.imageBase64 ? `<img src="${product.imageBase64}" class="pdf-product-image">` : '<span>Sin Imagen</span>'}
+                        </div>
+                        <div class="pdf-product-info">
+                            <h2 class="pdf-product-title">${product.name}</h2>
+                            <p class="pdf-product-price">$${(product.price || 0).toFixed(2)}</p>
+                            <p class="pdf-product-description">${product.description || ''}</p>
+                        </div>
+                    </div>`;
+            });
+            catalogHtml += `
+                    </main>
+                    <footer class="pdf-footer">
+                        Contacto: ${currentMerchantData.phone || currentMerchantData.email} | Generado con Feria Virtual
+                    </footer>
+                </div>`;
+
+            const elementToConvert = document.createElement('div');
+            // Es crucial añadir el elemento al DOM para que los estilos se apliquen correctamente,
+            // pero lo hacemos invisible para el usuario.
+            elementToConvert.style.position = 'absolute';
+            elementToConvert.style.left = '-250mm'; // Fuera de la pantalla
+            elementToConvert.innerHTML = catalogHtml;
+            document.body.appendChild(elementToConvert);
+
+            const opt = {
+                margin: 0,
+                filename: `catalogo-IA-${currentMerchantData.business.replace(/\s+/g, '-')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            await html2pdf().from(elementToConvert).set(opt).save();
+            
+            // Limpieza: removemos el elemento temporal del DOM
+            document.body.removeChild(elementToConvert);
+
+            showToast('¡Tu catálogo único se ha generado!', 'success');
+
+        } catch (error) {
+            console.error("Error en el proceso de generación de PDF:", error);
+            showToast('Hubo un error al generar tu catálogo.', 'error');
+        }
+    }
+
+    // --- UTILIDADES Y FUNCIONES AUXILIARES ---
+    function updateAuthUI() {
+        if (isMerchant && currentUser) {
+            authContainer.innerHTML = `
+                <div class="user-dropdown">
+                    <div class="nav-link" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">
+                        <i class="fas fa-user-circle"></i><span>Mi Cuenta</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="#" onclick="showSection('profile')"><i class="fas fa-user"></i> Mi Perfil</a>
+                        <a href="#" onclick="showSection('my-store')"><i class="fas fa-store"></i> Mi Puesto</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                    </div>
+                </div>`;
+            profileLink.style.display = 'flex';
+            storeLink.style.display = 'flex';
+        } else {
+            authContainer.innerHTML = `<a href="#" class="nav-link" onclick="showLogin()"><i class="fas fa-sign-in-alt"></i><span>Iniciar sesión</span></a>`;
+            profileLink.style.display = 'none';
+            storeLink.style.display = 'none';
+        }
+    }
+    
+    function showMessage(element, message, type) { element.textContent = message; element.className = `login-message login-${type}`; element.style.display = 'block'; }
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('fade-out');
+            toast.addEventListener('animationend', () => toast.remove());
+        }, 3000);
+    }
+
+    window.showImageLightbox = function(imageBase64) {
+        const lightboxImg = document.getElementById('lightboxImg');
+        lightboxImg.src = imageBase64;
+        lightboxImg.loading = 'lazy';
+        document.getElementById('imageLightbox').style.display = 'flex';
+    }
+    window.hideImageLightbox = function() { document.getElementById('imageLightbox').style.display = 'none'; }
+    
+    window.toggleChatbot = function toggleChatbot() {
+        const ctn = document.getElementById('chatbotContainer');
+        const isOpen = ctn.classList.toggle('visible');
+        if (typeof gsap !== 'undefined') {
+            gsap.to(ctn, { scale: isOpen ? 1 : 0.9, opacity: isOpen ? 1 : 0, duration: 0.3 });
+        } else {
+             ctn.style.opacity = isOpen ? '1' : '0';
+        }
+    };
+    
+    // --- INICIALIZACIÓN DE LA APLICACIÓN ---
+    function initializeApp() {
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                const merchantDoc = await db.collection('merchants').doc(user.uid).get();
+                if (merchantDoc.exists) {
+                    currentUser = user; isMerchant = true;
+                    await updateUserProfile(user.uid);
+                    showSection('profile');
+                } else { isMerchant = false; currentUser = null; currentMerchantData = null; }
+            } else {
+                currentUser = null; isMerchant = false; currentMerchantData = null;
+                showSection('home');
+            }
+            updateAuthUI();
+        });
+
+        const hamburger = document.getElementById('hamburgerMenu');
+        const navContainer = document.getElementById('navContainer');
+        hamburger.addEventListener('click', () => {
+            navContainer.classList.toggle('active');
+        });
+        
+        setupImageUpload('productImageUploadArea', 'productImageInput', (file) => selectedProductFile = file);
+        setupImageUpload('profilePicUploadArea', 'profilePicInput', (file) => {
+            selectedProfilePicFile = file;
+            selectedAvatarUrl = null;
+            document.querySelectorAll('.avatar-item').forEach(el => el.style.borderColor = 'transparent');
+        });
+
+        loadProducts();
+        populateAvatars();
+
+        const themeToggle = document.getElementById('themeToggle');
+        const applyTheme = (theme) => { document.body.dataset.theme = theme; localStorage.setItem('theme', theme); };
+        themeToggle.addEventListener('click', () => applyTheme(document.body.dataset.theme === 'dark' ? 'light' : 'dark'));
+        applyTheme(localStorage.getItem('theme') || 'light');
+    }
+
+    initializeApp();
+
+    }); // Fin del 'DOMContentLoaded'
 </script>
 </body>
 </html>
