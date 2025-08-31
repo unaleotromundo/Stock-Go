@@ -2,34 +2,32 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Chat de IAs estilo WhatsApp</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat IA-1 vs IA-2</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="chat-container">
-  <div class="chat-header">IA Chat</div>
-
-  <div id="chat"></div>
-
-  <div class="chat-footer">
-    <div id="inputRow">
-      <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
-      <button id="cargarPDF">PDF</button>
-      <button id="enviarMensaje">Enviar</button>
-      <input type="file" id="pdfFile" style="display:none">
+<div class="container">
+    <div class="sidebar">
+        <h2>Conversaciones</h2>
+        <ul id="listaConversaciones"></ul>
+        <button id="nuevaConversacion">+ Nueva conversación</button>
     </div>
-    <div class="control-buttons">
-      <button id="pausar">Pausar</button>
-      <button id="detener">Detener</button>
-      <button id="nueva">Nueva conversación</button>
-      <button id="promptIA1">Prompt IA-1</button>
-      <button id="promptIA2">Prompt IA-2</button>
+    <div class="chat-container">
+        <div id="chatHistorial" class="chat-historial"></div>
+        <div class="chat-input">
+            <textarea id="inputMensaje" placeholder="Escribí tu mensaje aquí..."></textarea>
+            <input type="file" id="inputPDF" accept=".pdf">
+            <button id="enviar">Enviar</button>
+        </div>
+        <div class="chat-botones">
+            <button id="pausar">Pausar</button>
+            <button id="detener">Detener</button>
+            <button id="editarPrompts">Editar Prompts</button>
+        </div>
     </div>
-  </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 <script src="main.js"></script>
 </body>
 </html>
