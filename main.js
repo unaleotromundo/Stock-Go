@@ -1,3 +1,5 @@
+const API_URL = "https://TU_BACKEND_URL/conversacion"; // <- reemplazar con tu backend real
+
 let conversaciones = JSON.parse(localStorage.getItem("conversaciones") || "[]");
 let conversacionActivaId = null;
 let chatPausado = false;
@@ -7,6 +9,7 @@ let prompts = {
     "IA-2": "Eres IA-2, investigadora y curiosa. Responde corta y clara, profundizando en el tema, evitando repetir ideas previas (~30-40 palabras)."
 };
 
+// Elementos
 const listaConversaciones = document.getElementById("listaConversaciones");
 const chatHistorial = document.getElementById("chatHistorial");
 const inputMensaje = document.getElementById("inputMensaje");
@@ -59,19 +62,18 @@ function renderizarChat() {
     chatHistorial.scrollTop = chatHistorial.scrollHeight;
 }
 
-// Loop automático de conversación infinita
+// Loop infinito de conversación
 async function loopConversacion() {
     const conv = conversaciones.find(c=>c.id===conversacionActivaId);
     if(!conv || chatDetenido) return;
 
     const iaActual = conv.mensajes.length % 2 === 0 ? "IA-1":"IA-2";
-
     const prompt = `${prompts[iaActual]}\nHistorial:\n${conv.mensajes.map(m=>m.ia+": "+m.mensaje).join("\n")}`;
 
-    const respuesta = await fetch("/conversacion",{
+    const respuesta = await fetch(API_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ text: prompt, turnos: 1, destinatario: iaActual })
+        body: JSON.stringify({ text: prompt, destinatario: iaActual })
     }).then(r=>r.json()).then(d=>d.chat[0].mensaje).catch(()=>`Error ${iaActual}`);
 
     conv.mensajes.push({ ia: iaActual, mensaje: respuesta });
@@ -89,7 +91,7 @@ enviarBtn.onclick = () => {
     renderizarChat();
     guardarConversaciones();
     inputMensaje.value = "";
-    loopConversacion(); // Inicia conversación infinita
+    loopConversacion(); // Inicia loop automático
 };
 nuevaConvBtn.onclick = () => {
     const nombre = `Conversación ${conversaciones.length+1}`;
