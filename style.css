@@ -1,191 +1,64 @@
-<<<<<<< HEAD
-:root {
-    --color-bg: #f0f0f0;
-    --color-chat-bg: #ece5dd;
-    --color-sidebar-bg: #202c33;
-    --color-sidebar-text: white;
-    --color-ia1: #dcf8c6;
-    --color-ia2: #ffffff;
-}
-
-body.dark {
-    --color-bg: #121212;
-    --color-chat-bg: #1e1e1e;
-    --color-sidebar-bg: #181818;
-    --color-sidebar-text: #ddd;
-    --color-ia1: #056162;
-    --color-ia2: #262d31;
-}
-
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: var(--color-bg);
-    transition: background 0.3s ease;
+  font-family: Arial, sans-serif;
+  background: #f2e9ff;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  margin: 0;
+  justify-content: flex-end;
+  padding: 20px;
 }
 
-.container {
-    display: flex;
-    height: 100vh;
-}
-
-.sidebar {
-    width: 250px;
-    background: var(--color-sidebar-bg);
-    color: var(--color-sidebar-text);
-    display: flex;
-    flex-direction: column;
-    padding: 10px;
-    transition: background 0.3s ease, color 0.3s ease;
-}
-
-.sidebar h2 { margin-top: 0; }
-
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.sidebar li {
-    padding: 8px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-.sidebar li:hover, .sidebar li.active {
-    background: #2a3b45;
-}
-
-.sidebar button {
-    margin-top: 10px;
-    padding: 10px;
-    background: #25d366;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-}
-
-.sidebar button:hover { background: #1da851; }
-
-.chat-container {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--color-chat-bg);
-    transition: background 0.3s ease;
-}
-
-.chat-historial {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    scroll-behavior: smooth;
+.chat {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
 
 .mensaje {
-    max-width: 70%;
-    margin: 5px 0;
-    padding: 10px;
-    border-radius: 10px;
-    word-wrap: break-word;
+  margin: 5px 0;
+  padding: 10px 15px;
+  border-radius: 20px;
+  max-width: 70%;
+  word-wrap: break-word;
 }
 
-.mensaje.IA-1 {
-    background: var(--color-ia1);
-    align-self: flex-start;
-    border-bottom-left-radius: 0;
+.usuario {
+  background: #d4a5ff;
+  align-self: flex-end;
 }
 
-.mensaje.IA-2 {
-    background: var(--color-ia2);
-    align-self: flex-end;
-    border-bottom-right-radius: 0;
+.servidor {
+  background: #e0e0e0;
+  align-self: flex-start;
 }
 
-.chat-input {
-    display: flex;
-    padding: 10px;
-    gap: 5px;
+.input-container {
+  display: flex;
 }
 
-.chat-input textarea {
-    flex: 1;
-    height: 50px;
-    resize: none;
-    padding: 8px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+#mensaje {
+  flex: 1;
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  outline: none;
 }
 
-.chat-input input[type="file"] {
-    width: 150px;
+#enviar {
+  margin-left: 10px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  border: none;
+  background: #9b59b6;
+  color: #fff;
+  cursor: pointer;
 }
 
-.chat-input button {
-    padding: 10px 15px;
-    background: #128c7e;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+#enviar:hover {
+  background: #8e44ad;
 }
-
-.chat-botones {
-    display: flex;
-    justify-content: space-around;
-    padding: 5px;
-}
-
-.chat-botones button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    color: white;
-    transition: opacity 0.2s ease;
-}
-
-#pausar { background: #f0ad4e; }
-#detener { background: #d9534f; }
-#editarPrompts { background: #5bc0de; }
-
-.chat-botones button:hover { opacity: 0.85; }
-=======
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Chat de IAs estilo WhatsApp</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="chat-container">
-  <div class="chat-header">IA Chat</div>
-
-  <div id="chat"></div>
-
-  <div class="chat-footer">
-    <div id="inputRow">
-      <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
-      <button id="cargarPDF">PDF</button>
-      <button id="enviarMensaje">Enviar</button>
-      <input type="file" id="pdfFile" style="display:none">
-    </div>
-    <div class="control-buttons">
-      <button id="pausar">Pausar</button>
-      <button id="detener">Detener</button>
-      <button id="nueva">Nueva conversación</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
-<script src="main.js"></script>
-</body>
-</html>
->>>>>>> parent of cd8858a (sds)
