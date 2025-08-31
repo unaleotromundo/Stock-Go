@@ -13,11 +13,14 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configurar APIs
+// Verificar claves
+console.log("Clave OpenAI cargada:", process.env.OPENAI_API_KEY ? "Sí" : "No");
+console.log("Clave Gemini cargada:", process.env.GEMINI_API_KEY ? "Sí" : "No");
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Función para llamar a Gemini
+// Función para llamar a Gemini con log
 async function llamarGemini(prompt) {
     try {
         const res = await fetch("https://api.gemini.com/v1/llm", {
@@ -27,38 +30,46 @@ async function llamarGemini(prompt) {
                 "Authorization": `Bearer ${GEMINI_API_KEY}`,
             },
             body: JSON.stringify({
-                prompt,
-                model: "gemini-1.5"
+                model: "gemini-1.5",
+                input: prompt  // Algunos endpoints esperan 'input' en lugar de 'prompt'
             }),
         });
+
         const data = await res.json();
-        return data.text || data.output_text || data.response || "Sin respuesta de Gemini";
+        console.log("Respuesta completa Gemini:", data);
+
+        // Ajuste flexible: prueba todas las posibles propiedades
+        return data.text || data.output_text || data.response || data.candidates?.[0]?.content || "Sin respuesta de Gemini";
     } catch (err) {
         console.error("Error Gemini:", err);
         return "Error Gemini";
     }
 }
 
-// Función para llamar a OpenAI
+// Función para llamar a OpenAI con log
 async function llamarOpenAI(prompt) {
     try {
         const resp = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{ role: "user", content: prompt }]
         });
-        return resp.choices[0].message.content || "Sin respuesta de OpenAI";
+
+        console.log("Respuesta completa OpenAI:", resp);
+
+        return resp.choices?.[0]?.message?.content || "Sin respuesta de OpenAI";
     } catch (err) {
         console.error("Error OpenAI:", err);
         return "Error OpenAI";
     }
 }
 
-// Endpoint para iniciar la conversación
+// Endpoint de conversación
 app.post("/conversacion", async (req, res) => {
     const { text, turnos } = req.body;
     let chat = [];
+
     let mensajeGemini = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado a OpenAI:\n\n${text}`;
-    
+
     for (let i = 0; i < turnos; i++) {
         const respuestaGemini = await llamarGemini(mensajeGemini);
         chat.push({ ia: "Gemini", mensaje: respuestaGemini });
