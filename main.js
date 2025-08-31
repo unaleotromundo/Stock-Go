@@ -1,37 +1,36 @@
-// WebSocket
-const ws = new WebSocket("ws://localhost:3000");
+// main.js
 
-ws.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    mostrarMensaje(data.ia, data.mensaje);
-};
+// Detecta si estamos en localhost o producción
+const baseURL = window.location.hostname.includes("localhost")
+  ? "http://localhost:3000"
+  : "https://iaconversacional-git-main-agradecidos-projects.vercel.app";
 
-function mostrarMensaje(ia, mensaje) {
-    const chatHistorial = document.getElementById("chatHistorial");
-    const div = document.createElement("div");
-    div.classList.add("mensaje", ia);
-    div.textContent = mensaje;
-    chatHistorial.appendChild(div);
-    chatHistorial.scrollTop = chatHistorial.scrollHeight;
-}
+// Si necesitas WebSocket, recuerda que Vercel no lo soporta directamente.
+// Aquí solo lo dejo comentado para desarrollo local.
+// const ws = new WebSocket(`${baseURL.replace(/^http/, 'ws')}/`);
 
-// Enviar mensaje inicial / iniciar loop
-document.getElementById("enviar").addEventListener("click", async () => {
-    await fetch("http://localhost:3000/iniciar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensaje: document.getElementById("inputMensaje").value })
+// Botón para iniciar acción
+const btnIniciar = document.getElementById("btnIniciar");
+
+btnIniciar.addEventListener("click", async () => {
+  try {
+    const res = await fetch(`${baseURL}/api/iniciar`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mensaje: "Hola desde el cliente" }),
     });
-});
 
-// Detener conversación
-document.getElementById("detener").addEventListener("click", async () => {
-    await fetch("http://localhost:3000/detener", { method: "POST" });
-});
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-// Toggle modo oscuro
-document.getElementById("toggleTema").addEventListener("click", () => {
-    document.body.classList.toggle("dark");
-    const btn = document.getElementById("toggleTema");
-    btn.textContent = document.body.classList.contains("dark") ? "☀️ Modo claro" : "🌙 Modo oscuro";
+    const data = await res.json();
+    console.log("Respuesta de la API:", data);
+
+    // Mostrar respuesta en la página si querés
+    const output = document.getElementById("output");
+    if (output) output.textContent = JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    console.error("Error al conectar con la API:", err);
+    alert("No se pudo conectar con la API. Revisa la consola.");
+  }
 });
