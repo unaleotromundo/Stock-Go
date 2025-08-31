@@ -9,7 +9,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+<<<<<<< HEAD
 // ✅ CORS configurado para GitHub Pages
+=======
+// Configurar CORS para tu frontend en GitHub Pages
+>>>>>>> parent of 82ed050 (ghj)
 app.use(cors({
     origin: "https://unaleotromundo.github.io", // tu frontend
     methods: ["GET","POST","OPTIONS"],
@@ -18,14 +22,23 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
+<<<<<<< HEAD
 // Inicializar clientes OpenAI con tus dos keys
 const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
 const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
 // Endpoint principal de conversación
+=======
+// Inicializar clientes OpenAI con tus dos claves
+const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
+const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
+
+// Endpoint para manejar la conversación
+>>>>>>> parent of 82ed050 (ghj)
 app.post("/conversacion", async (req, res) => {
     try {
         const { text, destinatario } = req.body;
+
         const client = destinatario === "IA-1" ? openai1 : openai2;
 
         const response = await client.chat.completions.create({
