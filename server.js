@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import OpenAI from "openai";
-import fetch from "node-fetch";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -13,50 +12,27 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Verificar claves
+// Verificar clave OpenAI
 console.log("Clave OpenAI cargada:", process.env.OPENAI_API_KEY ? "Sí" : "No");
-console.log("Clave Gemini cargada:", process.env.GEMINI_API_KEY ? "Sí" : "No");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-// Función para llamar a Gemini con log
+// Función simulada de Gemini
 async function llamarGemini(prompt) {
-    try {
-        const res = await fetch("https://api.gemini.com/v1/llm", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${GEMINI_API_KEY}`,
-            },
-            body: JSON.stringify({
-                model: "gemini-1.5",
-                input: prompt  // Algunos endpoints esperan 'input' en lugar de 'prompt'
-            }),
-        });
-
-        const data = await res.json();
-        console.log("Respuesta completa Gemini:", data);
-
-        // Ajuste flexible: prueba todas las posibles propiedades
-        return data.text || data.output_text || data.response || data.candidates?.[0]?.content || "Sin respuesta de Gemini";
-    } catch (err) {
-        console.error("Error Gemini:", err);
-        return "Error Gemini";
-    }
+    console.log("Prompt Gemini recibido:", prompt.slice(0, 100), "...");
+    // Simula análisis inicial
+    return "Simulación Gemini: he analizado el texto y propongo un primer comentario detallado.";
 }
 
-// Función para llamar a OpenAI con log
+// Función real OpenAI
 async function llamarOpenAI(prompt) {
     try {
         const resp = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{ role: "user", content: prompt }]
         });
-
-        console.log("Respuesta completa OpenAI:", resp);
-
-        return resp.choices?.[0]?.message?.content || "Sin respuesta de OpenAI";
+        console.log("Respuesta OpenAI:", resp.choices[0].message.content);
+        return resp.choices[0].message.content || "Sin respuesta de OpenAI";
     } catch (err) {
         console.error("Error OpenAI:", err);
         return "Error OpenAI";
