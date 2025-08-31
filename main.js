@@ -1,4 +1,4 @@
-const API_URL = "prueba-git-main-agradecidos-projects.vercel.app"; // <- reemplazar con tu backend real
+const API_URL = "prueba-alpha-rouge.vercel.app"; // <- reemplazar con tu backend real
 
 let conversaciones = JSON.parse(localStorage.getItem("conversaciones") || "[]");
 let conversacionActivaId = null;
