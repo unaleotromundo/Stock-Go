@@ -3,31 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat IA-1 vs IA-2</title>
+<title>Chat IA</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="container">
+<div class="contenedor">
     <div class="sidebar">
-        <h2>Conversaciones</h2>
+        <h3>Conversaciones</h3>
         <ul id="listaConversaciones"></ul>
-        <button id="nuevaConversacion">+ Nueva conversación</button>
+        <button id="nuevaConversacion">Nueva Conversación</button>
     </div>
     <div class="chat-container">
         <div id="chatHistorial" class="chat-historial"></div>
-        <div class="chat-input">
-            <textarea id="inputMensaje" placeholder="Escribí tu mensaje aquí..."></textarea>
-            <input type="file" id="inputPDF" accept=".pdf">
+        <textarea id="inputMensaje" placeholder="Escribe un mensaje o carga un PDF..."></textarea>
+        <input type="file" id="inputPDF" accept=".pdf">
+        <div class="botones">
             <button id="enviar">Enviar</button>
-        </div>
-        <div class="chat-botones">
             <button id="pausar">Pausar</button>
             <button id="detener">Detener</button>
             <button id="editarPrompts">Editar Prompts</button>
         </div>
     </div>
 </div>
-
 <script src="main.js"></script>
 </body>
 </html>

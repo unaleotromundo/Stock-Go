@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configurar CORS para tu frontend en GitHub Pages
+// CORS para tu frontend en GitHub Pages
 app.use(cors({
     origin: "https://unaleotromundo.github.io",
     methods: ["GET","POST","OPTIONS"],
@@ -18,15 +18,14 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-// Inicializar clientes OpenAI con tus dos claves
+// Inicializar clientes OpenAI
 const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
 const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
-// Endpoint para manejar la conversación
+// Endpoint para conversación
 app.post("/conversacion", async (req, res) => {
     try {
         const { text, destinatario } = req.body;
-
         const client = destinatario === "IA-1" ? openai1 : openai2;
 
         const response = await client.chat.completions.create({

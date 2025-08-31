@@ -1,4 +1,4 @@
-const API_URL = "https://prueba-ofo7bd350-agradecidos-projects.vercel.app"; // <- reemplazar con tu backend real
+const API_URL = "https://prueba-ofo7bd350-agradecidos-projects.vercel.app/conversacion";
 
 let conversaciones = JSON.parse(localStorage.getItem("conversaciones") || "[]");
 let conversacionActivaId = null;
@@ -62,7 +62,6 @@ function renderizarChat() {
     chatHistorial.scrollTop = chatHistorial.scrollHeight;
 }
 
-// Loop infinito de conversación
 async function loopConversacion() {
     const conv = conversaciones.find(c=>c.id===conversacionActivaId);
     if(!conv || chatDetenido) return;
@@ -91,7 +90,7 @@ enviarBtn.onclick = () => {
     renderizarChat();
     guardarConversaciones();
     inputMensaje.value = "";
-    loopConversacion(); // Inicia loop automático
+    loopConversacion();
 };
 nuevaConvBtn.onclick = () => {
     const nombre = `Conversación ${conversaciones.length+1}`;
@@ -108,7 +107,7 @@ editarPromptsBtn.onclick = () => {
 
 // Inicializar
 if(conversaciones.length===0) agregarConversacion("Conversación 1");
-else conversacionActivaId = conversaciones[conversaciones.length-1].id;
+else conversacionActivaId = conversaciones[0].id;
 
 renderizarLista();
 renderizarChat();
