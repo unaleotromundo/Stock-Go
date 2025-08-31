@@ -2,113 +2,131 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Conversación de IAs en tiempo real</title>
+<title>Chat de IAs continuo</title>
 <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    #textoEntrada { width: 100%; height: 150px; }
-    #chat { margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; }
-    .mensaje { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
-    .IA-1 { background: #d0e7ff; color: #004080; font-weight: bold; }
-    .IA-2 { background: #d0ffd8; color: #006400; font-weight: bold; }
+body { font-family: Arial, sans-serif; margin: 20px; }
+#textoEntrada { width: 100%; height: 150px; }
+#chat { margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; }
+.mensaje { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
+.IA-1 { background: #d0e7ff; color: #004080; font-weight: bold; }
+.IA-2 { background: #d0ffd8; color: #006400; font-weight: bold; }
+#prompts { margin-top: 20px; }
+#prompts textarea { width: 48%; height: 60px; margin-right: 2%; }
+#prompts button { width: 48%; }
 </style>
 </head>
 <body>
 
-<h2>Conversación de IAs en tiempo real</h2>
+<h2>Chat de IAs continuo</h2>
 
 <input type="file" id="pdfFile"><br><br>
 <textarea id="textoEntrada" placeholder="Escribí el texto o espera a procesar un PDF..."></textarea><br><br>
 <button id="procesar">Procesar PDF</button>
 <button id="comenzar">Comenzar conversación</button>
-<button id="agregarTurno">Agregar turno</button>
 
 <div id="chat"></div>
+
+<div id="prompts">
+  <textarea id="promptIA1" placeholder="Mensaje directo a IA-1..."></textarea>
+  <textarea id="promptIA2" placeholder="Mensaje directo a IA-2..."></textarea><br><br>
+  <button id="enviarIA1">Enviar a IA-1</button>
+  <button id="enviarIA2">Enviar a IA-2</button>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
 
 let textoFinal = "";
-let mensaje1 = "";
-let turnoActual = 0;
+let contexto = ""; // mantiene la conversación completa
+let turnoActivo = false;
 const chatDiv = document.getElementById('chat');
 
 document.getElementById('procesar').onclick = async () => {
-    const file = document.getElementById('pdfFile').files[0];
-    if(!file) return alert("Selecciona un PDF");
+  const file = document.getElementById('pdfFile').files[0];
+  if(!file) return alert("Selecciona un PDF");
 
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let text = "";
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = "";
 
-    for(let i=1; i<=pdf.numPages; i++){
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(" ") + "\n\n";
-    }
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item=>item.str).join(" ") + "\n\n";
+  }
 
-    textoFinal = text;
-    // Recortar texto largo
-    if(textoFinal.length > 3000) textoFinal = textoFinal.slice(0, 3000);
-    document.getElementById('textoEntrada').value = textoFinal;
+  textoFinal = text.length>3000? text.slice(0,3000): text;
+  document.getElementById('textoEntrada').value = textoFinal;
 }
 
-async function mostrarMensaje(ia, mensaje) {
-    const div = document.createElement("div");
-    div.className = "mensaje " + ia;
+async function mostrarMensaje(ia,mensaje){
+  const div=document.createElement("div");
+  div.className="mensaje "+ia;
+  chatDiv.appendChild(div);
+
+  let texto="";
+  for(const palabra of mensaje.split(" ")){
+    texto+=palabra+" ";
+    div.textContent=ia+": "+texto;
+    chatDiv.scrollTop=chatDiv.scrollHeight;
+    await new Promise(r=>setTimeout(r,60));
+  }
+}
+
+async function enviarTurno(prompt="", destinatario="IA-1"){
+  try{
+    const bodyText = prompt? prompt : contexto;
+    const resp = await fetch("http://localhost:3000/conversacion",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ text: bodyText, turnos:1, short:true, destinatario })
+    });
+    const data = await resp.json();
+
+    for(const msg of data.chat){
+      await mostrarMensaje(msg.ia,msg.mensaje);
+      contexto += `${msg.ia}: ${msg.mensaje}\n`;
+    }
+
+    // turno automático al otro
+    const otro = data.chat[data.chat.length-1].ia==="IA-1"?"IA-2":"IA-1";
+    if(turnoActivo) await enviarTurno("",otro);
+
+  }catch(err){
+    console.error("Error conversación:",err);
+    const div=document.createElement("div");
+    div.className="mensaje";
+    div.textContent="Error al conectar con el servidor.";
     chatDiv.appendChild(div);
-
-    let texto = "";
-    for(const palabra of mensaje.split(" ")) {
-        texto += palabra + " ";
-        div.textContent = ia + ": " + texto;
-        chatDiv.scrollTop = chatDiv.scrollHeight;
-        await new Promise(r => setTimeout(r, 80));
-    }
+  }
 }
 
-async function generarTurno() {
-    try {
-        const resp = await fetch("http://localhost:3000/conversacion", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: mensaje1, turnos: 1 })
-        });
-        const data = await resp.json();
-
-        for(const msg of data.chat){
-            await mostrarMensaje(msg.ia, msg.mensaje);
-
-            if(msg.ia === "IA-2"){
-                mensaje1 = `Revisa lo que IA-2 dijo y profundiza aún más:\n${msg.mensaje}`;
-            }
-        }
-        turnoActual++;
-    } catch(err) {
-        console.error("Error en conversación:", err);
-        const div = document.createElement("div");
-        div.className = "mensaje";
-        div.textContent = "Error al conectar con el servidor.";
-        chatDiv.appendChild(div);
-    }
-}
-
+// Iniciar conversación continua
 document.getElementById('comenzar').onclick = async () => {
-    textoFinal = document.getElementById('textoEntrada').value.trim();
-    if(!textoFinal) return alert("Escribí algo o procesa un PDF primero");
+  textoFinal = document.getElementById('textoEntrada').value.trim();
+  if(!textoFinal) return alert("Escribí algo o procesa un PDF primero");
 
-    chatDiv.innerHTML = "Iniciando conversación...";
-    turnoActual = 0;
-    mensaje1 = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado:\n\n${textoFinal}`;
-    
-    await generarTurno();
+  chatDiv.innerHTML="";
+  contexto = `Texto inicial:\n${textoFinal}\n`;
+  turnoActivo = true;
+  await enviarTurno(textoFinal,"IA-1");
 }
 
-document.getElementById('agregarTurno').onclick = async () => {
-    if(!mensaje1) return alert("Primero iniciá la conversación");
-    await generarTurno();
+// Prompts directos
+document.getElementById('enviarIA1').onclick = async () => {
+  const prompt=document.getElementById('promptIA1').value.trim();
+  if(!prompt) return;
+  document.getElementById('promptIA1').value="";
+  await enviarTurno(prompt,"IA-1");
+}
+
+document.getElementById('enviarIA2').onclick = async () => {
+  const prompt=document.getElementById('promptIA2').value.trim();
+  if(!prompt) return;
+  document.getElementById('promptIA2').value="";
+  await enviarTurno(prompt,"IA-2");
 }
 </script>
-
 </body>
 </html>
