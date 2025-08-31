@@ -1,33 +1,16 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Chat de IAs estilo WhatsApp</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="chat-container">
-  <div class="chat-header">IA Chat</div>
-
-  <div id="chat"></div>
-
-  <div class="chat-footer">
-    <div id="inputRow">
-      <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
-      <button id="cargarPDF">PDF</button>
-      <button id="enviarMensaje">Enviar</button>
-      <input type="file" id="pdfFile" style="display:none">
-    </div>
-    <div class="control-buttons">
-      <button id="pausar">Pausar</button>
-      <button id="detener">Detener</button>
-      <button id="nueva">Nueva conversación</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
-<script src="main.js"></script>
-</body>
-</html>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Helvetica',Arial,sans-serif; background-color:#e5ddd5; display:flex; justify-content:center; align-items:center; height:100vh; }
+.chat-container { width:400px; max-width:95%; height:600px; background-color:#fff; border-radius:10px; display:flex; flex-direction:column; box-shadow:0 4px 12px rgba(0,0,0,0.15); overflow:hidden; }
+.chat-header { background-color:#075e54; color:#fff; padding:15px; font-weight:bold; text-align:center; font-size:18px; }
+#chat { flex:1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+.mensaje { padding:8px 12px; border-radius:18px; max-width:70%; word-wrap:break-word; line-height:1.4; }
+.IA-1 { background-color:#dcf8c6; color:#000; align-self:flex-start; border-bottom-left-radius:0; }
+.IA-2 { background-color:#34b7f1; color:#fff; align-self:flex-end; border-bottom-right-radius:0; }
+.chat-footer { display:flex; flex-direction:column; padding:10px; background-color:#f0f0f0; gap:5px; }
+#inputRow { display:flex; gap:5px; }
+#textoEntrada { flex:1; padding:10px; border-radius:20px; border:1px solid #ccc; outline:none; font-size:14px; }
+button { background-color:#075e54; color:white; border:none; padding:10px 12px; border-radius:20px; cursor:pointer; font-size:14px; transition:0.2s; }
+button:hover { background-color:#128c7e; }
+#cargarPDF { background-color:#25d366; }
+#cargarPDF:hover { background-color:#1ebe5d; }
+.control-buttons { display:flex; gap:5px; justify-content:space-between; flex-wrap:wrap; }

@@ -8,6 +8,10 @@ let detener=false;
 const chatDiv=document.getElementById('chat');
 const textoEntrada=document.getElementById('textoEntrada');
 
+// Prompts iniciales de cada IA
+let promptIA1 = "Eres IA-1, curiosa e investigadora de la verdad. Responde de manera corta y clara.";
+let promptIA2 = "Eres IA-2, curiosa e investigadora de la verdad. Responde de manera corta y clara.";
+
 // Mostrar mensaje en burbuja
 function mostrarMensaje(ia,mensaje){
   const div=document.createElement("div");
@@ -38,19 +42,34 @@ document.getElementById('pdfFile').onchange=async e=>{
   textoEntrada.value=text.length>3000?text.slice(0,3000):text;
 }
 
-// Función para chat continuo
+// Cambiar prompt IA-1
+document.getElementById('promptIA1').onclick = () => {
+  const nuevoPrompt = prompt("Ingrese nuevo prompt para IA-1:", promptIA1);
+  if(nuevoPrompt) promptIA1 = nuevoPrompt;
+};
+
+// Cambiar prompt IA-2
+document.getElementById('promptIA2').onclick = () => {
+  const nuevoPrompt = prompt("Ingrese nuevo prompt para IA-2:", promptIA2);
+  if(nuevoPrompt) promptIA2 = nuevoPrompt;
+}
+
+// Función de chat continuo
 async function enviarTurno(prompt="", destinatario="IA-1"){
   if(detener) return;
   if(pausa) return;
 
   try{
-    const bodyText=prompt?prompt:contexto;
-    const resp=await fetch("http://localhost:3000/conversacion",{
+    let bodyText = prompt ? prompt : contexto;
+    const promptFinal = destinatario==="IA-1" ? `${promptIA1}\n\n${bodyText}` : `${promptIA2}\n\n${bodyText}`;
+
+    const resp = await fetch("http://localhost:3000/conversacion",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ text: bodyText, turnos:1, short:true, destinatario })
+      body:JSON.stringify({ text: promptFinal, turnos:1, short:true, destinatario })
     });
-    const data=await resp.json();
+
+    const data = await resp.json();
 
     for(const msg of data.chat){
       await mostrarMensaje(msg.ia,msg.mensaje);
