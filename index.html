@@ -1,33 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat IA-1 vs IA-2</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Vercel</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    button { padding: 10px 20px; cursor: pointer; }
+    pre { background: #f0f0f0; padding: 10px; height: 200px; overflow-y: auto; }
+  </style>
 </head>
 <body>
-<div class="container">
-    <div class="sidebar">
-        <h2>Conversaciones</h2>
-        <ul id="listaConversaciones"></ul>
-        <button id="nuevaConversacion">+ Nueva conversación</button>
-        <button id="toggleTema">🌙 Modo oscuro</button>
-    </div>
-    <div class="chat-container">
-        <div id="chatHistorial" class="chat-historial"></div>
-        <div class="chat-input">
-            <textarea id="inputMensaje" placeholder="Escribí tu mensaje aquí..."></textarea>
-            <input type="file" id="inputPDF" accept=".pdf">
-            <button id="enviar">Enviar</button>
-        </div>
-        <div class="chat-botones">
-            <button id="pausar">Pausar</button>
-            <button id="detener">Detener</button>
-            <button id="editarPrompts">Editar Prompts</button>
-        </div>
-    </div>
-</div>
-<script src="main.js"></script>
+  <h1>Chat en Tiempo Real</h1>
+  <button id="btnIniciar">Iniciar</button>
+  <pre id="output"></pre>
+  <script src="main.js"></script>
 </body>
 </html>
