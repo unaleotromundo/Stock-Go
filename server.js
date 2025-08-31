@@ -9,20 +9,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS para tu frontend en GitHub Pages
+// ✅ CORS configurado para GitHub Pages
 app.use(cors({
-    origin: "https://unaleotromundo.github.io",
+    origin: "https://unaleotromundo.github.io", // tu frontend
     methods: ["GET","POST","OPTIONS"],
     allowedHeaders: ["Content-Type"]
 }));
 
 app.use(bodyParser.json());
 
-// Inicializar clientes OpenAI
+// Inicializar clientes OpenAI con tus dos keys
 const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
 const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
-// Endpoint para conversación
+// Endpoint principal de conversación
 app.post("/conversacion", async (req, res) => {
     try {
         const { text, destinatario } = req.body;
@@ -42,4 +42,10 @@ app.post("/conversacion", async (req, res) => {
     }
 });
 
+// Health check (opcional)
+app.get("/", (req, res) => {
+    res.send("Servidor de conversación IA activo ✅");
+});
+
+// Vercel usa el puerto interno
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
