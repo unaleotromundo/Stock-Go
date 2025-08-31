@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Chat de IAs estilo WhatsApp</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">IA Chat</div>
+
+  <div id="chat"></div>
+
+  <div class="chat-footer">
+    <div id="inputRow">
+      <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
+      <button id="cargarPDF">PDF</button>
+      <button id="enviarMensaje">Enviar</button>
+      <input type="file" id="pdfFile" style="display:none">
+    </div>
+    <div class="control-buttons">
+      <button id="pausar">Pausar</button>
+      <button id="detener">Detener</button>
+      <button id="nueva">Nueva conversación</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
