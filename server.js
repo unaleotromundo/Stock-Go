@@ -9,13 +9,20 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Configurar CORS para tu frontend en GitHub Pages
+app.use(cors({
+    origin: "https://unaleotromundo.github.io",
+    methods: ["GET","POST","OPTIONS"],
+    allowedHeaders: ["Content-Type"]
+}));
+
 app.use(bodyParser.json());
 
-// Inicializar dos clientes de OpenAI para IA-1 e IA-2
+// Inicializar clientes OpenAI con tus dos claves
 const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
 const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
+// Endpoint para manejar la conversación
 app.post("/conversacion", async (req, res) => {
     try {
         const { text, destinatario } = req.body;
@@ -29,10 +36,9 @@ app.post("/conversacion", async (req, res) => {
         });
 
         const mensaje = response.choices[0].message.content;
-
         res.json({ chat: [{ ia: destinatario, mensaje }] });
     } catch (err) {
-        console.error("Error conversacion:", err);
+        console.error("Error en conversación:", err);
         res.status(500).json({ chat: [{ ia: "Error", mensaje: "Error en la IA" }] });
     }
 });
