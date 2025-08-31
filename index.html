@@ -2,130 +2,191 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Chat de IAs continuo</title>
+<title>Chat de IAs estilo WhatsApp</title>
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; }
-#textoEntrada { width: 100%; height: 150px; }
-#chat { margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; }
-.mensaje { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
-.IA-1 { background: #d0e7ff; color: #004080; font-weight: bold; }
-.IA-2 { background: #d0ffd8; color: #006400; font-weight: bold; }
-#prompts { margin-top: 20px; }
-#prompts textarea { width: 48%; height: 60px; margin-right: 2%; }
-#prompts button { width: 48%; }
+/* Reset básico */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* Fondo general */
+body { 
+    font-family: 'Helvetica', Arial, sans-serif; 
+    background-color: #e5ddd5; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh;
+}
+
+/* Contenedor principal */
+.chat-container {
+    width: 400px;
+    max-width: 95%;
+    height: 600px;
+    background-color: #fff;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    overflow: hidden;
+}
+
+/* Barra superior */
+.chat-header {
+    background-color: #075e54;
+    color: #fff;
+    padding: 15px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 18px;
+}
+
+/* Área de mensajes */
+#chat {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Burbuja de mensaje */
+.mensaje {
+    padding: 8px 12px;
+    border-radius: 18px;
+    max-width: 70%;
+    word-wrap: break-word;
+    line-height: 1.4;
+}
+
+/* IA-1 izquierda */
+.IA-1 {
+    background-color: #dcf8c6;
+    color: #000;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+}
+
+/* IA-2 derecha */
+.IA-2 {
+    background-color: #34b7f1;
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+}
+
+/* Barra inferior */
+.chat-footer {
+    display: flex;
+    padding: 10px;
+    background-color: #f0f0f0;
+    gap: 5px;
+    align-items: center;
+}
+
+/* Input y botones */
+#textoEntrada {
+    flex: 1;
+    padding: 10px;
+    border-radius: 20px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-size: 14px;
+}
+
+#pdfFile {
+    display: none; /* oculto, se activa con botón */
+}
+
+button {
+    background-color: #075e54;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+button:hover {
+    background-color: #128c7e;
+}
+
+/* Botón para cargar PDF */
+#cargarPDF {
+    background-color: #25d366;
+}
+
+#cargarPDF:hover {
+    background-color: #1ebe5d;
+}
 </style>
 </head>
 <body>
 
-<h2>Chat de IAs continuo</h2>
+<div class="chat-container">
+    <div class="chat-header">IA Chat</div>
 
-<input type="file" id="pdfFile"><br><br>
-<textarea id="textoEntrada" placeholder="Escribí el texto o espera a procesar un PDF..."></textarea><br><br>
-<button id="procesar">Procesar PDF</button>
-<button id="comenzar">Comenzar conversación</button>
+    <div id="chat"></div>
 
-<div id="chat"></div>
-
-<div id="prompts">
-  <textarea id="promptIA1" placeholder="Mensaje directo a IA-1..."></textarea>
-  <textarea id="promptIA2" placeholder="Mensaje directo a IA-2..."></textarea><br><br>
-  <button id="enviarIA1">Enviar a IA-1</button>
-  <button id="enviarIA2">Enviar a IA-2</button>
+    <div class="chat-footer">
+        <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
+        <button id="cargarPDF">PDF</button>
+        <button id="enviarMensaje">Enviar</button>
+        <input type="file" id="pdfFile">
+    </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
 
-let textoFinal = "";
-let contexto = ""; // mantiene la conversación completa
-let turnoActivo = false;
+let contexto = "";
 const chatDiv = document.getElementById('chat');
 
-document.getElementById('procesar').onclick = async () => {
-  const file = document.getElementById('pdfFile').files[0];
-  if(!file) return alert("Selecciona un PDF");
-
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  let text = "";
-
-  for(let i=1;i<=pdf.numPages;i++){
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    text += content.items.map(item=>item.str).join(" ") + "\n\n";
-  }
-
-  textoFinal = text.length>3000? text.slice(0,3000): text;
-  document.getElementById('textoEntrada').value = textoFinal;
-}
-
-async function mostrarMensaje(ia,mensaje){
-  const div=document.createElement("div");
-  div.className="mensaje "+ia;
-  chatDiv.appendChild(div);
-
-  let texto="";
-  for(const palabra of mensaje.split(" ")){
-    texto+=palabra+" ";
-    div.textContent=ia+": "+texto;
-    chatDiv.scrollTop=chatDiv.scrollHeight;
-    await new Promise(r=>setTimeout(r,60));
-  }
-}
-
-async function enviarTurno(prompt="", destinatario="IA-1"){
-  try{
-    const bodyText = prompt? prompt : contexto;
-    const resp = await fetch("http://localhost:3000/conversacion",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ text: bodyText, turnos:1, short:true, destinatario })
-    });
-    const data = await resp.json();
-
-    for(const msg of data.chat){
-      await mostrarMensaje(msg.ia,msg.mensaje);
-      contexto += `${msg.ia}: ${msg.mensaje}\n`;
-    }
-
-    // turno automático al otro
-    const otro = data.chat[data.chat.length-1].ia==="IA-1"?"IA-2":"IA-1";
-    if(turnoActivo) await enviarTurno("",otro);
-
-  }catch(err){
-    console.error("Error conversación:",err);
-    const div=document.createElement("div");
-    div.className="mensaje";
-    div.textContent="Error al conectar con el servidor.";
+function mostrarMensaje(ia,mensaje){
+    const div = document.createElement("div");
+    div.className = "mensaje " + ia;
     chatDiv.appendChild(div);
-  }
+
+    let texto = "";
+    for(const palabra of mensaje.split(" ")){
+        texto += palabra + " ";
+        div.textContent = texto;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
 }
 
-// Iniciar conversación continua
-document.getElementById('comenzar').onclick = async () => {
-  textoFinal = document.getElementById('textoEntrada').value.trim();
-  if(!textoFinal) return alert("Escribí algo o procesa un PDF primero");
+// PDF
+document.getElementById('cargarPDF').onclick = () => document.getElementById('pdfFile').click();
+document.getElementById('pdfFile').onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
 
-  chatDiv.innerHTML="";
-  contexto = `Texto inicial:\n${textoFinal}\n`;
-  turnoActivo = true;
-  await enviarTurno(textoFinal,"IA-1");
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = "";
+    for(let i=1;i<=pdf.numPages;i++){
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map(item=>item.str).join(" ") + "\n\n";
+    }
+    document.getElementById('textoEntrada').value = text.length>3000?text.slice(0,3000):text;
 }
 
-// Prompts directos
-document.getElementById('enviarIA1').onclick = async () => {
-  const prompt=document.getElementById('promptIA1').value.trim();
-  if(!prompt) return;
-  document.getElementById('promptIA1').value="";
-  await enviarTurno(prompt,"IA-1");
-}
+// Enviar mensaje
+document.getElementById('enviarMensaje').onclick = async () => {
+    const text = document.getElementById('textoEntrada').value.trim();
+    if(!text) return;
+    document.getElementById('textoEntrada').value = "";
 
-document.getElementById('enviarIA2').onclick = async () => {
-  const prompt=document.getElementById('promptIA2').value.trim();
-  if(!prompt) return;
-  document.getElementById('promptIA2').value="";
-  await enviarTurno(prompt,"IA-2");
+    // Mostrar en chat como IA-1 (usuario)
+    mostrarMensaje("IA-1", text);
+
+    // Aquí podes llamar al backend y agregar lógica para que IA-2 responda
+    // Ejemplo demo:
+    setTimeout(()=>mostrarMensaje("IA-2","Respuesta automática de IA-2 en 30-40 palabras..."),500);
 }
 </script>
 </body>
