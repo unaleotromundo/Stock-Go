@@ -12,50 +12,41 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Verificar clave OpenAI
-console.log("Clave OpenAI cargada:", process.env.OPENAI_API_KEY ? "Sí" : "No");
+// Dos instancias de OpenAI con diferentes claves
+const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
+const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Función simulada de Gemini
-async function llamarGemini(prompt) {
-    console.log("Prompt Gemini recibido:", prompt.slice(0, 100), "...");
-    // Simula análisis inicial
-    return "Simulación Gemini: he analizado el texto y propongo un primer comentario detallado.";
-}
-
-// Función real OpenAI
-async function llamarOpenAI(prompt) {
+// Función para llamar a OpenAI
+async function llamarOpenAI(openaiClient, prompt) {
     try {
-        const resp = await openai.chat.completions.create({
+        const resp = await openaiClient.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{ role: "user", content: prompt }]
         });
-        console.log("Respuesta OpenAI:", resp.choices[0].message.content);
-        return resp.choices[0].message.content || "Sin respuesta de OpenAI";
+        return resp.choices[0].message.content || "Sin respuesta";
     } catch (err) {
         console.error("Error OpenAI:", err);
         return "Error OpenAI";
     }
 }
 
-// Endpoint de conversación
+// Endpoint para la conversación
 app.post("/conversacion", async (req, res) => {
     const { text, turnos } = req.body;
     let chat = [];
 
-    let mensajeGemini = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado a OpenAI:\n\n${text}`;
+    let mensaje1 = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado:\n\n${text}`;
 
     for (let i = 0; i < turnos; i++) {
-        const respuestaGemini = await llamarGemini(mensajeGemini);
-        chat.push({ ia: "Gemini", mensaje: respuestaGemini });
+        const respuesta1 = await llamarOpenAI(openai1, mensaje1);
+        chat.push({ ia: "IA-1", mensaje: respuesta1 });
 
-        const promptOpenAI = `Eres una IA curiosa e investigadora de la verdad. Responde al mensaje de Gemini:\n\n${respuestaGemini}`;
-        const respuestaOpenAI = await llamarOpenAI(promptOpenAI);
-        chat.push({ ia: "OpenAI", mensaje: respuestaOpenAI });
+        const prompt2 = `Eres una IA curiosa e investigadora de la verdad. Responde al mensaje de IA-1:\n\n${respuesta1}`;
+        const respuesta2 = await llamarOpenAI(openai2, prompt2);
+        chat.push({ ia: "IA-2", mensaje: respuesta2 });
 
-        // Preparar siguiente turno para Gemini
-        mensajeGemini = `Revisa lo que OpenAI dijo y profundiza aún más:\n${respuestaOpenAI}`;
+        // Preparar siguiente turno
+        mensaje1 = `Revisa lo que IA-2 dijo y profundiza aún más:\n${respuesta2}`;
     }
 
     res.json({ chat });

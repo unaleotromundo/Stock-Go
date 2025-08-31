@@ -5,7 +5,7 @@ dotenv.config();
 
 async function testGemini() {
   try {
-    const res = await fetch("https://api.gemini.com/v1/llm", {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

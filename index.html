@@ -2,74 +2,114 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PDF Chat IAs</title>
+<title>Conversación de IAs en tiempo real</title>
 <style>
-  body { font-family: Arial; padding: 20px; background: #f0f0f0; }
-  textarea { width: 100%; height: 200px; margin-top: 10px; }
-  #chat { margin-top: 20px; }
-  .mensaje { padding: 10px; margin: 5px 0; border-radius: 5px; }
-  .gemini { background: #d4f7d4; border-left: 5px solid #4CAF50; }
-  .openai { background: #d4e7f7; border-left: 5px solid #2196F3; }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    #textoEntrada { width: 100%; height: 150px; }
+    #chat { margin-top: 20px; border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: auto; }
+    .mensaje { margin-bottom: 10px; padding: 5px; border-radius: 5px; }
+    .IA-1 { background: #d0e7ff; color: #004080; font-weight: bold; }
+    .IA-2 { background: #d0ffd8; color: #006400; font-weight: bold; }
 </style>
 </head>
 <body>
-<h1>PDF Chat de IAs</h1>
 
-<input type="file" id="pdfInput" accept=".pdf">
-<button onclick="procesarPDF()">Procesar PDF</button>
+<h2>Conversación de IAs en tiempo real</h2>
 
-<h2>Texto extraído:</h2>
-<textarea id="pdfText" readonly></textarea>
+<input type="file" id="pdfFile"><br><br>
+<textarea id="textoEntrada" placeholder="Escribí el texto o espera a procesar un PDF..."></textarea><br><br>
+<button id="procesar">Procesar PDF</button>
+<button id="comenzar">Comenzar conversación</button>
+<button id="agregarTurno">Agregar turno</button>
 
-<button onclick="comenzarConversacion()">Comenzar conversación</button>
-
-<h2>Chat de IAs:</h2>
 <div id="chat"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.worker.min.js';
+let textoFinal = "";
+let mensaje1 = "";
+let turnoActual = 0;
+const chatDiv = document.getElementById('chat');
 
-let textoPDF = "";
-
-async function procesarPDF() {
-    const file = document.getElementById('pdfInput').files[0];
-    if(!file) return alert("Sube un PDF primero");
+// Procesar PDF
+document.getElementById('procesar').onclick = async () => {
+    const file = document.getElementById('pdfFile').files[0];
+    if(!file) return alert("Selecciona un PDF");
 
     const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = "";
 
-    textoPDF = "";
     for(let i=1; i<=pdf.numPages; i++){
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        textoPDF += content.items.map(item => item.str).join(" ") + "\n\n";
+        text += content.items.map(item => item.str).join(" ") + "\n\n";
     }
-    document.getElementById('pdfText').value = textoPDF;
+
+    textoFinal = text;
+    document.getElementById('textoEntrada').value = textoFinal;
 }
 
-async function comenzarConversacion() {
-    if(!textoPDF) return alert("Procesa primero el PDF");
-    const chatDiv = document.getElementById('chat');
-    chatDiv.innerHTML = "<p>Iniciando conversación...</p>";
+// Función para mostrar mensaje palabra por palabra
+async function mostrarMensaje(ia, mensaje) {
+    const div = document.createElement("div");
+    div.className = "mensaje " + ia;
+    chatDiv.appendChild(div);
 
-    const turnos = 3; // cantidad de turnos (Gemini + OpenAI)
-    const resp = await fetch("http://localhost:3000/conversacion", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: textoPDF, turnos })
-    });
-    const data = await resp.json();
-    chatDiv.innerHTML = "";
+    let texto = "";
+    for(const palabra of mensaje.split(" ")) {
+        texto += palabra + " ";
+        div.textContent = ia + ": " + texto;
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+        await new Promise(r => setTimeout(r, 80));
+    }
+}
 
-    data.chat.forEach(m => {
+// Generar un turno
+async function generarTurno() {
+    try {
+        const resp = await fetch("http://localhost:3000/conversacion", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: mensaje1, turnos: 1 })
+        });
+        const data = await resp.json();
+
+        for(const msg of data.chat){
+            await mostrarMensaje(msg.ia, msg.mensaje);
+
+            if(msg.ia === "IA-2"){
+                mensaje1 = `Revisa lo que IA-2 dijo y profundiza aún más:\n${msg.mensaje}`;
+            }
+        }
+        turnoActual++;
+    } catch(err) {
+        console.error("Error en conversación:", err);
         const div = document.createElement("div");
-        div.className = `mensaje ${m.ia.toLowerCase()}`;
-        div.innerHTML = `<strong>${m.ia}:</strong> ${m.mensaje}`;
+        div.className = "mensaje";
+        div.textContent = "Error al conectar con el servidor.";
         chatDiv.appendChild(div);
-    });
+    }
+}
+
+// Comenzar conversación
+document.getElementById('comenzar').onclick = async () => {
+    textoFinal = document.getElementById('textoEntrada').value.trim();
+    if(!textoFinal) return alert("Escribí algo o procesa un PDF primero");
+
+    chatDiv.innerHTML = "Iniciando conversación...";
+    turnoActual = 0;
+    mensaje1 = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado:\n\n${textoFinal}`;
+    
+    await generarTurno();
+}
+
+// Agregar turno extra
+document.getElementById('agregarTurno').onclick = async () => {
+    if(!mensaje1) return alert("Primero iniciá la conversación");
+    await generarTurno();
 }
 </script>
+
 </body>
 </html>
