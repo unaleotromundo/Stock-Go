@@ -1,37 +1,48 @@
 const API_URL = "https://prueba-ofo7bd350-agradecidos-projects.vercel.app/conversacion";
 
-let conversaciones = [];
-let activo = true;
-let detenido = false;
-let turno = 0;
-let promptIA1 = "Eres una IA curiosa e investigadora de la verdad.";
-let promptIA2 = "Eres una IA curiosa e investigadora de la verdad.";
+let conversaciones = JSON.parse(localStorage.getItem("conversaciones") || "[]");
+let conversacionActivaId = null;
+let chatPausado = false;
+let chatDetenido = false;
+let prompts = {
+    "IA-1": "Eres IA-1, investigadora y curiosa. Responde corta y clara, profundizando en el tema, evitando repetir ideas previas (~30-40 palabras).",
+    "IA-2": "Eres IA-2, investigadora y curiosa. Responde corta y clara, profundizando en el tema, evitando repetir ideas previas (~30-40 palabras)."
+};
 
-const chatDiv = document.getElementById("chat");
-const enviarBtn = document.getElementById("enviarBtn");
-const pausarBtn = document.getElementById("pausarBtn");
-const detenerBtn = document.getElementById("detenerBtn");
-const nuevaConversacionBtn = document.getElementById("nuevaConversacionBtn");
-const promptIA1Btn = document.getElementById("promptIA1Btn");
-const promptIA2Btn = document.getElementById("promptIA2Btn");
-const mensajeInput = document.getElementById("mensajeInput");
-const archivoInput = document.getElementById("archivoInput");
+// Elementos
 const listaConversaciones = document.getElementById("listaConversaciones");
+const chatHistorial = document.getElementById("chatHistorial");
+const inputMensaje = document.getElementById("inputMensaje");
+const inputPDF = document.getElementById("inputPDF");
+const enviarBtn = document.getElementById("enviar");
+const pausarBtn = document.getElementById("pausar");
+const detenerBtn = document.getElementById("detener");
+const nuevaConvBtn = document.getElementById("nuevaConversacion");
+const editarPromptsBtn = document.getElementById("editarPrompts");
 
-// Cargar historial
-if (localStorage.getItem("conversaciones")) {
-    conversaciones = JSON.parse(localStorage.getItem("conversaciones"));
-    renderizarLista();
+function guardarConversaciones() {
+    localStorage.setItem("conversaciones", JSON.stringify(conversaciones));
 }
 
-// Funciones
+function agregarConversacion(nombre) {
+    const id = Date.now();
+    const nueva = { id, nombre, mensajes: [] };
+    conversaciones.push(nueva);
+    conversacionActivaId = id;
+    guardarConversaciones();
+    renderizarLista();
+    renderizarChat();
+}
+
 function renderizarLista() {
     listaConversaciones.innerHTML = "";
-    conversaciones.forEach((c, i) => {
+    conversaciones.forEach(conv => {
         const li = document.createElement("li");
-        li.textContent = c.nombre;
+        li.textContent = conv.nombre;
+        if(conv.id === conversacionActivaId) li.classList.add("active");
         li.onclick = () => {
-            turno = i;
+            conversacionActivaId = conv.id;
+            renderizarLista();
             renderizarChat();
         };
         listaConversaciones.appendChild(li);
@@ -39,107 +50,64 @@ function renderizarLista() {
 }
 
 function renderizarChat() {
-    chatDiv.innerHTML = "";
-    if (!conversaciones[turno]) return;
-    conversaciones[turno].chat.forEach(m => {
+    chatHistorial.innerHTML = "";
+    const conv = conversaciones.find(c => c.id === conversacionActivaId);
+    if(!conv) return;
+    conv.mensajes.forEach(m => {
         const div = document.createElement("div");
-        div.classList.add("mensaje", m.ia === "IA-1" ? "ia1" : "ia2");
+        div.classList.add("mensaje", m.ia);
         div.textContent = m.mensaje;
-        chatDiv.appendChild(div);
+        chatHistorial.appendChild(div);
     });
-    chatDiv.scrollTop = chatDiv.scrollHeight;
-}
-
-async function enviarMensaje(texto) {
-    if (!texto) return;
-    if (!conversaciones[turno]) {
-        conversaciones.push({ nombre: `Conversación ${conversaciones.length+1}`, chat: [] });
-        turno = conversaciones.length - 1;
-    }
-    const chatActual = conversaciones[turno].chat;
-
-    chatActual.push({ ia: "Usuario", mensaje: texto });
-    renderizarChat();
-    localStorage.setItem("conversaciones", JSON.stringify(conversaciones));
-
-    if (detenido) return;
-
-    activo = true;
-    loopConversacion();
+    chatHistorial.scrollTop = chatHistorial.scrollHeight;
 }
 
 async function loopConversacion() {
-    if (!activo || detenido) return;
+    const conv = conversaciones.find(c=>c.id===conversacionActivaId);
+    if(!conv || chatDetenido) return;
 
-    const chatActual = conversaciones[turno].chat;
-    const ultimo = chatActual[chatActual.length - 1]?.mensaje || "";
+    const iaActual = conv.mensajes.length % 2 === 0 ? "IA-1":"IA-2";
+    const prompt = `${prompts[iaActual]}\nHistorial:\n${conv.mensajes.map(m=>m.ia+": "+m.mensaje).join("\n")}`;
 
-    // IA-1
-    const resp1 = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: promptIA1 + "\n" + ultimo, destinatario: "IA-1" })
-    });
-    const data1 = await resp1.json();
-    chatActual.push(data1.chat[0]);
+    const respuesta = await fetch(API_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ text: prompt, destinatario: iaActual })
+    }).then(r=>r.json()).then(d=>d.chat[0].mensaje).catch(()=>`Error ${iaActual}`);
+
+    conv.mensajes.push({ ia: iaActual, mensaje: respuesta });
     renderizarChat();
-    localStorage.setItem("conversaciones", JSON.stringify(conversaciones));
+    guardarConversaciones();
 
-    if (detenido) return;
-
-    // IA-2
-    const resp2 = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: promptIA2 + "\n" + chatActual[chatActual.length-1].mensaje, destinatario: "IA-2" })
-    });
-    const data2 = await resp2.json();
-    chatActual.push(data2.chat[0]);
-    renderizarChat();
-    localStorage.setItem("conversaciones", JSON.stringify(conversaciones));
-
-    setTimeout(loopConversacion, 1000); // cada segundo
+    if(!chatPausado) setTimeout(loopConversacion, 500);
 }
 
-// Botones
+// Eventos
 enviarBtn.onclick = () => {
-    enviarMensaje(mensajeInput.value);
-    mensajeInput.value = "";
-};
-
-pausarBtn.onclick = () => { activo = !activo; };
-
-detenerBtn.onclick = () => { detenido = true; };
-
-nuevaConversacionBtn.onclick = () => {
-    conversaciones.push({ nombre: `Conversación ${conversaciones.length+1}`, chat: [] });
-    turno = conversaciones.length - 1;
-    renderizarLista();
+    if(inputMensaje.value.trim() === "") return;
+    const conv = conversaciones.find(c => c.id === conversacionActivaId);
+    conv.mensajes.push({ ia: "IA-1", mensaje: inputMensaje.value });
     renderizarChat();
-    localStorage.setItem("conversaciones", JSON.stringify(conversaciones));
+    guardarConversaciones();
+    inputMensaje.value = "";
+    loopConversacion();
+};
+nuevaConvBtn.onclick = () => {
+    const nombre = `Conversación ${conversaciones.length+1}`;
+    agregarConversacion(nombre);
+};
+pausarBtn.onclick = () => chatPausado = !chatPausado;
+detenerBtn.onclick = () => chatDetenido = true;
+editarPromptsBtn.onclick = () => {
+    const p1 = prompt("Editar prompt IA-1", prompts["IA-1"]);
+    if(p1) prompts["IA-1"] = p1;
+    const p2 = prompt("Editar prompt IA-2", prompts["IA-2"]);
+    if(p2) prompts["IA-2"] = p2;
 };
 
-promptIA1Btn.onclick = () => {
-    const nuevoPrompt = prompt("Nuevo prompt para IA-1:", promptIA1);
-    if (nuevoPrompt) promptIA1 = nuevoPrompt;
-};
+// Inicializar
+if(conversaciones.length===0) agregarConversacion("Conversación 1");
+else conversacionActivaId = conversaciones[0].id;
 
-promptIA2Btn.onclick = () => {
-    const nuevoPrompt = prompt("Nuevo prompt para IA-2:", promptIA2);
-    if (nuevoPrompt) promptIA2 = nuevoPrompt;
-};
-
-// PDF a texto (opcional)
-archivoInput.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const pdfData = new Uint8Array(await file.arrayBuffer());
-    const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
-    let texto = "";
-    for (let i=1; i<=pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        texto += content.items.map(item => item.str).join(" ") + "\n";
-    }
-    enviarMensaje(texto);
-};
+renderizarLista();
+renderizarChat();
