@@ -3,29 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <title>Chat de IAs estilo WhatsApp</title>
-<style>
-* { box-sizing: border-box; margin:0; padding:0; }
-body { font-family:'Helvetica',Arial,sans-serif; background-color:#e5ddd5; display:flex; justify-content:center; align-items:center; height:100vh; }
-.chat-container { width:400px; max-width:95%; height:600px; background-color:#fff; border-radius:10px; display:flex; flex-direction:column; box-shadow:0 4px 12px rgba(0,0,0,0.15); overflow:hidden; }
-.chat-header { background-color:#075e54; color:#fff; padding:15px; font-weight:bold; text-align:center; font-size:18px; }
-#chat { flex:1; padding:10px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
-.mensaje { padding:8px 12px; border-radius:18px; max-width:70%; word-wrap:break-word; line-height:1.4; }
-.IA-1 { background-color:#dcf8c6; color:#000; align-self:flex-start; border-bottom-left-radius:0; }
-.IA-2 { background-color:#34b7f1; color:#fff; align-self:flex-end; border-bottom-right-radius:0; }
-.chat-footer { display:flex; flex-direction:column; padding:10px; background-color:#f0f0f0; gap:5px; }
-#inputRow { display:flex; gap:5px; }
-#textoEntrada { flex:1; padding:10px; border-radius:20px; border:1px solid #ccc; outline:none; font-size:14px; }
-button { background-color:#075e54; color:white; border:none; padding:10px 12px; border-radius:20px; cursor:pointer; font-size:14px; transition:0.2s; }
-button:hover { background-color:#128c7e; }
-#cargarPDF { background-color:#25d366; }
-#cargarPDF:hover { background-color:#1ebe5d; }
-.control-buttons { display:flex; gap:5px; justify-content:space-between; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="chat-container">
   <div class="chat-header">IA Chat</div>
+
   <div id="chat"></div>
 
   <div class="chat-footer">
@@ -33,101 +17,17 @@ button:hover { background-color:#128c7e; }
       <input type="text" id="textoEntrada" placeholder="Escribí un mensaje o procesá un PDF...">
       <button id="cargarPDF">PDF</button>
       <button id="enviarMensaje">Enviar</button>
-      <input type="file" id="pdfFile">
+      <input type="file" id="pdfFile" style="display:none">
     </div>
     <div class="control-buttons">
       <button id="pausar">Pausar</button>
       <button id="detener">Detener</button>
+      <button id="nueva">Nueva conversación</button>
     </div>
   </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
-
-let contexto=""; 
-let turnoActivo=false; 
-let pausa=false; 
-let detener=false;
-const chatDiv=document.getElementById('chat');
-
-// Mostrar mensaje tipo burbuja
-function mostrarMensaje(ia,mensaje){
-  const div=document.createElement("div");
-  div.className="mensaje "+ia;
-  chatDiv.appendChild(div);
-
-  let texto="";
-  for(const palabra of mensaje.split(" ")){
-    texto+=palabra+" ";
-    div.textContent=texto;
-    chatDiv.scrollTop=chatDiv.scrollHeight;
-  }
-}
-
-// PDF
-document.getElementById('cargarPDF').onclick=()=>document.getElementById('pdfFile').click();
-document.getElementById('pdfFile').onchange=async e=>{
-  const file=e.target.files[0];
-  if(!file) return;
-  const arrayBuffer=await file.arrayBuffer();
-  const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
-  let text="";
-  for(let i=1;i<=pdf.numPages;i++){
-    const page=await pdf.getPage(i);
-    const content=await page.getTextContent();
-    text+=content.items.map(item=>item.str).join(" ")+"\n\n";
-  }
-  document.getElementById('textoEntrada').value=text.length>3000?text.slice(0,3000):text;
-}
-
-// Función para generar turno automático con control de pausa y detener
-async function enviarTurno(prompt="", destinatario="IA-1"){
-  if(detener) return; // detener chat completo
-  if(pausa) return; // pausa temporal
-
-  try{
-    const bodyText=prompt?prompt:contexto;
-    const resp=await fetch("http://localhost:3000/conversacion",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({ text: bodyText, turnos:1, short:true, destinatario })
-    });
-    const data=await resp.json();
-
-    for(const msg of data.chat){
-      await mostrarMensaje(msg.ia,msg.mensaje);
-      contexto+=`${msg.ia}: ${msg.mensaje}\n`;
-    }
-
-    // Si sigue activo, turno automático al otro
-    const ultimoIA=data.chat[data.chat.length-1].ia;
-    const otro=ultimoIA==="IA-1"?"IA-2":"IA-1";
-    if(turnoActivo&&!pausa&&!detener) setTimeout(()=>enviarTurno("",otro),500);
-
-  }catch(err){
-    console.error("Error conversación:",err);
-    const div=document.createElement("div");
-    div.className="mensaje";
-    div.textContent="Error al conectar con el servidor.";
-    chatDiv.appendChild(div);
-  }
-}
-
-// Iniciar chat continuo
-document.getElementById('enviarMensaje').onclick=async()=>{
-  const text=document.getElementById('textoEntrada').value.trim();
-  if(!text) return;
-  document.getElementById('textoEntrada').value="";
-  mostrarMensaje("IA-1",text);
-  contexto+=`IA-1: ${text}\n`;
-  if(!turnoActivo){turnoActivo=true; detener=false; pausa=false; enviarTurno("", "IA-2");}
-}
-
-// Botones pausa y detener
-document.getElementById('pausar').onclick=()=>{pausa=!pausa;}
-document.getElementById('detener').onclick=()=>{detener=true; turnoActivo=false;}
-</script>
+<script src="main.js"></script>
 </body>
 </html>
