@@ -3,29 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Comentarios de PDF por IAs</title>
+<title>PDF Chat IAs</title>
 <style>
-  body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
-  #pdfText { width: 100%; height: 200px; margin-top: 10px; }
-  #comments { margin-top: 20px; }
-  .llm-comment { background: #fff; padding: 10px; margin: 5px 0; border-radius: 5px; }
-  .gemini { border-left: 5px solid #4CAF50; }
-  .openai { border-left: 5px solid #2196F3; }
+  body { font-family: Arial; padding: 20px; background: #f0f0f0; }
+  textarea { width: 100%; height: 200px; margin-top: 10px; }
+  #chat { margin-top: 20px; }
+  .mensaje { padding: 10px; margin: 5px 0; border-radius: 5px; }
+  .gemini { background: #d4f7d4; border-left: 5px solid #4CAF50; }
+  .openai { background: #d4e7f7; border-left: 5px solid #2196F3; }
 </style>
 </head>
 <body>
-<h1>Sube un PDF y recibe comentarios de Gemini y OpenAI</h1>
+<h1>PDF Chat de IAs</h1>
+
 <input type="file" id="pdfInput" accept=".pdf">
 <button onclick="procesarPDF()">Procesar PDF</button>
 
 <h2>Texto extraído:</h2>
 <textarea id="pdfText" readonly></textarea>
 
-<h2>Comentarios de las IAs:</h2>
-<div id="comments"></div>
+<button onclick="comenzarConversacion()">Comenzar conversación</button>
+
+<h2>Chat de IAs:</h2>
+<div id="chat"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.min.js"></script>
 <script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.8.162/pdf.worker.min.js';
+
+let textoPDF = "";
+
 async function procesarPDF() {
     const file = document.getElementById('pdfInput').files[0];
     if(!file) return alert("Sube un PDF primero");
@@ -33,27 +40,35 @@ async function procesarPDF() {
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
 
-    let text = "";
+    textoPDF = "";
     for(let i=1; i<=pdf.numPages; i++){
         const page = await pdf.getPage(i);
         const content = await page.getTextContent();
-        text += content.items.map(item => item.str).join(" ") + "\n\n";
+        textoPDF += content.items.map(item => item.str).join(" ") + "\n\n";
     }
-    document.getElementById('pdfText').value = text;
+    document.getElementById('pdfText').value = textoPDF;
+}
 
-    // Llamar backend para comentarios
-    const response = await fetch("http://localhost:3000/comentarios", {
+async function comenzarConversacion() {
+    if(!textoPDF) return alert("Procesa primero el PDF");
+    const chatDiv = document.getElementById('chat');
+    chatDiv.innerHTML = "<p>Iniciando conversación...</p>";
+
+    const turnos = 3; // cantidad de turnos (Gemini + OpenAI)
+    const resp = await fetch("http://localhost:3000/conversacion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text })
+        body: JSON.stringify({ text: textoPDF, turnos })
     });
-    const data = await response.json();
+    const data = await resp.json();
+    chatDiv.innerHTML = "";
 
-    const commentsDiv = document.getElementById('comments');
-    commentsDiv.innerHTML = `
-        <div class="llm-comment gemini"><strong>Gemini:</strong> ${data.geminiComment}</div>
-        <div class="llm-comment openai"><strong>OpenAI:</strong> ${data.openaiComment}</div>
-    `;
+    data.chat.forEach(m => {
+        const div = document.createElement("div");
+        div.className = `mensaje ${m.ia.toLowerCase()}`;
+        div.innerHTML = `<strong>${m.ia}:</strong> ${m.mensaje}`;
+        chatDiv.appendChild(div);
+    });
 }
 </script>
 </body>
