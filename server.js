@@ -12,16 +12,21 @@ const PORT = 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configuración OpenAI
+// Verificar que la API Key esté presente
+if (!process.env.OPENAI_API_KEY) {
+    console.error("❌ ERROR: La variable OPENAI_API_KEY no está definida en .env");
+    process.exit(1); // Detiene el servidor
+}
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Función para generar respuesta de IA con límite de 30-40 palabras
+// Generar respuesta de IA (aprox 30-40 palabras)
 async function generarRespuesta(prompt, iaName) {
     try {
         const resp = await openai.chat.completions.create({
             model: "gpt-4o-mini",
             messages: [{ role: "user", content: prompt }],
-            max_tokens: 200 // aprox 30-40 palabras
+            max_tokens: 200 // límite de palabras
         });
         let contenido = resp.choices[0].message.content.trim();
         return contenido;
@@ -31,9 +36,9 @@ async function generarRespuesta(prompt, iaName) {
     }
 }
 
-// Endpoint para conversación
+// Endpoint de conversación
 app.post("/conversacion", async (req, res) => {
-    const { text, turnos = 1, short = false, destinatario } = req.body;
+    const { text, turnos = 1, destinatario = "IA-1" } = req.body;
 
     let chat = [];
     let promptIA1 = "Eres IA-1, curiosa e investigadora de la verdad. Responde de manera corta y clara.";
@@ -43,8 +48,8 @@ app.post("/conversacion", async (req, res) => {
 
     try {
         for (let i = 0; i < turnos; i++) {
-            let iaName = destinatario === "IA-1" ? "IA-1" : "IA-2";
-            let prompt = destinatario === "IA-1" ? `${promptIA1}\n\n${mensaje}` : `${promptIA2}\n\n${mensaje}`;
+            const iaName = destinatario === "IA-1" ? "IA-1" : "IA-2";
+            const prompt = destinatario === "IA-1" ? `${promptIA1}\n\n${mensaje}` : `${promptIA2}\n\n${mensaje}`;
 
             const respuesta = await generarRespuesta(prompt, iaName);
             chat.push({ ia: iaName, mensaje: respuesta });
@@ -59,4 +64,4 @@ app.post("/conversacion", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`✅ Servidor corriendo en http://localhost:${PORT}`));
