@@ -26,12 +26,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
 <script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
+
 let textoFinal = "";
 let mensaje1 = "";
 let turnoActual = 0;
 const chatDiv = document.getElementById('chat');
 
-// Procesar PDF
 document.getElementById('procesar').onclick = async () => {
     const file = document.getElementById('pdfFile').files[0];
     if(!file) return alert("Selecciona un PDF");
@@ -47,10 +48,11 @@ document.getElementById('procesar').onclick = async () => {
     }
 
     textoFinal = text;
+    // Recortar texto largo
+    if(textoFinal.length > 3000) textoFinal = textoFinal.slice(0, 3000);
     document.getElementById('textoEntrada').value = textoFinal;
 }
 
-// Función para mostrar mensaje palabra por palabra
 async function mostrarMensaje(ia, mensaje) {
     const div = document.createElement("div");
     div.className = "mensaje " + ia;
@@ -65,7 +67,6 @@ async function mostrarMensaje(ia, mensaje) {
     }
 }
 
-// Generar un turno
 async function generarTurno() {
     try {
         const resp = await fetch("http://localhost:3000/conversacion", {
@@ -92,7 +93,6 @@ async function generarTurno() {
     }
 }
 
-// Comenzar conversación
 document.getElementById('comenzar').onclick = async () => {
     textoFinal = document.getElementById('textoEntrada').value.trim();
     if(!textoFinal) return alert("Escribí algo o procesa un PDF primero");
@@ -104,7 +104,6 @@ document.getElementById('comenzar').onclick = async () => {
     await generarTurno();
 }
 
-// Agregar turno extra
 document.getElementById('agregarTurno').onclick = async () => {
     if(!mensaje1) return alert("Primero iniciá la conversación");
     await generarTurno();

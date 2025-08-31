@@ -9,14 +9,14 @@ dotenv.config();
 const app = express();
 const PORT = 3000;
 
+// Aumentar límite de payload
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
-// Dos instancias de OpenAI con diferentes claves
 const openai1 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_1 });
 const openai2 = new OpenAI({ apiKey: process.env.OPENAI_API_KEY_2 });
 
-// Función para llamar a OpenAI
 async function llamarOpenAI(openaiClient, prompt) {
     try {
         const resp = await openaiClient.chat.completions.create({
@@ -30,11 +30,13 @@ async function llamarOpenAI(openaiClient, prompt) {
     }
 }
 
-// Endpoint para la conversación
 app.post("/conversacion", async (req, res) => {
-    const { text, turnos } = req.body;
-    let chat = [];
+    let { text, turnos } = req.body;
 
+    // Recortar texto largo
+    if(text.length > 3000) text = text.slice(0, 3000);
+
+    let chat = [];
     let mensaje1 = `Eres una IA curiosa e investigadora de la verdad. Analiza este texto y propón un análisis detallado:\n\n${text}`;
 
     for (let i = 0; i < turnos; i++) {
@@ -45,7 +47,6 @@ app.post("/conversacion", async (req, res) => {
         const respuesta2 = await llamarOpenAI(openai2, prompt2);
         chat.push({ ia: "IA-2", mensaje: respuesta2 });
 
-        // Preparar siguiente turno
         mensaje1 = `Revisa lo que IA-2 dijo y profundiza aún más:\n${respuesta2}`;
     }
 
