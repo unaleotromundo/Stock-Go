@@ -1,4 +1,4 @@
-const API_URL = "https://TU_BACKEND_URL/conversacion"; // <- reemplazar con tu backend real
+const API_URL = "https://http://localhost:3000/conversacion"; // <- reemplazar con tu backend real
 
 let conversaciones = JSON.parse(localStorage.getItem("conversaciones") || "[]");
 let conversacionActivaId = null;
