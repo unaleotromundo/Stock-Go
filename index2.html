@@ -514,147 +514,7 @@
             font-size: 1.5em;
         }
         
-        .edit-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        .edit-modal.show {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: var(--secondary-bg);
-            border: 3px solid var(--accent-gold);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 40px var(--shadow);
-            position: relative;
-        }
-        
-        .modal-header {
-            text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid var(--accent-gold);
-            padding-bottom: 15px;
-        }
-        
-        .modal-header h3 {
-            color: var(--accent-gold);
-            font-size: 1.8em;
-            margin-bottom: 5px;
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: var(--danger);
-            color: white;
-            border: none;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2em;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-        
-        .close-modal:hover {
-            background: #c0392b;
-            transform: scale(1.1);
-        }
-        
-        .modal-form-group {
-            margin-bottom: 20px;
-        }
-        
-        .modal-form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: var(--text-primary);
-        }
-        
-        .modal-form-group input, .modal-form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 1em;
-            background: var(--card-bg);
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-        
-        .modal-form-group input:focus, .modal-form-group select:focus {
-            border-color: var(--accent-gold);
-            outline: none;
-            box-shadow: 0 0 10px rgba(244, 208, 63, 0.3);
-        }
-        
-        .modal-ingredients {
-            background: var(--primary-bg);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            border: 1px solid var(--border-color);
-        }
-        
-        .modal-ingredient-item {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .modal-ingredient-item select, .modal-ingredient-item input {
-            margin: 0;
-            flex: 1;
-        }
-        
-        .modal-ingredient-item input[type="number"] {
-            flex: 0 0 80px;
-        }
-        
-        .modal-actions {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-        }
-        
         @media (max-width: 768px) {
-            .modal-content {
-                margin: 10px;
-                padding: 20px;
-            }
-            
-            .modal-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
             .header h1 {
                 font-size: 2.2em;
             }
@@ -743,8 +603,7 @@
                 <div class="vintage-decoration">◇ ◆ ◇</div>
                 <div class="form-group">
                     <label for="productName">Nombre del Producto:</label>
-                    <input type="text" id="productName" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
-                    <datalist id="productSuggestions"></datalist>
+                    <input type="text" id="productName" placeholder="Ej: Pan de hamburguesa">
                 </div>
                 <div class="form-group">
                     <label for="productQuantity">Cantidad:</label>
@@ -810,42 +669,7 @@
         </div>
     </div>
     
-    <!-- Modal para editar recetas -->
-    <div id="editModal" class="edit-modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeEditModal()">×</button>
-            
-            <div class="modal-header">
-                <h3>✏️ Editar Receta</h3>
-                <p>Modifica los datos y guarda los cambios</p>
-            </div>
-            
-            <div class="modal-form-group">
-                <label for="editRecipeName">Nombre del Combo/Receta:</label>
-                <input type="text" id="editRecipeName" placeholder="Nombre de la receta">
-            </div>
-            
-            <div class="modal-form-group">
-                <label for="editRecipePrice">Precio de Venta ($):</label>
-                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
-            </div>
-            
-            <div class="modal-form-group">
-                <label>Ingredientes:</label>
-                <div id="editIngredientsList" class="modal-ingredients"></div>
-                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
-                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
-            </div>
-        </div>
-    </div>
-    
     <script>
-        let currentEditingRecipe = null;
-        
         // Datos almacenados en memoria
         let stock = {};
         let recipes = {};
@@ -916,8 +740,6 @@
             
             showAlert('success', `✅ Se agregaron ${quantity} ${unit} de ${name}`);
             updateStockDisplay();
-            updateProductSuggestions();
-            updateProductSuggestions();
         }
         
         // Actualizar display de stock
@@ -960,7 +782,6 @@
             if (confirm(`¿Estás seguro de eliminar "${name}" del stock?`)) {
                 delete stock[name];
                 updateStockDisplay();
-                updateProductSuggestions();
                 showAlert('warning', `⚠️ Se eliminó ${name} del stock`);
             }
         }
@@ -1052,127 +873,7 @@
             }
         }
         
-        // Actualizar sugerencias de productos
-        function updateProductSuggestions() {
-            const datalist = document.getElementById('productSuggestions');
-            datalist.innerHTML = '';
-            
-            Object.keys(stock).forEach(productName => {
-                const option = document.createElement('option');
-                option.value = productName;
-                datalist.appendChild(option);
-            });
-        }
-        
-        // Editar receta existente - VERSION MEJORADA
-        function editRecipe(recipeName) {
-            currentEditingRecipe = recipeName;
-            const recipe = recipes[recipeName];
-            
-            // Llenar los campos del modal
-            document.getElementById('editRecipeName').value = recipeName;
-            document.getElementById('editRecipePrice').value = recipe.price;
-            
-            // Limpiar ingredientes del modal
-            const ingredientsList = document.getElementById('editIngredientsList');
-            ingredientsList.innerHTML = '';
-            
-            // Agregar ingredientes existentes
-            Object.entries(recipe.ingredients).forEach(([ingredient, quantity]) => {
-                addEditIngredient(ingredient, quantity);
-            });
-            
-            // Mostrar el modal
-            document.getElementById('editModal').classList.add('show');
-        }
-        
-        // Agregar ingrediente en el modal de edición
-        function addEditIngredient(selectedIngredient = '', selectedQuantity = '') {
-            const container = document.getElementById('editIngredientsList');
-            const ingredientDiv = document.createElement('div');
-            ingredientDiv.className = 'modal-ingredient-item';
-            
-            const stockOptions = Object.keys(stock).map(item => 
-                `<option value="${item}" ${item === selectedIngredient ? 'selected' : ''}>${item}</option>`
-            ).join('');
-            
-            ingredientDiv.innerHTML = `
-                <select class="edit-ingredient-select">
-                    <option value="">Seleccionar producto...</option>
-                    ${stockOptions}
-                </select>
-                <input type="number" placeholder="Cantidad" min="1" class="edit-ingredient-quantity" value="${selectedQuantity}">
-                <button type="button" class="btn btn-danger" style="padding: 8px 12px; font-size: 0.9em;" onclick="this.parentElement.remove()">❌</button>
-            `;
-            
-            container.appendChild(ingredientDiv);
-        }
-        
-        // Guardar receta editada
-        function saveEditedRecipe() {
-            const newName = document.getElementById('editRecipeName').value.trim();
-            const newPrice = parseFloat(document.getElementById('editRecipePrice').value);
-            const ingredientItems = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
-            
-            console.log('Guardando receta:', newName, newPrice, ingredientItems.length); // Debug
-            
-            if (!newName || !newPrice || ingredientItems.length === 0) {
-                alert('Por favor completa todos los campos de la receta');
-                return;
-            }
-            
-            const ingredients = {};
-            let validRecipe = true;
-            
-            ingredientItems.forEach(item => {
-                const select = item.querySelector('.edit-ingredient-select');
-                const quantity = item.querySelector('.edit-ingredient-quantity');
-                
-                console.log('Ingrediente:', select.value, quantity.value); // Debug
-                
-                if (select.value && quantity.value && parseInt(quantity.value) > 0) {
-                    ingredients[select.value] = parseInt(quantity.value);
-                } else {
-                    validRecipe = false;
-                }
-            });
-            
-            if (!validRecipe) {
-                alert('Todos los ingredientes deben tener producto y cantidad válida');
-                return;
-            }
-            
-            console.log('Receta válida:', ingredients); // Debug
-            
-            // Si cambió el nombre, eliminar la receta anterior
-            if (currentEditingRecipe && currentEditingRecipe !== newName) {
-                delete recipes[currentEditingRecipe];
-            }
-            
-            // Guardar la receta (nueva o actualizada)
-            recipes[newName] = { ingredients, price: newPrice };
-            
-            console.log('Receta guardada:', recipes[newName]); // Debug
-            
-            closeEditModal();
-            showAlert('success', `✅ Receta "${newName}" actualizada correctamente`);
-            updateRecipesDisplay();
-            updateSalesButtons();
-        }
-        
-        // Cerrar modal de edición
-        function closeEditModal() {
-            document.getElementById('editModal').classList.remove('show');
-            currentEditingRecipe = null;
-        }
-        
-        // Cerrar modal al hacer clic fuera
-        document.addEventListener('click', function(event) {
-            const modal = document.getElementById('editModal');
-            if (event.target === modal) {
-                closeEditModal();
-            }
-        });
+        // Eliminar receta
         function deleteRecipe(name) {
             if (confirm(`¿Eliminar la receta "${name}"?`)) {
                 delete recipes[name];
@@ -1415,7 +1116,6 @@
             updateStockDisplay();
             updateRecipesDisplay();
             updateSalesButtons();
-            updateProductSuggestions();
         }
         
         // Limpiar todos los datos
