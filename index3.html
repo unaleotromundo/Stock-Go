@@ -917,6 +917,7 @@
             showAlert('success', `✅ Se agregaron ${quantity} ${unit} de ${name}`);
             updateStockDisplay();
             updateProductSuggestions();
+            updateProductSuggestions();
         }
         
         // Actualizar display de stock
@@ -934,31 +935,24 @@
                 return;
             }
             
-            let tableHTML = `
-                <table>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Cantidad</th>
-                        <th>Acciones</th>
-                    </tr>
-            `;
+            container.innerHTML = '';
             
             for (let [name, data] of Object.entries(stock)) {
                 let quantityClass = 'good';
                 if (data.quantity <= 5) quantityClass = 'low';
                 else if (data.quantity <= 15) quantityClass = 'medium';
                 
-                tableHTML += `
-                    <tr>
-                        <td>${name}</td>
-                        <td class="stock-quantity ${quantityClass}">${data.quantity} ${data.unit}</td>
-                        <td><button class="btn btn-danger" onclick="removeProduct('${name}')">Eliminar</button></td>
-                    </tr>
+                const card = document.createElement('div');
+                card.className = 'stock-card';
+                card.innerHTML = `
+                    <h3>${name}</h3>
+                    <div class="stock-quantity ${quantityClass}">
+                        ${data.quantity} ${data.unit}
+                    </div>
+                    <button class="btn btn-danger" onclick="removeProduct('${name}')">Eliminar</button>
                 `;
+                container.appendChild(card);
             }
-            
-            tableHTML += '</table>';
-            container.innerHTML = tableHTML;
         }
         
         // Eliminar producto
@@ -1051,10 +1045,7 @@
                         <strong>${name}</strong> - ${recipe.price}<br>
                         <small>Ingredientes: ${ingredientsList}</small>
                     </div>
-                    <div>
-                        <button class="btn" onclick="editRecipe('${name}')" style="margin-right: 5px;">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteRecipe('${name}')">Eliminar</button>
-                    </div>
+                    <button class="btn btn-danger" onclick="deleteRecipe('${name}')">Eliminar</button>
                 `;
                 
                 container.appendChild(recipeDiv);
@@ -1073,7 +1064,7 @@
             });
         }
         
-        // Editar receta existente
+        // Editar receta existente - VERSION MEJORADA
         function editRecipe(recipeName) {
             currentEditingRecipe = recipeName;
             const recipe = recipes[recipeName];
@@ -1123,6 +1114,8 @@
             const newPrice = parseFloat(document.getElementById('editRecipePrice').value);
             const ingredientItems = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
             
+            console.log('Guardando receta:', newName, newPrice, ingredientItems.length); // Debug
+            
             if (!newName || !newPrice || ingredientItems.length === 0) {
                 alert('Por favor completa todos los campos de la receta');
                 return;
@@ -1134,6 +1127,8 @@
             ingredientItems.forEach(item => {
                 const select = item.querySelector('.edit-ingredient-select');
                 const quantity = item.querySelector('.edit-ingredient-quantity');
+                
+                console.log('Ingrediente:', select.value, quantity.value); // Debug
                 
                 if (select.value && quantity.value && parseInt(quantity.value) > 0) {
                     ingredients[select.value] = parseInt(quantity.value);
@@ -1147,6 +1142,8 @@
                 return;
             }
             
+            console.log('Receta válida:', ingredients); // Debug
+            
             // Si cambió el nombre, eliminar la receta anterior
             if (currentEditingRecipe && currentEditingRecipe !== newName) {
                 delete recipes[currentEditingRecipe];
@@ -1154,6 +1151,8 @@
             
             // Guardar la receta (nueva o actualizada)
             recipes[newName] = { ingredients, price: newPrice };
+            
+            console.log('Receta guardada:', recipes[newName]); // Debug
             
             closeEditModal();
             showAlert('success', `✅ Receta "${newName}" actualizada correctamente`);
@@ -1174,7 +1173,6 @@
                 closeEditModal();
             }
         });
-        
         function deleteRecipe(name) {
             if (confirm(`¿Eliminar la receta "${name}"?`)) {
                 delete recipes[name];
