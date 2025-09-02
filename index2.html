@@ -73,7 +73,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
+            background: url('image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
             pointer-events: none;
         }
         .logo-section {
@@ -626,7 +626,7 @@
         </div>
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
-            <!-- Botón de "Cargar Stock" eliminado del menú -->
+            <button class="nav-btn" onclick="showSection('add-stock')">➕ Cargar Stock</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
             <button class="nav-btn" onclick="showSection('sales')">💰 Registrar Venta</button>
             <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
@@ -636,21 +636,34 @@
             <div id="stock" class="section active">
                 <h2>📦 Stock Actual</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
-                
-                <!-- Botones de acción -->
-                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
-                    <button class="btn btn-gold" onclick="openAddStockModal()">
-                        ➕ Cargar Producto
-                    </button>
-                    <button class="btn" onclick="loadSampleData()">
-                        📦 Cargar Datos de Ejemplo
-                    </button>
-                </div>
-
-                <!-- Display de stock -->
                 <div id="stockDisplay" class="stock-grid"></div>
             </div>
-
+            <!-- Cargar Stock -->
+            <div id="add-stock" class="section">
+                <h2>➕ Cargar Stock</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div class="form-group">
+                    <label for="productName">Nombre del Producto:</label>
+                    <input type="text" id="productName" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
+                    <datalist id="productSuggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="productQuantity">Cantidad:</label>
+                    <input type="number" id="productQuantity" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="productUnit">Unidad:</label>
+                    <select id="productUnit">
+                        <option value="unidades">Unidades</option>
+                        <option value="kg">Kilogramos</option>
+                        <option value="litros">Litros</option>
+                        <option value="gramos">Gramos</option>
+                        <option value="ml">Mililitros</option>
+                    </select>
+                </div>
+                <button class="btn btn-gold" onclick="addStock()">Agregar Producto</button>
+                <button class="btn" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+            </div>
             <!-- Recetas/Combos -->
             <div id="recipes" class="section">
                 <h2>🍽️ Recetas y Combos</h2>
@@ -671,14 +684,12 @@
                 <button class="btn btn-gold" onclick="saveRecipe()">Guardar Receta</button>
                 <div id="savedRecipes"></div>
             </div>
-
             <!-- Registrar Ventas -->
             <div id="sales" class="section">
                 <h2>💰 Registrar Venta</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
                 <div id="salesButtons" class="sales-grid"></div>
             </div>
-
             <!-- Reportes -->
             <div id="reports" class="section">
                 <h2>📊 Reportes</h2>
@@ -700,39 +711,6 @@
                         📤 Exportar Base de Datos + PDF
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Cargar Stock -->
-    <div id="addStockModal" class="edit-modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <button class="close-modal" onclick="closeAddStockModal()">×</button>
-            <div class="modal-header">
-                <h3>➕ Cargar Stock</h3>
-                <p>Agrega productos al inventario</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="productNameModal">Nombre del Producto:</label>
-                <input type="text" id="productNameModal" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
-            </div>
-            <div class="modal-form-group">
-                <label for="productQuantityModal">Cantidad:</label>
-                <input type="number" id="productQuantityModal" placeholder="0" min="0">
-            </div>
-            <div class="modal-form-group">
-                <label for="productUnitModal">Unidad:</label>
-                <select id="productUnitModal">
-                    <option value="unidades">Unidades</option>
-                    <option value="kg">Kilogramos</option>
-                    <option value="litros">Litros</option>
-                    <option value="gramos">Gramos</option>
-                    <option value="ml">Mililitros</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="addStockFromModal()">Agregar Producto</button>
-                <button class="btn btn-danger" onclick="closeAddStockModal()">Cancelar</button>
             </div>
         </div>
     </div>
@@ -1373,183 +1351,88 @@
             jsonLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.json`;
             jsonLink.click();
 
-            // 2. Generar PDF en nueva ventana (solución 100% segura)
+            // 2. Generar PDF
             setTimeout(() => {
-                const pdfWindow = window.open('', '_blank');
-                if (!pdfWindow) {
-                    alert('Bloqueador de pop-ups activado. Por favor, habilítalo.');
-                    return;
-                }
-
-                const pdfContent = `
-                    <!DOCTYPE html>
-                    <html lang="es">
-                    <head>
-                        <meta charset="UTF-8">
-                        <title>Historial de Movimientos - Danny's Burger</title>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
-                        <style>
-                            body {
-                                font-family: 'Segoe UI', sans-serif;
-                                padding: 50px;
-                                background: white;
-                                color: #2c3e50;
-                            }
-                            h1, h2 {
-                                text-align: center;
-                                color: #1a1a1a;
-                            }
-                            h1 {
-                                font-size: 2.5em;
-                                margin-bottom: 10px;
-                            }
-                            h2 {
-                                color: #6c757d;
-                                margin-bottom: 30px;
-                            }
-                            table {
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin: 20px 0;
-                            }
-                            th, td {
-                                padding: 12px;
-                                text-align: left;
-                                border-bottom: 1px solid #ddd;
-                            }
-                            th {
-                                background: #f4d03f;
-                                color: #1a1a1a;
-                                font-weight: bold;
-                            }
-                            tr:hover { background: #f9f9f9; }
-                            .footer {
-                                text-align: center;
-                                margin-top: 50px;
-                                color: #999;
-                                font-size: 0.9em;
-                                border-top: 1px solid #eee;
-                                padding-top: 20px;
-                            }
-                            .burger-icon {
-                                font-size: 2em;
-                                color: #f4d03f;
-                                text-align: center;
-                                display: block;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <div style="text-align: center; margin-bottom: 40px;">
-                            <div class="burger-icon">🍔</div>
-                            <h1>Danny's Burger</h1>
-                            <h2>Historial de Movimientos • 2024</h2>
-                            <p><strong>Fecha de exportación:</strong> ${new Date().toLocaleString('es-AR')}</p>
-                        </div>
-
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>📅 Fecha</th>
-                                    <th>📊 Tipo</th>
-                                    <th>🥪 Producto</th>
-                                    <th>🔢 Cantidad</th>
-                                    <th>📝 Descripción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${movements.map(mov => {
-                                    const typeColor = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                                    return `
-                                        <tr>
-                                            <td style="font-size: 0.9em;">${mov.date}</td>
-                                            <td style="color: ${typeColor}; font-weight: bold;">
-                                                ${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}
-                                            </td>
-                                            <td>${mov.product}</td>
-                                            <td>${mov.quantity}</td>
-                                            <td style="font-size: 0.9em;">${mov.description}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-
-                        <div class="footer">
-                            🍔 Danny's Burger - Sistema de Gestión de Stock
-                        </div>
-
-                        <script>
-                            // Generar PDF al cargar
-                            window.onload = function() {
-                                const opt = {
-                                    margin: 1,
-                                    filename: 'Historial-Movimientos-DannysBurger-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf',
-                                    image: { type: 'jpeg', quality: 0.98 },
-                                    html2canvas: { scale: 2, backgroundColor: '#fff' },
-                                    jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-                                };
-                                html2pdf().set(opt).from(document.body).save();
-                            };
-                        <\/script>
-                    </body>
-                    </html>
-                `;
-
-                pdfWindow.document.write(pdfContent);
-                pdfWindow.document.close();
+                generatePDFReport(exportData.movements);
             }, 600);
         }
 
-        // === Funciones para el modal de Cargar Stock ===
-        function openAddStockModal() {
-            document.getElementById('addStockModal').classList.add('show');
-            document.getElementById('productNameModal').focus();
+        // === Generar PDF seguro ===
+        function generatePDFReport(movements) {
+            const printContainer = document.createElement('div');
+            printContainer.style.position = 'fixed';
+            printContainer.style.top = '0';
+            printContainer.style.left = '100%';
+            printContainer.style.width = '800px';
+            printContainer.style.height = '100vh';
+            printContainer.style.backgroundColor = 'white';
+            printContainer.style.padding = '50px';
+            printContainer.style.fontFamily = 'Segoe UI, sans-serif';
+            printContainer.style.zIndex = '9999';
+            printContainer.style.overflow = 'auto';
+
+            printContainer.innerHTML = `
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <h1 style="color: #1a1a1a; font-size: 2.5em; margin: 0;">🍔 Danny's Burger</h1>
+                    <p style="color: #6c757d; font-size: 1.2em; margin: 10px 0;">Historial de Movimientos • 2024</p>
+                    <p style="color: #888; font-size: 1em;"><strong>Fecha de exportación:</strong> ${new Date().toLocaleString('es-AR')}</p>
+                </div>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <thead>
+                        <tr style="background: #f4d03f; color: #1a1a1a;">
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📅 Fecha</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📊 Tipo</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">🥪 Producto</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">🔢 Cantidad</th>
+                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📝 Descripción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${movements.map(mov => {
+                            const typeColor = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
+                            return `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9em;">${mov.date}</td>
+                                    <td style="padding: 10px; border: 1px solid #ddd; color: ${typeColor}; font-weight: bold;">
+                                        ${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}
+                                    </td>
+                                    <td style="padding: 10px; border: 1px solid #ddd;">${mov.product}</td>
+                                    <td style="padding: 10px; border: 1px solid #ddd;">${mov.quantity}</td>
+                                    <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9em;">${mov.description}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+                <div style="margin-top: 50px; text-align: center; color: #999; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 30px;">
+                    🍔 Danny's Burger - Sistema de Gestión de Stock
+                </div>
+            `;
+
+            document.body.appendChild(printContainer);
+
+            const opt = {
+                margin: 1,
+                filename: `dannys-burger-historial-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, backgroundColor: '#fff', useCORS: true },
+                jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf()
+                .set(opt)
+                .from(printContainer)
+                .save()
+                .then(() => {
+                    document.body.removeChild(printContainer);
+                    showAlert('success', '✅ PDF generado correctamente');
+                })
+                .catch(err => {
+                    console.error('Error al generar PDF:', err);
+                    alert('Error al generar el PDF. Revisa la consola.');
+                    document.body.removeChild(printContainer);
+                });
         }
-
-        function closeAddStockModal() {
-            document.getElementById('addStockModal').classList.remove('show');
-            document.getElementById('productNameModal').value = '';
-            document.getElementById('productQuantityModal').value = '';
-        }
-
-        function addStockFromModal() {
-            const name = document.getElementById('productNameModal').value.trim();
-            const quantity = parseInt(document.getElementById('productQuantityModal').value);
-            const unit = document.getElementById('productUnitModal').value;
-
-            if (!name || isNaN(quantity) || quantity < 0) {
-                alert('Por favor completa todos los campos correctamente');
-                return;
-            }
-
-            if (stock[name]) {
-                stock[name].quantity += quantity;
-            } else {
-                stock[name] = { quantity, unit };
-            }
-
-            movements.push({
-                date: new Date().toLocaleString('es-AR'),
-                type: 'Entrada',
-                product: name,
-                quantity: quantity,
-                description: `Carga de stock: ${quantity} ${unit}`
-            });
-
-            showAlert('success', `✅ Se agregaron ${quantity} ${unit} de ${name}`);
-            updateStockDisplay();
-            updateProductSuggestions();
-            saveData();
-            closeAddStockModal();
-        }
-
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('addStockModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAddStockModal();
-            }
-        });
     </script>
 </body>
 </html>

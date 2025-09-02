@@ -73,7 +73,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
+            background: url('image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
             pointer-events: none;
         }
         .logo-section {
@@ -626,7 +626,7 @@
         </div>
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
-            <!-- Botón de "Cargar Stock" eliminado del menú -->
+            <button class="nav-btn" onclick="showSection('add-stock')">➕ Cargar Stock</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
             <button class="nav-btn" onclick="showSection('sales')">💰 Registrar Venta</button>
             <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
@@ -636,21 +636,40 @@
             <div id="stock" class="section active">
                 <h2>📦 Stock Actual</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
-                
-                <!-- Botones de acción -->
-                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
-                    <button class="btn btn-gold" onclick="openAddStockModal()">
-                        ➕ Cargar Producto
-                    </button>
-                    <button class="btn" onclick="loadSampleData()">
-                        📦 Cargar Datos de Ejemplo
-                    </button>
+                <div id="stockDisplay" class="stock-grid">
+                    <div class="stock-card">
+                        <h3>¡Bienvenido a Danny's Burger!</h3>
+                        <p>Comienza agregando productos en la sección "Cargar Stock" o carga los datos de ejemplo.</p>
+                        <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+                    </div>
                 </div>
-
-                <!-- Display de stock -->
-                <div id="stockDisplay" class="stock-grid"></div>
             </div>
-
+            <!-- Cargar Stock -->
+            <div id="add-stock" class="section">
+                <h2>➕ Cargar Stock</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div class="form-group">
+                    <label for="productName">Nombre del Producto:</label>
+                    <input type="text" id="productName" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
+                    <datalist id="productSuggestions"></datalist>
+                </div>
+                <div class="form-group">
+                    <label for="productQuantity">Cantidad:</label>
+                    <input type="number" id="productQuantity" placeholder="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label for="productUnit">Unidad:</label>
+                    <select id="productUnit">
+                        <option value="unidades">Unidades</option>
+                        <option value="kg">Kilogramos</option>
+                        <option value="litros">Litros</option>
+                        <option value="gramos">Gramos</option>
+                        <option value="ml">Mililitros</option>
+                    </select>
+                </div>
+                <button class="btn btn-gold" onclick="addStock()">Agregar Producto</button>
+                <button class="btn" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+            </div>
             <!-- Recetas/Combos -->
             <div id="recipes" class="section">
                 <h2>🍽️ Recetas y Combos</h2>
@@ -671,14 +690,12 @@
                 <button class="btn btn-gold" onclick="saveRecipe()">Guardar Receta</button>
                 <div id="savedRecipes"></div>
             </div>
-
             <!-- Registrar Ventas -->
             <div id="sales" class="section">
                 <h2>💰 Registrar Venta</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
                 <div id="salesButtons" class="sales-grid"></div>
             </div>
-
             <!-- Reportes -->
             <div id="reports" class="section">
                 <h2>📊 Reportes</h2>
@@ -700,39 +717,6 @@
                         📤 Exportar Base de Datos + PDF
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Cargar Stock -->
-    <div id="addStockModal" class="edit-modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <button class="close-modal" onclick="closeAddStockModal()">×</button>
-            <div class="modal-header">
-                <h3>➕ Cargar Stock</h3>
-                <p>Agrega productos al inventario</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="productNameModal">Nombre del Producto:</label>
-                <input type="text" id="productNameModal" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
-            </div>
-            <div class="modal-form-group">
-                <label for="productQuantityModal">Cantidad:</label>
-                <input type="number" id="productQuantityModal" placeholder="0" min="0">
-            </div>
-            <div class="modal-form-group">
-                <label for="productUnitModal">Unidad:</label>
-                <select id="productUnitModal">
-                    <option value="unidades">Unidades</option>
-                    <option value="kg">Kilogramos</option>
-                    <option value="litros">Litros</option>
-                    <option value="gramos">Gramos</option>
-                    <option value="ml">Mililitros</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="addStockFromModal()">Agregar Producto</button>
-                <button class="btn btn-danger" onclick="closeAddStockModal()">Cancelar</button>
             </div>
         </div>
     </div>
@@ -1500,56 +1484,6 @@
                 pdfWindow.document.close();
             }, 600);
         }
-
-        // === Funciones para el modal de Cargar Stock ===
-        function openAddStockModal() {
-            document.getElementById('addStockModal').classList.add('show');
-            document.getElementById('productNameModal').focus();
-        }
-
-        function closeAddStockModal() {
-            document.getElementById('addStockModal').classList.remove('show');
-            document.getElementById('productNameModal').value = '';
-            document.getElementById('productQuantityModal').value = '';
-        }
-
-        function addStockFromModal() {
-            const name = document.getElementById('productNameModal').value.trim();
-            const quantity = parseInt(document.getElementById('productQuantityModal').value);
-            const unit = document.getElementById('productUnitModal').value;
-
-            if (!name || isNaN(quantity) || quantity < 0) {
-                alert('Por favor completa todos los campos correctamente');
-                return;
-            }
-
-            if (stock[name]) {
-                stock[name].quantity += quantity;
-            } else {
-                stock[name] = { quantity, unit };
-            }
-
-            movements.push({
-                date: new Date().toLocaleString('es-AR'),
-                type: 'Entrada',
-                product: name,
-                quantity: quantity,
-                description: `Carga de stock: ${quantity} ${unit}`
-            });
-
-            showAlert('success', `✅ Se agregaron ${quantity} ${unit} de ${name}`);
-            updateStockDisplay();
-            updateProductSuggestions();
-            saveData();
-            closeAddStockModal();
-        }
-
-        // Cerrar modal al hacer clic fuera
-        document.getElementById('addStockModal')?.addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeAddStockModal();
-            }
-        });
     </script>
 </body>
 </html>
