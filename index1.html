@@ -73,7 +73,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
             pointer-events: none;
         }
         .logo-section {
@@ -636,7 +636,13 @@
             <div id="stock" class="section active">
                 <h2>📦 Stock Actual</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
-                <div id="stockDisplay" class="stock-grid"></div>
+                <div id="stockDisplay" class="stock-grid">
+                    <div class="stock-card">
+                        <h3>¡Bienvenido a Danny's Burger!</h3>
+                        <p>Comienza agregando productos en la sección "Cargar Stock" o carga los datos de ejemplo.</p>
+                        <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+                    </div>
+                </div>
             </div>
             <!-- Cargar Stock -->
             <div id="add-stock" class="section">
@@ -706,9 +712,9 @@
                     <button class="btn btn-danger" onclick="confirmClearAllData()">
                         🗑️ Limpiar Todos los Datos
                     </button>
-                    <button class="btn" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;"
-                            onclick="exportDataAndPDF()">
-                        📤 Exportar Base de Datos + PDF
+                    <button class="btn" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); color: white;" 
+                            onclick="exportMovementsToPDF()">
+                        📤 Exportar Historial a PDF
                     </button>
                 </div>
             </div>
@@ -1327,111 +1333,46 @@
             saveData();
         }
 
-        // === Exportar JSON + PDF en un solo clic ===
-        function exportDataAndPDF() {
-            if (movements.length === 0) {
+        // === Exportar Historial de Movimientos a PDF ===
+        function exportMovementsToPDF() {
+            const historyContainer = document.getElementById('movementHistory');
+            if (historyContainer.children.length === 0 || !historyContainer.querySelector('table')) {
                 alert('No hay movimientos para exportar.');
                 return;
             }
 
-            const exportData = {
-                stock,
-                recipes,
-                sales,
-                movements,
-                exportedAt: new Date().toLocaleString('es-AR')
-            };
+            const logoPath = 'dannys-burger-logo.png'; // Cambia esta ruta si es necesario
 
-            // 1. Exportar JSON
-            const jsonStr = JSON.stringify(exportData, null, 2);
-            const jsonBlob = new Blob([jsonStr], { type: 'application/json' });
-            const jsonUrl = URL.createObjectURL(jsonBlob);
-            const jsonLink = document.createElement('a');
-            jsonLink.href = jsonUrl;
-            jsonLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.json`;
-            jsonLink.click();
-
-            // 2. Generar PDF
-            setTimeout(() => {
-                generatePDFReport(exportData.movements);
-            }, 600);
-        }
-
-        // === Generar PDF seguro ===
-        function generatePDFReport(movements) {
             const printContainer = document.createElement('div');
-            printContainer.style.position = 'fixed';
-            printContainer.style.top = '0';
-            printContainer.style.left = '100%';
-            printContainer.style.width = '800px';
-            printContainer.style.height = '100vh';
-            printContainer.style.backgroundColor = 'white';
-            printContainer.style.padding = '50px';
-            printContainer.style.fontFamily = 'Segoe UI, sans-serif';
-            printContainer.style.zIndex = '9999';
-            printContainer.style.overflow = 'auto';
-
             printContainer.innerHTML = `
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h1 style="color: #1a1a1a; font-size: 2.5em; margin: 0;">🍔 Danny's Burger</h1>
-                    <p style="color: #6c757d; font-size: 1.2em; margin: 10px 0;">Historial de Movimientos • 2024</p>
-                    <p style="color: #888; font-size: 1em;"><strong>Fecha de exportación:</strong> ${new Date().toLocaleString('es-AR')}</p>
-                </div>
-                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-                    <thead>
-                        <tr style="background: #f4d03f; color: #1a1a1a;">
-                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📅 Fecha</th>
-                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📊 Tipo</th>
-                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">🥪 Producto</th>
-                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">🔢 Cantidad</th>
-                            <th style="padding: 12px; border: 1px solid #ddd; text-align: left;">📝 Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${movements.map(mov => {
-                            const typeColor = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                            return `
-                                <tr style="border-bottom: 1px solid #eee;">
-                                    <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9em;">${mov.date}</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd; color: ${typeColor}; font-weight: bold;">
-                                        ${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}
-                                    </td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;">${mov.product}</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd;">${mov.quantity}</td>
-                                    <td style="padding: 10px; border: 1px solid #ddd; font-size: 0.9em;">${mov.description}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-                <div style="margin-top: 50px; text-align: center; color: #999; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 30px;">
-                    🍔 Danny's Burger - Sistema de Gestión de Stock
+                <div style="font-family: 'Segoe UI', sans-serif; padding: 30px; background: white; color: #2c3e50;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <img src="${logoPath}" alt="Logo Danny's Burger" style="width: 150px; height: auto; margin-bottom: 10px;">
+                        <h1 style="color: #1a1a1a; font-size: 2em; margin: 0;">📋 HISTORIAL DE MOVIMIENTOS</h1>
+                        <p style="color: #6c757d; font-size: 1.1em; margin-top: 5px;"><strong>Danny's Burger • 2024</strong></p>
+                        <p style="margin-top: 10px; color: #6c757d;"><strong>Fecha:</strong> ${new Date().toLocaleString('es-AR')}</p>
+                    </div>
+                    <div style="margin-top: 30px; border-top: 2px solid #f4d03f; padding-top: 20px;">
+                        ${historyContainer.innerHTML}
+                    </div>
                 </div>
             `;
 
             document.body.appendChild(printContainer);
+            printContainer.style.position = 'absolute';
+            printContainer.style.left = '-9999px';
 
             const opt = {
                 margin: 1,
-                filename: `dannys-burger-historial-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf`,
+                filename: `Historial-Movimientos-DannysBurger-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, backgroundColor: '#fff', useCORS: true },
+                html2canvas: { scale: 2, backgroundColor: '#fff' },
                 jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
             };
 
-            html2pdf()
-                .set(opt)
-                .from(printContainer)
-                .save()
-                .then(() => {
-                    document.body.removeChild(printContainer);
-                    showAlert('success', '✅ PDF generado correctamente');
-                })
-                .catch(err => {
-                    console.error('Error al generar PDF:', err);
-                    alert('Error al generar el PDF. Revisa la consola.');
-                    document.body.removeChild(printContainer);
-                });
+            html2pdf().set(opt).from(printContainer).save().then(() => {
+                document.body.removeChild(printContainer);
+            });
         }
     </script>
 </body>
