@@ -442,70 +442,6 @@ tr:hover {
     color: var(--accent-gold);
     font-size: 1.5em;
 }
-
-/* Estilos para la nueva tabla de stock */
-.stock-table-container {
-    background: var(--card-bg);
-    border: 2px solid var(--border-color);
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px var(--shadow);
-    margin-top: 20px;
-}
-.stock-table {
-    width: 100%;
-    border-collapse: collapse;
-    color: var(--text-primary);
-}
-.stock-table th {
-    background: #1a1a1a;
-    color: var(--accent-gold);
-    padding: 16px 12px;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 1px solid var(--border-color);
-}
-.stock-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid var(--border-color);
-    transition: all 0.3s ease;
-}
-.stock-table tr:hover {
-    background: rgba(244, 208, 63, 0.05);
-}
-.stock-table .edit-btn, .stock-table .delete-btn {
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 50%;
-    cursor: pointer;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    margin-left: 5px;
-}
-.stock-table .edit-btn {
-    background: #f4d03f;
-    color: #1a1a1a;
-    box-shadow: 0 3px 8px rgba(244, 208, 63, 0.4);
-}
-.stock-table .edit-btn:hover {
-    transform: scale(1.1);
-    background: #f7dc6f;
-}
-.stock-table .delete-btn {
-    background: #e74c3c;
-    color: white;
-    box-shadow: 0 3px 8px rgba(231, 76, 60, 0.4);
-}
-.stock-table .delete-btn:hover {
-    transform: scale(1.1);
-    background: #c0392b;
-}
-
-/* Modales */
 .edit-modal {
     position: fixed;
     top: 0;
@@ -578,6 +514,7 @@ tr:hover {
     padding: 12px;
     border: 2px solid var(--border-color);
     border-radius: 10px;
+    font-size: 1em;
     background: var(--card-bg);
     color: var(--text-primary);
     transition: all 0.3s ease;
@@ -618,6 +555,95 @@ tr:hover {
     margin-top: 25px;
     padding-top: 20px;
     border-top: 1px solid var(--border-color);
+}
+
+/* === Estilo para la nueva tabla de stock === */
+.stock-table-container {
+    width: 100%;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.stock-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1a1a;
+    color: #e0e0e0;
+}
+
+.stock-table-container th {
+    background: #2d2d2d;
+    color: #f4d03f;
+    font-weight: 600;
+    text-align: left;
+    padding: 16px 12px;
+    font-size: 0.9em;
+}
+
+.stock-table-container td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #333;
+    color: #e0e0e0;
+    font-size: 0.95em;
+}
+
+.stock-table-container tr:last-child td {
+    border-bottom: none;
+}
+
+.stock-table-container .actions {
+    display: flex;
+    gap: 8px;
+}
+
+.stock-table-container .edit-btn {
+    background: #f4d03f;
+    color: #1a1a1a;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(244, 208, 63, 0.3);
+}
+
+.stock-table-container .edit-btn:hover {
+    background: #f7dc6f;
+    transform: scale(1.05);
+}
+
+.stock-table-container .delete-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.stock-table-container .delete-btn:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+}
+
+/* Efecto de hover en filas */
+.stock-table-container tr:hover {
+    background: #252525;
 }
 
 /* Responsive */

@@ -50,7 +50,7 @@ function saveData() {
     }
 }
 
-// === Cambiar tema ===
+// === Función para cambiar tema ===
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
@@ -70,29 +70,37 @@ function showSection(sectionName) {
     });
     document.getElementById(sectionName).classList.add('active');
     event.target.classList.add('active');
-
     if (sectionName === 'stock') updateStockDisplay();
     if (sectionName === 'recipes') updateRecipesDisplay();
     if (sectionName === 'sales') updateSalesButtons();
     if (sectionName === 'reports') updateReports();
 }
 
-// === Actualizar display de stock (tabla) ===
+// === Actualizar display de stock ===
 function updateStockDisplay() {
-    const container = document.getElementById('stockTableBody');
+    const container = document.getElementById('stockDisplay');
     if (Object.keys(stock).length === 0) {
         container.innerHTML = `
-            <tr>
-                <td colspan="3" style="text-align: center; padding: 30px; color: var(--text-secondary);">
-                    <p>No hay productos en el stock</p>
-                    <button class="btn btn-gold" onclick="openAddStockModal()">Agregar primero un producto</button>
-                </td>
-            </tr>
+            <div style="text-align: center; padding: 40px; color: #ccc;">
+                <p>No hay productos en stock.</p>
+                <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+            </div>
         `;
         return;
     }
 
-    let tableHTML = '';
+    let tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     for (let [name, data] of Object.entries(stock)) {
         let quantityClass = 'good';
         if (data.quantity <= 5) quantityClass = 'low';
@@ -102,70 +110,58 @@ function updateStockDisplay() {
             <tr>
                 <td>${name}</td>
                 <td class="stock-quantity ${quantityClass}">${data.quantity} ${data.unit}</td>
-                <td>
+                <td class="actions">
                     <button class="edit-btn" onclick="editProduct('${name}')">✏️</button>
                     <button class="delete-btn" onclick="removeProduct('${name}')">🗑️</button>
                 </td>
             </tr>
         `;
     }
+
+    tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
 }
 
 // === Editar producto ===
-function editProduct(productName) {
-    const product = stock[productName];
-    const modal = document.getElementById('addStockModal');
-    const nameInput = document.getElementById('productNameModal');
-    const quantityInput = document.getElementById('productQuantityModal');
-    const unitSelect = document.getElementById('productUnitModal');
+function editProduct(name) {
+    const product = stock[name];
+    if (!product) return;
 
-    nameInput.value = productName;
-    quantityInput.value = product.quantity;
-    unitSelect.value = product.unit;
+    document.getElementById('editProductName').value = name;
+    document.getElementById('editProductQuantity').value = product.quantity;
+    document.getElementById('editProductUnit').value = product.unit;
+    document.getElementById('editProductModal').classList.add('show');
+}
 
-    // Cambiar texto del botón
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = '💾 Guardar Cambios';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = () => saveEditedProduct();
-
-    modal.classList.add('show');
+// === Cerrar modal de edición de producto ===
+function closeEditProductModal() {
+    document.getElementById('editProductModal').classList.remove('show');
 }
 
 // === Guardar producto editado ===
 function saveEditedProduct() {
-    const name = document.getElementById('productNameModal').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('productUnitModal').value;
+    const name = document.getElementById('editProductName').value.trim();
+    const quantity = parseInt(document.getElementById('editProductQuantity').value);
+    const unit = document.getElementById('editProductUnit').value;
 
     if (!name || isNaN(quantity) || quantity < 0) {
         alert('Por favor completa todos los campos correctamente');
         return;
     }
 
-    // Guardar cambios
-    stock[name].quantity = quantity;
-    stock[name].unit = unit;
-
-    // Registrar movimiento
-    movements.push({
-        date: new Date().toLocaleString('es-AR'),
-        type: 'Entrada',
-        product: name,
-        quantity: quantity,
-        description: `Edición de stock: ${quantity} ${unit}`
-    });
-
-    showAlert('success', `✅ Se actualizó el stock de "${name}"`);
+    stock[name] = { quantity, unit };
     updateStockDisplay();
-    updateProductSuggestions();
+    showAlert('success', `✅ Producto "${name}" actualizado correctamente`);
+    closeEditProductModal();
     saveData();
-
-    // Restaurar botón original
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
-
-    closeAddStockModal();
 }
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('editProductModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditProductModal();
+    }
+});
 
 // === Eliminar producto ===
 function removeProduct(name) {
@@ -178,86 +174,85 @@ function removeProduct(name) {
     }
 }
 
-// === Abrir modal para agregar nueva receta ===
-function openAddRecipeModal() {
-    const modal = document.getElementById('editModal');
-    const header = modal.querySelector('.modal-header h3');
-    const saveBtn = modal.querySelector('.btn.btn-gold');
-
-    header.textContent = '➕ Crear Nueva Receta';
-    saveBtn.textContent = '💾 Guardar Receta';
-    saveBtn.onclick = () => {
-        const name = document.getElementById('editRecipeName').value.trim();
-        const price = parseFloat(document.getElementById('editRecipePrice').value);
-        const ingredientItems = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
-        if (!name || !price || ingredientItems.length === 0) {
-            alert('Por favor completa todos los campos de la receta');
-            return;
-        }
-        const ingredients = {};
-        let validRecipe = true;
-        ingredientItems.forEach(item => {
-            const select = item.querySelector('.edit-ingredient-select');
-            const quantity = item.querySelector('.edit-ingredient-quantity');
-            if (select.value && quantity.value && parseInt(quantity.value) > 0) {
-                ingredients[select.value] = parseInt(quantity.value);
-            } else {
-                validRecipe = false;
-            }
-        });
-        if (!validRecipe) {
-            alert('Todos los ingredientes deben tener producto y cantidad válida');
-            return;
-        }
-        recipes[name] = { ingredients, price };
-        showAlert('success', `✅ Receta "${name}" guardada correctamente`);
-        updateRecipesDisplay();
-        updateSalesButtons();
-        saveData();
-        closeEditModal();
-    };
-
-    document.getElementById('editRecipeName').value = '';
-    document.getElementById('editRecipePrice').value = '';
-    document.getElementById('editIngredientsList').innerHTML = '';
-    addEditIngredient(); // Agrega un campo vacío
-    modal.classList.add('show');
+// === Agregar ingrediente a receta ===
+function addIngredient() {
+    const container = document.getElementById('ingredientsList');
+    const ingredientDiv = document.createElement('div');
+    ingredientDiv.className = 'recipe-item';
+    const stockOptions = Object.keys(stock).map(item => 
+        `<option value="${item}">${item}</option>`
+    ).join('');
+    ingredientDiv.innerHTML = `
+        <select class="ingredient-select" style="margin-right: 10px;">
+            <option value="">Seleccionar producto...</option>
+            ${stockOptions}
+        </select>
+        <input type="number" placeholder="Cantidad" min="1" class="ingredient-quantity" style="width: 100px; margin: 0 10px;">
+        <button class="btn btn-danger" onclick="this.parentElement.remove()">Quitar</button>
+    `;
+    container.appendChild(ingredientDiv);
 }
 
-// === Actualizar display de recetas (tarjetas) ===
-function updateRecipesDisplay() {
-    const container = document.getElementById('recipesDisplay');
-    if (Object.keys(recipes).length === 0) {
-        container.innerHTML = `
-            <div class="recipe-card" style="text-align: center; padding: 40px;">
-                <p>No hay recetas creadas aún</p>
-                <button class="btn btn-gold" onclick="openAddRecipeModal()">Crear tu primera receta</button>
-            </div>
-        `;
+// === Guardar receta ===
+function saveRecipe() {
+    const name = document.getElementById('recipeName').value.trim();
+    const price = parseFloat(document.getElementById('recipePrice').value);
+    const ingredientItems = document.querySelectorAll('#ingredientsList .recipe-item');
+    if (!name || !price || ingredientItems.length === 0) {
+        alert('Por favor completa todos los campos de la receta');
         return;
     }
+    const ingredients = {};
+    let validRecipe = true;
+    ingredientItems.forEach(item => {
+        const select = item.querySelector('.ingredient-select');
+        const quantity = item.querySelector('.ingredient-quantity');
+        if (select.value && quantity.value) {
+            ingredients[select.value] = parseInt(quantity.value);
+        } else {
+            validRecipe = false;
+        }
+    });
+    if (!validRecipe) {
+        alert('Todos los ingredientes deben tener producto y cantidad');
+        return;
+    }
+    recipes[name] = { ingredients, price };
+    document.getElementById('recipeName').value = '';
+    document.getElementById('recipePrice').value = '';
+    document.getElementById('ingredientsList').innerHTML = '';
+    showAlert('success', `✅ Receta "${name}" guardada correctamente`);
+    updateRecipesDisplay();
+    updateSalesButtons();
+    saveData();
+}
 
-    let html = '';
+// === Actualizar display de recetas ===
+function updateRecipesDisplay() {
+    const container = document.getElementById('savedRecipes');
+    container.innerHTML = '<h3>🍔 Recetas Guardadas:</h3>';
     for (let [name, recipe] of Object.entries(recipes)) {
+        const recipeDiv = document.createElement('div');
+        recipeDiv.className = 'recipe-item';
         const ingredientsList = Object.entries(recipe.ingredients)
             .map(([ingredient, quantity]) => `${quantity} ${ingredient}`)
-            .join('\n');
-
-        html += `
-            <div class="recipe-card">
-                <div class="burger-icon">🍔</div>
-                <h3>${name}</h3>
-                <div class="price">Precio: $${recipe.price}</div>
-                <div class="ingredients-label">Ingredientes:</div>
-                <div class="ingredient-list">${ingredientsList}</div>
-                <div class="actions">
-                    <button class="edit-btn" onclick="editRecipe('${name}')">✏️ Editar</button>
-                    <button class="delete-btn" onclick="deleteRecipe('${name}')">🗑️ Eliminar</button>
-                </div>
+            .join(', ');
+        recipeDiv.innerHTML = `
+            <div>
+                <strong>${name}</strong> - $${recipe.price}<br>
+                <small>Ingredientes: ${ingredientsList}</small>
+            </div>
+            <div>
+                <button class="btn edit-btn" style="margin-right: 5px;">Editar</button>
+                <button class="btn btn-danger delete-btn">Eliminar</button>
             </div>
         `;
+        const editBtn = recipeDiv.querySelector('.edit-btn');
+        const deleteBtn = recipeDiv.querySelector('.delete-btn');
+        editBtn.addEventListener('click', () => editRecipe(name));
+        deleteBtn.addEventListener('click', () => deleteRecipe(name));
+        container.appendChild(recipeDiv);
     }
-    container.innerHTML = html;
 }
 
 // === Actualizar sugerencias de productos ===
@@ -282,13 +277,7 @@ function editRecipe(recipeName) {
     Object.entries(recipe.ingredients).forEach(([ingredient, quantity]) => {
         addEditIngredient(ingredient, quantity);
     });
-
-    const modal = document.getElementById('editModal');
-    modal.querySelector('.modal-header h3').textContent = '✏️ Editar Receta';
-    modal.querySelector('.btn.btn-gold').textContent = '💾 Guardar Cambios';
-    modal.querySelector('.btn.btn-gold').onclick = saveEditedRecipe;
-
-    modal.classList.add('show');
+    document.getElementById('editModal').classList.add('show');
 }
 
 // === Agregar ingrediente en modal de edición ===
@@ -465,7 +454,6 @@ function updateReports() {
         salesHTML += `<p style="text-align: center; font-size: 1.3em; margin-top: 15px;"><strong>💵 Total del día: $${todayTotal}</strong></p>`;
         todayContainer.innerHTML = salesHTML;
     }
-
     const historyContainer = document.getElementById('movementHistory');
     if (movements.length === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos registrados 📋</p>';
@@ -629,7 +617,6 @@ function exportDataAndPDF() {
     jsonLink.href = jsonUrl;
     jsonLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.json`;
     jsonLink.click();
-
     setTimeout(() => {
         const pdfWindow = window.open('', '_blank');
         if (!pdfWindow) {
@@ -717,14 +704,14 @@ function exportDataAndPDF() {
 function openAddStockModal() {
     document.getElementById('addStockModal').classList.add('show');
     document.getElementById('productNameModal').focus();
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
 }
+
 function closeAddStockModal() {
     document.getElementById('addStockModal').classList.remove('show');
     document.getElementById('productNameModal').value = '';
     document.getElementById('productQuantityModal').value = '';
 }
+
 function addStockFromModal() {
     const name = document.getElementById('productNameModal').value.trim();
     const quantity = parseInt(document.getElementById('productQuantityModal').value);

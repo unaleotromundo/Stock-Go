@@ -70,7 +70,6 @@ function showSection(sectionName) {
     });
     document.getElementById(sectionName).classList.add('active');
     event.target.classList.add('active');
-
     if (sectionName === 'stock') updateStockDisplay();
     if (sectionName === 'recipes') updateRecipesDisplay();
     if (sectionName === 'sales') updateSalesButtons();
@@ -79,20 +78,29 @@ function showSection(sectionName) {
 
 // === Actualizar display de stock ===
 function updateStockDisplay() {
-    const container = document.getElementById('stockTableBody');
+    const container = document.getElementById('stockDisplay');
     if (Object.keys(stock).length === 0) {
         container.innerHTML = `
-            <tr>
-                <td colspan="3" style="text-align: center; padding: 30px; color: var(--text-secondary);">
-                    <p>No hay productos en el stock</p>
-                    <button class="btn btn-gold" onclick="openAddStockModal()">Agregar primero un producto</button>
-                </td>
-            </tr>
+            <div style="text-align: center; padding: 40px; color: #ccc;">
+                <p>No hay productos en stock.</p>
+                <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+            </div>
         `;
         return;
     }
 
-    let tableHTML = '';
+    let tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
     for (let [name, data] of Object.entries(stock)) {
         let quantityClass = 'good';
         if (data.quantity <= 5) quantityClass = 'low';
@@ -102,69 +110,22 @@ function updateStockDisplay() {
             <tr>
                 <td>${name}</td>
                 <td class="stock-quantity ${quantityClass}">${data.quantity} ${data.unit}</td>
-                <td>
+                <td class="actions">
                     <button class="edit-btn" onclick="editProduct('${name}')">✏️</button>
                     <button class="delete-btn" onclick="removeProduct('${name}')">🗑️</button>
                 </td>
             </tr>
         `;
     }
+
+    tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
 }
 
-// === Editar producto ===
-function editProduct(productName) {
-    const product = stock[productName];
-    const modal = document.getElementById('addStockModal');
-    const nameInput = document.getElementById('productNameModal');
-    const quantityInput = document.getElementById('productQuantityModal');
-    const unitSelect = document.getElementById('productUnitModal');
-
-    nameInput.value = productName;
-    quantityInput.value = product.quantity;
-    unitSelect.value = product.unit;
-
-    // Cambiar texto del botón
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = '💾 Guardar Cambios';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = () => saveEditedProduct();
-
-    modal.classList.add('show');
-}
-
-// === Guardar producto editado ===
-function saveEditedProduct() {
-    const name = document.getElementById('productNameModal').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('productUnitModal').value;
-
-    if (!name || isNaN(quantity) || quantity < 0) {
-        alert('Por favor completa todos los campos correctamente');
-        return;
-    }
-
-    // Guardar cambios
-    stock[name].quantity = quantity;
-    stock[name].unit = unit;
-
-    // Regenerar movimiento
-    movements.push({
-        date: new Date().toLocaleString('es-AR'),
-        type: 'Entrada',
-        product: name,
-        quantity: quantity,
-        description: `Edición de stock: ${quantity} ${unit}`
-    });
-
-    showAlert('success', `✅ Se actualizó el stock de "${name}"`);
-    updateStockDisplay();
-    updateProductSuggestions();
-    saveData();
-
-    // Restaurar botón original
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
-
-    closeAddStockModal();
+// === Editar producto (solo muestra alert por ahora) ===
+function editProduct(name) {
+    alert(`✏️ Editar producto: ${name}\n(Próximamente: modal de edición)`);
+    // Aquí puedes abrir un modal para editar cantidad o unidad
 }
 
 // === Eliminar producto ===
@@ -458,7 +419,6 @@ function updateReports() {
         salesHTML += `<p style="text-align: center; font-size: 1.3em; margin-top: 15px;"><strong>💵 Total del día: $${todayTotal}</strong></p>`;
         todayContainer.innerHTML = salesHTML;
     }
-
     const historyContainer = document.getElementById('movementHistory');
     if (movements.length === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos registrados 📋</p>';
@@ -622,7 +582,6 @@ function exportDataAndPDF() {
     jsonLink.href = jsonUrl;
     jsonLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.json`;
     jsonLink.click();
-
     setTimeout(() => {
         const pdfWindow = window.open('', '_blank');
         if (!pdfWindow) {
@@ -710,15 +669,14 @@ function exportDataAndPDF() {
 function openAddStockModal() {
     document.getElementById('addStockModal').classList.add('show');
     document.getElementById('productNameModal').focus();
-    // Restaurar botón original
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
 }
+
 function closeAddStockModal() {
     document.getElementById('addStockModal').classList.remove('show');
     document.getElementById('productNameModal').value = '';
     document.getElementById('productQuantityModal').value = '';
 }
+
 function addStockFromModal() {
     const name = document.getElementById('productNameModal').value.trim();
     const quantity = parseInt(document.getElementById('productQuantityModal').value);

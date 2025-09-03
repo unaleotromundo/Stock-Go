@@ -50,7 +50,7 @@ function saveData() {
     }
 }
 
-// === Cambiar tema ===
+// === Función para cambiar tema ===
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
@@ -77,94 +77,42 @@ function showSection(sectionName) {
     if (sectionName === 'reports') updateReports();
 }
 
-// === Actualizar display de stock (tabla) ===
+// === Actualizar display de stock ===
 function updateStockDisplay() {
-    const container = document.getElementById('stockTableBody');
+    const container = document.getElementById('stockDisplay');
     if (Object.keys(stock).length === 0) {
         container.innerHTML = `
-            <tr>
-                <td colspan="3" style="text-align: center; padding: 30px; color: var(--text-secondary);">
-                    <p>No hay productos en el stock</p>
-                    <button class="btn btn-gold" onclick="openAddStockModal()">Agregar primero un producto</button>
-                </td>
-            </tr>
+            <div class="stock-card">
+                <h3>¡Bienvenido a Danny's Burger!</h3>
+                <p>Comienza agregando productos en la sección "Cargar Stock" o carga los datos de ejemplo.</p>
+                <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
+            </div>
         `;
         return;
     }
 
-    let tableHTML = '';
+    let tableHTML = `
+        <table>
+            <tr>
+                <th>Producto</th>
+                <th>Cantidad</th>
+                <th>Acciones</th>
+            </tr>
+    `;
     for (let [name, data] of Object.entries(stock)) {
         let quantityClass = 'good';
         if (data.quantity <= 5) quantityClass = 'low';
         else if (data.quantity <= 15) quantityClass = 'medium';
-
         tableHTML += `
             <tr>
                 <td>${name}</td>
                 <td class="stock-quantity ${quantityClass}">${data.quantity} ${data.unit}</td>
-                <td>
-                    <button class="edit-btn" onclick="editProduct('${name}')">✏️</button>
-                    <button class="delete-btn" onclick="removeProduct('${name}')">🗑️</button>
-                </td>
+                <td><button class="btn btn-danger" onclick="removeProduct('${name}')">Eliminar</button></td>
             </tr>
         `;
     }
+    tableHTML += '</table>';
     container.innerHTML = tableHTML;
-}
-
-// === Editar producto ===
-function editProduct(productName) {
-    const product = stock[productName];
-    const modal = document.getElementById('addStockModal');
-    const nameInput = document.getElementById('productNameModal');
-    const quantityInput = document.getElementById('productQuantityModal');
-    const unitSelect = document.getElementById('productUnitModal');
-
-    nameInput.value = productName;
-    quantityInput.value = product.quantity;
-    unitSelect.value = product.unit;
-
-    // Cambiar texto del botón
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = '💾 Guardar Cambios';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = () => saveEditedProduct();
-
-    modal.classList.add('show');
-}
-
-// === Guardar producto editado ===
-function saveEditedProduct() {
-    const name = document.getElementById('productNameModal').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('productUnitModal').value;
-
-    if (!name || isNaN(quantity) || quantity < 0) {
-        alert('Por favor completa todos los campos correctamente');
-        return;
-    }
-
-    // Guardar cambios
-    stock[name].quantity = quantity;
-    stock[name].unit = unit;
-
-    // Registrar movimiento
-    movements.push({
-        date: new Date().toLocaleString('es-AR'),
-        type: 'Entrada',
-        product: name,
-        quantity: quantity,
-        description: `Edición de stock: ${quantity} ${unit}`
-    });
-
-    showAlert('success', `✅ Se actualizó el stock de "${name}"`);
-    updateStockDisplay();
-    updateProductSuggestions();
-    saveData();
-
-    // Restaurar botón original
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
-
-    closeAddStockModal();
 }
 
 // === Eliminar producto ===
@@ -710,8 +658,6 @@ function exportDataAndPDF() {
 function openAddStockModal() {
     document.getElementById('addStockModal').classList.add('show');
     document.getElementById('productNameModal').focus();
-    document.querySelector('#addStockModal .btn.btn-gold').textContent = 'Agregar Producto';
-    document.querySelector('#addStockModal .btn.btn-gold').onclick = addStockFromModal;
 }
 function closeAddStockModal() {
     document.getElementById('addStockModal').classList.remove('show');
