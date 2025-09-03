@@ -122,11 +122,46 @@ function updateStockDisplay() {
     container.innerHTML = tableHTML;
 }
 
-// === Editar producto (solo muestra alert por ahora) ===
+// === Editar producto ===
 function editProduct(name) {
-    alert(`✏️ Editar producto: ${name}\n(Próximamente: modal de edición)`);
-    // Aquí puedes abrir un modal para editar cantidad o unidad
+    const product = stock[name];
+    if (!product) return;
+
+    document.getElementById('editProductName').value = name;
+    document.getElementById('editProductQuantity').value = product.quantity;
+    document.getElementById('editProductUnit').value = product.unit;
+    document.getElementById('editProductModal').classList.add('show');
 }
+
+// === Cerrar modal de edición de producto ===
+function closeEditProductModal() {
+    document.getElementById('editProductModal').classList.remove('show');
+}
+
+// === Guardar producto editado ===
+function saveEditedProduct() {
+    const name = document.getElementById('editProductName').value.trim();
+    const quantity = parseInt(document.getElementById('editProductQuantity').value);
+    const unit = document.getElementById('editProductUnit').value;
+
+    if (!name || isNaN(quantity) || quantity < 0) {
+        alert('Por favor completa todos los campos correctamente');
+        return;
+    }
+
+    stock[name] = { quantity, unit };
+    updateStockDisplay();
+    showAlert('success', `✅ Producto "${name}" actualizado correctamente`);
+    closeEditProductModal();
+    saveData();
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('editProductModal')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditProductModal();
+    }
+});
 
 // === Eliminar producto ===
 function removeProduct(name) {

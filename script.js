@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateSalesButtons();
     updateReports();
     updateProductSuggestions();
+    createParticles(); // Iniciar partículas
 });
 
 // === Cargar datos guardados ===
@@ -174,84 +175,38 @@ function removeProduct(name) {
     }
 }
 
-// === Agregar ingrediente a receta ===
-function addIngredient() {
-    const container = document.getElementById('ingredientsList');
-    const ingredientDiv = document.createElement('div');
-    ingredientDiv.className = 'recipe-item';
-    const stockOptions = Object.keys(stock).map(item => 
-        `<option value="${item}">${item}</option>`
-    ).join('');
-    ingredientDiv.innerHTML = `
-        <select class="ingredient-select" style="margin-right: 10px;">
-            <option value="">Seleccionar producto...</option>
-            ${stockOptions}
-        </select>
-        <input type="number" placeholder="Cantidad" min="1" class="ingredient-quantity" style="width: 100px; margin: 0 10px;">
-        <button class="btn btn-danger" onclick="this.parentElement.remove()">Quitar</button>
-    `;
-    container.appendChild(ingredientDiv);
-}
-
-// === Guardar receta ===
-function saveRecipe() {
-    const name = document.getElementById('recipeName').value.trim();
-    const price = parseFloat(document.getElementById('recipePrice').value);
-    const ingredientItems = document.querySelectorAll('#ingredientsList .recipe-item');
-    if (!name || !price || ingredientItems.length === 0) {
-        alert('Por favor completa todos los campos de la receta');
-        return;
-    }
-    const ingredients = {};
-    let validRecipe = true;
-    ingredientItems.forEach(item => {
-        const select = item.querySelector('.ingredient-select');
-        const quantity = item.querySelector('.ingredient-quantity');
-        if (select.value && quantity.value) {
-            ingredients[select.value] = parseInt(quantity.value);
-        } else {
-            validRecipe = false;
-        }
-    });
-    if (!validRecipe) {
-        alert('Todos los ingredientes deben tener producto y cantidad');
-        return;
-    }
-    recipes[name] = { ingredients, price };
-    document.getElementById('recipeName').value = '';
-    document.getElementById('recipePrice').value = '';
-    document.getElementById('ingredientsList').innerHTML = '';
-    showAlert('success', `✅ Receta "${name}" guardada correctamente`);
-    updateRecipesDisplay();
-    updateSalesButtons();
-    saveData();
-}
-
 // === Actualizar display de recetas ===
 function updateRecipesDisplay() {
     const container = document.getElementById('savedRecipes');
-    container.innerHTML = '<h3>🍔 Recetas Guardadas:</h3>';
+    container.innerHTML = '';
+
+    if (Object.keys(recipes).length === 0) {
+        container.innerHTML = '<p>No hay recetas creadas aún. Haz clic en "AGREGAR Combo/Receta" para comenzar.</p>';
+        return;
+    }
+
     for (let [name, recipe] of Object.entries(recipes)) {
-        const recipeDiv = document.createElement('div');
-        recipeDiv.className = 'recipe-item';
         const ingredientsList = Object.entries(recipe.ingredients)
             .map(([ingredient, quantity]) => `${quantity} ${ingredient}`)
             .join(', ');
-        recipeDiv.innerHTML = `
-            <div>
-                <strong>${name}</strong> - $${recipe.price}<br>
-                <small>Ingredientes: ${ingredientsList}</small>
+
+        const recipeCard = document.createElement('div');
+        recipeCard.className = 'recipe-card';
+
+        recipeCard.innerHTML = `
+            <div class="burger-icon">🍔</div>
+            <h3>${name}</h3>
+            <div class="price">Precio: $${recipe.price}</div>
+            <div class="ingredients">
+                <strong>Ingredientes:</strong>
+                <span>${ingredientsList}</span>
             </div>
-            <div>
-                <button class="btn edit-btn" style="margin-right: 5px;">Editar</button>
-                <button class="btn btn-danger delete-btn">Eliminar</button>
+            <div class="actions">
+                <button class="edit-btn" onclick="editRecipe('${name}')">✏️ Editar</button>
+                <button class="delete-btn" onclick="deleteRecipe('${name}')">🗑️ Eliminar</button>
             </div>
         `;
-        const editBtn = recipeDiv.querySelector('.edit-btn');
-        const deleteBtn = recipeDiv.querySelector('.delete-btn');
-        editBtn.addEventListener('click', () => editRecipe(name));
-        deleteBtn.addEventListener('click', () => deleteRecipe(name));
-        container.appendChild(recipeDiv);
+        container.appendChild(recipeCard);
     }
 }
 
@@ -356,6 +311,16 @@ function deleteRecipe(name) {
         showAlert('warning', `⚠️ Se eliminó la receta ${name}`);
         saveData();
     }
+}
+
+// === Abrir modal para agregar receta ===
+function openAddRecipeModal() {
+    currentEditingRecipe = null;
+    document.getElementById('editRecipeName').value = '';
+    document.getElementById('editRecipePrice').value = '';
+    document.getElementById('editIngredientsList').innerHTML = '';
+    addEditIngredient();
+    document.getElementById('editModal').classList.add('show');
 }
 
 // === Actualizar botones de venta ===
@@ -745,3 +710,47 @@ document.getElementById('addStockModal')?.addEventListener('click', function(e) 
         closeAddStockModal();
     }
 });
+
+// === Generar partículas animadas ===
+function createParticles() {
+    const container = document.getElementById('particles');
+    const particleCount = window.innerWidth > 768 ? 20 : 8;
+
+    for (let i = 0; i < particleCount; i++) {
+        setTimeout(() => {
+            createSingleParticle();
+        }, i * 1000);
+    }
+
+    // Reiniciar cada 30 segundos
+    setInterval(() => {
+        document.querySelectorAll('.particle').forEach(p => p.remove());
+        for (let i = 0; i < particleCount; i++) {
+            setTimeout(() => createSingleParticle(), i * 500);
+        }
+    }, 30000);
+}
+
+function createSingleParticle() {
+    const container = document.getElementById('particles');
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+
+    const size = Math.random() * 6 + 2;
+    particle.style.width = `${size}px`;
+    particle.style.height = `${size}px`;
+    particle.style.left = `${Math.random() * 100}vw`;
+
+    const delay = Math.random() * 5;
+    const duration = Math.random() * 10 + 10;
+    particle.style.animationDelay = `${delay}s`;
+    particle.style.animationDuration = `${duration}s`;
+
+    container.appendChild(particle);
+
+    setTimeout(() => {
+        if (particle.parentElement === container) {
+            container.removeChild(particle);
+        }
+    }, duration * 1000 + delay * 1000 + 1000);
+}

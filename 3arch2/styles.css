@@ -686,4 +686,19 @@ tr:hover {
         padding: 10px;
         font-size: 1em;
     }
+    /* Responsive para tabla de stock */
+    .stock-table-container th,
+    .stock-table-container td {
+        padding: 10px 6px;
+        font-size: 0.85em;
+    }
+    .stock-table-container .actions {
+        gap: 6px;
+    }
+    .stock-table-container .edit-btn,
+    .stock-table-container .delete-btn {
+        width: 26px;
+        height: 26px;
+        font-size: 0.8em;
+    }
 }
