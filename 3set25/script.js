@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSalesButtons();
     updateReports();
     updateProductSuggestions();
-    createParticles();
+    createParticles(); // ✅ Iniciar partículas aquí
 });
 
 // === Cargar desde localStorage ===
@@ -77,6 +77,36 @@ function showSection(sectionName) {
     }
 }
 
+// === Escapar HTML para evitar problemas con comillas ===
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// === Desescapar texto para usarlo en JS ===
+function unescapeHtml(text) {
+    const div = document.createElement('div');
+    div.innerHTML = text;
+    return div.textContent || div.innerText || '';
+}
+
+// === Eventos delegados para botones con data-* ===
+document.addEventListener('click', function(e) {
+    const action = e.target.getAttribute('data-action');
+    const name = unescapeHtml(e.target.getAttribute('data-name'));
+
+    if (action === 'edit-product') {
+        editProduct(name);
+    } else if (action === 'delete-product') {
+        removeProduct(name);
+    } else if (action === 'edit-recipe') {
+        editRecipe(name);
+    } else if (action === 'delete-recipe') {
+        deleteRecipe(name);
+    }
+});
+
 // === Actualizar display de stock ===
 function updateStockDisplay() {
     const container = document.getElementById('stockDisplay');
@@ -107,36 +137,6 @@ function updateStockDisplay() {
     tableHTML += '</tbody></table>';
     container.innerHTML = tableHTML;
 }
-
-// === Escapar HTML para evitar problemas con comillas ===
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-// === Desescapar texto para usarlo en JS ===
-function unescapeHtml(text) {
-    const div = document.createElement('div');
-    div.innerHTML = text;
-    return div.textContent || div.innerText || '';
-}
-
-// === Eventos delegados para botones con data-* ===
-document.addEventListener('click', function(e) {
-    const action = e.target.getAttribute('data-action');
-    const name = unescapeHtml(e.target.getAttribute('data-name'));
-
-    if (action === 'edit-product') {
-        editProduct(name);
-    } else if (action === 'delete-product') {
-        removeProduct(name);
-    } else if (action === 'edit-recipe') {
-        editRecipe(name);
-    } else if (action === 'delete-recipe') {
-        deleteRecipe(name);
-    }
-});
 
 // === Editar producto ===
 function editProduct(name) {
@@ -656,12 +656,21 @@ function createParticles() {
         p.style.animationDelay = `${Math.random() * 5}s`;
         p.style.animationDuration = `${Math.random() * 10 + 10}s`;
         container.appendChild(p);
-        setTimeout(() => p.remove(), 20000);
+        setTimeout(() => {
+            if (p.parentElement === container) container.removeChild(p);
+        }, 20000);
     };
 
-    for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
+    // Crear partículas iniciales
+    for (let i = 0; i < count; i++) {
+        setTimeout(create, i * 1000);
+    }
+
+    // Reiniciar cada 30 segundos
     setInterval(() => {
-        document.querySelectorAll('.particle').forEach(p => p.remove());
-        for (let i = 0; i < count; i++) setTimeout(create, i * 500);
+        document.querySelectorAll('#particles .particle').forEach(p => p.remove());
+        for (let i = 0; i < count; i++) {
+            setTimeout(create, i * 500);
+        }
     }, 30000);
 }
