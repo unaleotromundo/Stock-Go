@@ -2,7 +2,13 @@ let currentEditingRecipe = null;
 let stock = {};
 let recipes = {};
 let sales = [];
-let movements = [];
+let movements = {};
+
+// === Carrito de ventas con cantidades ===
+let selectedSales = {};
+
+// === Referencias al widget flotante ===
+let floatingCart, floatingCartItems, floatingTotal, closeFloatingCart, confirmFloatingSale;
 
 // === Cargar datos al iniciar ===
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,14 +20,36 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProductSuggestions();
     createParticles();
 
-    // Cerrar modales con Escape
+    // Inicializar referencias al widget flotante
+    floatingCart = document.getElementById('floatingCart');
+    floatingCartItems = document.getElementById('floatingCartItems');
+    floatingTotal = document.getElementById('floatingTotal');
+    closeFloatingCart = document.getElementById('closeFloatingCart');
+    confirmFloatingSale = document.getElementById('confirmFloatingSale');
+
+    // Eventos del widget
+    if (closeFloatingCart) {
+        closeFloatingCart.onclick = () => {
+            floatingCart.style.display = 'none';
+        };
+    }
+
+    if (confirmFloatingSale) {
+        confirmFloatingSale.onclick = confirmSelectedSales;
+    }
+
+    // Cerrar con Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeAddStockModal();
             closeEditModal();
             closeEditProductModal();
+            if (floatingCart) floatingCart.style.display = 'none';
         }
     });
+
+    // Actualizar carrito inicial
+    updateFloatingCart();
 });
 
 // === Cargar desde localStorage ===
@@ -100,19 +128,37 @@ function unescapeHtml(text) {
     return div.textContent || div.innerText || '';
 }
 
-// === Eventos delegados para botones con data-* ===
+// === Eventos delegados con data-* (seguro con apostrofes) ===
 document.addEventListener('click', function(e) {
-    const action = e.target.getAttribute('data-action');
-    const name = unescapeHtml(e.target.getAttribute('data-name'));
+    const target = e.target.closest('[data-action]');
+    if (!target) return;
 
-    if (action === 'edit-product') {
-        editProduct(name);
-    } else if (action === 'delete-product') {
-        removeProduct(name);
-    } else if (action === 'edit-recipe') {
-        editRecipe(name);
-    } else if (action === 'delete-recipe') {
-        deleteRecipe(name);
+    const action = target.dataset.action;
+    let name = target.dataset.name || target.closest('[data-name]')?.dataset.name;
+
+    if (name) {
+        name = unescapeHtml(name);
+    }
+
+    switch (action) {
+        case 'add-to-sale':
+            addToSale(name);
+            break;
+        case 'remove-one':
+            removeOneFromSelection(name);
+            break;
+        case 'edit-product':
+            editProduct(name);
+            break;
+        case 'delete-product':
+            removeProduct(name);
+            break;
+        case 'edit-recipe':
+            editRecipe(name);
+            break;
+        case 'delete-recipe':
+            deleteRecipe(name);
+            break;
     }
 });
 
@@ -336,34 +382,6 @@ function deleteRecipe(name) {
     }
 }
 
-// === Actualizar botones de venta ===
-function updateSalesButtons() {
-    const container = document.getElementById('salesButtons');
-    container.innerHTML = '';
-
-    if (Object.keys(recipes).length === 0) {
-        container.innerHTML = `
-            <div class="sale-btn" style="background:#95a5a6;color:white;cursor:not-allowed;">
-                🍔 No hay recetas disponibles<br><small>Crea recetas primero</small>
-            </div>
-        `;
-        return;
-    }
-
-    for (let [name, recipe] of Object.entries(recipes)) {
-        const button = document.createElement('button');
-        button.className = 'sale-btn';
-        if (checkCanMakeRecipe(name)) {
-            button.onclick = () => makeSale(name);
-            button.innerHTML = `🍔 ${escapeHtml(name)}<br><strong>$${recipe.price}</strong>`;
-        } else {
-            button.disabled = true;
-            button.innerHTML = `❌ ${escapeHtml(name)}<br><small>Sin stock suficiente</small>`;
-        }
-        container.appendChild(button);
-    }
-}
-
 // === Verificar si se puede hacer la receta ===
 function checkCanMakeRecipe(name) {
     const recipe = recipes[name];
@@ -373,35 +391,189 @@ function checkCanMakeRecipe(name) {
     return true;
 }
 
-// === Realizar venta ===
-function makeSale(name) {
+// === Verifica si agregar 1 más excede el stock disponible ===
+function wouldExceedStock(name, currentQty) {
+    const recipe = recipes[name];
+    for (let [ing, neededPerUnit] of Object.entries(recipe.ingredients)) {
+        const totalNeeded = neededPerUnit * (currentQty + 1);
+        if (!stock[ing] || stock[ing].quantity < totalNeeded) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// === Agregar un ítem al carrito (puede sumar si ya existe) ===
+function addToSale(name) {
     if (!checkCanMakeRecipe(name)) {
-        alert('Stock insuficiente');
+        showAlert('warning', `⚠️ No hay stock suficiente para ${name}`);
         return;
     }
 
-    const recipe = recipes[name];
-    for (let [ing, needed] of Object.entries(recipe.ingredients)) {
-        stock[ing].quantity -= needed;
-        movements.push({
-            date: new Date().toLocaleString('es-AR'),
-            type: 'Salida',
-            product: ing,
-            quantity: needed,
-            description: `Venta: ${name}`
-        });
+    if (selectedSales[name] && wouldExceedStock(name, selectedSales[name])) {
+        showAlert('warning', `⚠️ No puedes agregar más: alcanzaste el límite de stock para ${name}`);
+        return;
     }
 
-    sales.push({
-        date: new Date().toLocaleString('es-AR'),
-        product: name,
-        price: recipe.price
+    selectedSales[name] = (selectedSales[name] || 0) + 1;
+    updateSalesButtons();
+    updateFloatingCart();
+}
+
+// === Actualizar botones de venta (versión con acumulación) ===
+function updateSalesButtons() {
+    const container = document.getElementById('salesButtons');
+    container.innerHTML = '';
+
+    if (Object.keys(recipes).length === 0) {
+        container.innerHTML = `
+            <div class="sale-btn" style="background:#95a5a6;color:white;cursor:not-allowed;height:80px;display:flex;align-items:center;justify-content:center;">
+                🍔 No hay recetas disponibles<br><small>Crea recetas primero</small>
+            </div>
+        `;
+        return;
+    }
+
+    for (let [name, recipe] of Object.entries(recipes)) {
+        const button = document.createElement('button');
+        button.className = 'sale-btn';
+        button.dataset.name = name;
+        button.dataset.action = 'add-to-sale';
+
+        const canMake = checkCanMakeRecipe(name);
+        const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
+
+        if (canMake && !willExceed) {
+            button.innerHTML = `🍔 ${escapeHtml(name)}<br><strong>$${recipe.price}</strong>`;
+            if (selectedSales[name]) {
+                button.classList.add('selected');
+                const badge = document.createElement('span');
+                badge.style.position = 'absolute';
+                badge.style.top = '4px';
+                badge.style.right = '4px';
+                badge.style.background = '#27ae60';
+                badge.style.color = 'white';
+                badge.style.borderRadius = '50%';
+                badge.style.width = '18px';
+                badge.style.height = '18px';
+                badge.style.fontSize = '0.7em';
+                badge.style.display = 'flex';
+                badge.style.alignItems = 'center';
+                badge.style.justifyContent = 'center';
+                badge.textContent = selectedSales[name];
+                button.appendChild(badge);
+            }
+        } else {
+            button.disabled = true;
+            button.innerHTML = `❌<br><small>Sin stock</small>`;
+        }
+
+        container.appendChild(button);
+    }
+}
+
+// === Actualizar el widget flotante ===
+function updateFloatingCart() {
+    if (!floatingCartItems) return;
+    floatingCartItems.innerHTML = '';
+
+    const items = Object.entries(selectedSales);
+    if (items.length === 0) {
+        floatingCartItems.innerHTML = '<p style="color:#ccc;text-align:center;">Vacío</p>';
+        floatingTotal.textContent = '$0';
+        floatingCart.style.display = 'none';
+        return;
+    }
+
+    let total = 0;
+    items.forEach(([name, qty]) => {
+        const recipe = recipes[name];
+        const itemTotal = recipe.price * qty;
+        total += itemTotal;
+
+        const item = document.createElement('div');
+        item.style.margin = '6px 0';
+        item.style.padding = '8px';
+        item.style.background = 'var(--card-bg)';
+        item.style.borderRadius = '8px';
+        item.style.fontSize = '0.9em';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+
+        item.innerHTML = `
+            <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                🍔 ×${qty} ${escapeHtml(name)}
+            </span>
+            <span style="color: var(--accent-gold); margin: 0 8px;">$${itemTotal}</span>
+            <button class="btn btn-danger"
+                    style="padding:4px 8px;font-size:0.8em;"
+                    data-action="remove-one"
+                    data-name="${escapeHtml(name)}">
+                ➖
+            </button>
+        `;
+        floatingCartItems.appendChild(item);
     });
 
-    showAlert('success', `✅ Venta: ${name} - $${recipe.price}`);
+    floatingTotal.textContent = `$${total}`;
+    floatingCart.style.display = 'flex';
+}
+
+// === Quitar solo una unidad del carrito ===
+function removeOneFromSelection(name) {
+    if (selectedSales[name] > 1) {
+        selectedSales[name]--;
+    } else {
+        delete selectedSales[name];
+    }
+    updateSalesButtons();
+    updateFloatingCart();
+}
+
+// === Confirmar todas las ventas ===
+function confirmSelectedSales() {
+    if (Object.keys(selectedSales).length === 0) return;
+
+    const totalAmount = Object.entries(selectedSales).reduce((sum, [name, qty]) => {
+        return sum + (recipes[name].price * qty);
+    }, 0);
+
+    Object.entries(selectedSales).forEach(([name, qty]) => {
+        const recipe = recipes[name];
+        for (let i = 0; i < qty; i++) {
+            for (let [ing, needed] of Object.entries(recipe.ingredients)) {
+                stock[ing].quantity -= needed;
+                movements.push({
+                    date: new Date().toLocaleString('es-AR'),
+                    type: 'Salida',
+                    product: ing,
+                    quantity: needed,
+                    description: `Venta: ${name}`
+                });
+            }
+            sales.push({
+                date: new Date().toLocaleString('es-AR'),
+                product: name,
+                price: recipe.price
+            });
+        }
+    });
+
+    const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
+    showAlert('success', `✅ Venta registrada: ${Object.keys(selectedSales).length} productos, ${totalItems} ítems - Total: $${totalAmount}`);
+
+    selectedSales = {};
     updateSalesButtons();
     updateStockDisplay();
+    updateReports();
     saveData();
+    floatingCart.style.display = 'none';
+}
+
+// === Sumar todas las cantidades ===
+function sumQuantities(obj) {
+    return Object.values(obj).reduce((a, b) => a + b, 0);
 }
 
 // === Actualizar reportes ===
