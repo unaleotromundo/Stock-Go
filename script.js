@@ -12,7 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSalesButtons();
     updateReports();
     updateProductSuggestions();
-    createParticles(); // ✅ Iniciar partículas aquí
+    createParticles();
+
+    // Cerrar modales con Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeAddStockModal();
+            closeEditModal();
+            closeEditProductModal();
+        }
+    });
 });
 
 // === Cargar desde localStorage ===
@@ -77,7 +86,7 @@ function showSection(sectionName) {
     }
 }
 
-// === Escapar HTML para evitar problemas con comillas ===
+// === Escapar HTML para evitar inyección ===
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -122,14 +131,15 @@ function updateStockDisplay() {
 
     let tableHTML = `<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Acciones</th></tr></thead><tbody>`;
     for (let [name, data] of Object.entries(stock)) {
+        const escapedName = escapeHtml(name);
         const quantityClass = data.quantity <= 5 ? 'low' : data.quantity <= 15 ? 'medium' : 'good';
         tableHTML += `
             <tr>
-                <td>${name}</td>
-                <td class="stock-quantity ${quantityClass}">${data.quantity} ${data.unit}</td>
+                <td>${escapedName}</td>
+                <td class="stock-quantity ${quantityClass}">${data.quantity} ${escapeHtml(data.unit)}</td>
                 <td class="actions">
-                    <button class="edit-btn" data-action="edit-product" data-name="${escapeHtml(name)}">✏️</button>
-                    <button class="delete-btn" data-action="delete-product" data-name="${escapeHtml(name)}">🗑️</button>
+                    <button class="edit-btn" data-action="edit-product" data-name="${escapedName}">✏️</button>
+                    <button class="delete-btn" data-action="delete-product" data-name="${escapedName}">🗑️</button>
                 </td>
             </tr>
         `;
@@ -193,20 +203,21 @@ function updateRecipesDisplay() {
     }
 
     for (let [name, recipe] of Object.entries(recipes)) {
+        const escapedName = escapeHtml(name);
         const ingredientsList = Object.entries(recipe.ingredients)
-            .map(([ing, qty]) => `${qty} ${ing}`)
+            .map(([ing, qty]) => `${qty} ${escapeHtml(ing)}`)
             .join(', ');
 
         const card = document.createElement('div');
         card.className = 'recipe-card';
         card.innerHTML = `
             <div class="burger-icon">🍔</div>
-            <h3>${name}</h3>
+            <h3>${escapedName}</h3>
             <div class="price">Precio: $${recipe.price}</div>
-            <div class="ingredients"><strong>Ingredientes:</strong><span>${ingredientsList}</span></div>
+            <div class="ingredients"><strong>Ingredientes:</strong><span>${escapeHtml(ingredientsList)}</span></div>
             <div class="actions">
-                <button class="edit-btn" data-action="edit-recipe" data-name="${escapeHtml(name)}">✏️ Editar</button>
-                <button class="delete-btn" data-action="delete-recipe" data-name="${escapeHtml(name)}">🗑️ Eliminar</button>
+                <button class="edit-btn" data-action="edit-recipe" data-name="${escapedName}">✏️ Editar</button>
+                <button class="delete-btn" data-action="delete-recipe" data-name="${escapedName}">🗑️ Eliminar</button>
             </div>
         `;
         container.appendChild(card);
@@ -250,7 +261,7 @@ function addEditIngredient(ingredient = '', quantity = '') {
     const container = document.getElementById('editIngredientsList');
     const div = document.createElement('div');
     div.className = 'modal-ingredient-item';
-    const options = Object.keys(stock).map(i => `<option value="${i}" ${i === ingredient ? 'selected' : ''}>${i}</option>`).join('');
+    const options = Object.keys(stock).map(i => `<option value="${escapeHtml(i)}" ${i === ingredient ? 'selected' : ''}>${escapeHtml(i)}</option>`).join('');
     div.innerHTML = `
         <select class="edit-ingredient-select"><option value="">Seleccionar...</option>${options}</select>
         <input type="number" placeholder="Cantidad" min="1" class="edit-ingredient-quantity" value="${quantity}">
@@ -265,8 +276,16 @@ function saveEditedRecipe() {
     const price = parseFloat(document.getElementById('editRecipePrice').value);
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
 
-    if (!name || !price || items.length === 0) {
-        alert('Completa todos los campos');
+    if (!name) {
+        alert('El nombre de la receta no puede estar vacío');
+        return;
+    }
+    if (isNaN(price) || price <= 0) {
+        alert('El precio debe ser un número mayor a 0');
+        return;
+    }
+    if (items.length === 0) {
+        alert('Agrega al menos un ingrediente');
         return;
     }
 
@@ -275,15 +294,19 @@ function saveEditedRecipe() {
         const select = item.querySelector('.edit-ingredient-select');
         const input = item.querySelector('.edit-ingredient-quantity');
         const qty = parseInt(input.value);
-        if (select.value && qty > 0) ingredients[select.value] = qty;
-        else {
+        const ingName = select.value.trim();
+        if (ingName && qty > 0) {
+            ingredients[ingName] = qty;
+        } else {
             alert('Todos los ingredientes deben tener producto y cantidad válida');
             return;
         }
     }
 
     recipes[name] = { ingredients, price };
-    if (currentEditingRecipe && currentEditingRecipe !== name) delete recipes[currentEditingRecipe];
+    if (currentEditingRecipe && currentEditingRecipe !== name) {
+        delete recipes[currentEditingRecipe];
+    }
     closeEditModal();
     showAlert('success', `✅ Receta "${name}" guardada`);
     updateRecipesDisplay();
@@ -332,10 +355,10 @@ function updateSalesButtons() {
         button.className = 'sale-btn';
         if (checkCanMakeRecipe(name)) {
             button.onclick = () => makeSale(name);
-            button.innerHTML = `🍔 ${name}<br><strong>$${recipe.price}</strong>`;
+            button.innerHTML = `🍔 ${escapeHtml(name)}<br><strong>$${recipe.price}</strong>`;
         } else {
             button.disabled = true;
-            button.innerHTML = `❌ ${name}<br><small>Sin stock suficiente</small>`;
+            button.innerHTML = `❌ ${escapeHtml(name)}<br><small>Sin stock suficiente</small>`;
         }
         container.appendChild(button);
     }
@@ -397,7 +420,7 @@ function updateReports() {
         let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
         todaySales.forEach(s => {
             const time = s.date.split(' ')[1];
-            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+            html += `<tr><td>${escapeHtml(s.product)}</td><td>$${s.price}</td><td>${time}</td></tr>`;
         });
         html += `</table><p style="text-align:center;font-size:1.3em;margin-top:15px;"><strong>💵 Total: $${total}</strong></p>`;
         todayContainer.innerHTML = html;
@@ -409,14 +432,16 @@ function updateReports() {
     } else {
         let html = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
         movements.slice(-20).reverse().forEach(mov => {
+            const escapedProduct = escapeHtml(mov.product);
+            const escapedDesc = escapeHtml(mov.description);
             const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
             html += `
                 <tr>
                     <td style="font-size:0.9em;">${mov.date}</td>
                     <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
-                    <td>${mov.product}</td>
+                    <td>${escapedProduct}</td>
                     <td>${mov.quantity}</td>
-                    <td style="font-size:0.9em;">${mov.description}</td>
+                    <td style="font-size:0.9em;">${escapedDesc}</td>
                 </tr>
             `;
         });
@@ -437,6 +462,11 @@ function showAlert(type, message) {
 
 // === Cargar datos de ejemplo ===
 function loadSampleData() {
+    if (Object.keys(stock).length > 0 || Object.keys(recipes).length > 0) {
+        const confirmLoad = confirm('¿Estás seguro? Esto sobrescribirá el stock y recetas actuales.');
+        if (!confirmLoad) return;
+    }
+
     stock = {
         'Pan Brioche': { quantity: 50, unit: 'unidades' },
         'Medallón Danny\'s': { quantity: 45, unit: 'unidades' },
@@ -485,7 +515,8 @@ function confirmClearAllData() {
     const confirmation = confirm(
         '⚠️ ¿Eliminar TODOS los datos?\n' +
         'Se borrarán:\n' +
-        '  • Stock\n  • Recetas\n  • Ventas\n  • Historial\n' +
+        '  • Stock\n' +
+        '  • Recetas\n  • Ventas\n  • Historial\n' +
         'Esta acción NO se puede deshacer.\n¿Continuar?'
     );
     if (confirmation) clearAllData();
@@ -529,7 +560,7 @@ function exportDataAndPDF() {
             <head>
                 <meta charset="UTF-8">
                 <title>Historial de Movimientos - Danny's Burger</title>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
                 <style>
                     body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
                     h1, h2 { text-align: center; color: #1a1a1a; }
@@ -562,14 +593,16 @@ function exportDataAndPDF() {
                     </thead>
                     <tbody>
                         ${movements.map(mov => {
+                            const escapedProduct = escapeHtml(mov.product);
+                            const escapedDesc = escapeHtml(mov.description);
                             const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
                             return `
                                 <tr>
                                     <td style="font-size:0.9em;">${mov.date}</td>
                                     <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
-                                    <td>${mov.product}</td>
+                                    <td>${escapedProduct}</td>
                                     <td>${mov.quantity}</td>
-                                    <td style="font-size:0.9em;">${mov.description}</td>
+                                    <td style="font-size:0.9em;">${escapedDesc}</td>
                                 </tr>
                             `;
                         }).join('')}
@@ -618,8 +651,11 @@ function addStockFromModal() {
         return;
     }
 
-    if (stock[name]) stock[name].quantity += quantity;
-    else stock[name] = { quantity, unit };
+    if (stock[name]) {
+        stock[name].quantity += quantity;
+    } else {
+        stock[name] = { quantity, unit };
+    }
 
     movements.push({
         date: new Date().toLocaleString('es-AR'),
@@ -661,12 +697,10 @@ function createParticles() {
         }, 20000);
     };
 
-    // Crear partículas iniciales
     for (let i = 0; i < count; i++) {
         setTimeout(create, i * 1000);
     }
 
-    // Reiniciar cada 30 segundos
     setInterval(() => {
         document.querySelectorAll('#particles .particle').forEach(p => p.remove());
         for (let i = 0; i < count; i++) {
