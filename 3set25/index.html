@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny's Burger - Gestión de Stock</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                <span id="themeIcon">☀️</span>
+            </button>
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <div class="burger-icon">🍔</div>
+                </div>
+                <div>
+                    <h1>DANNY'S</h1>
+                    <div class="subtitle">BURGER • 2024</div>
+                </div>
+            </div>
+            <div class="vintage-decoration">◆ ◇ ◆</div>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
+            <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
+            <button class="nav-btn" onclick="showSection('sales')">💰 Registrar Venta</button>
+            <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
+        </div>
+        <div class="content">
+            <!-- Stock Actual -->
+            <div id="stock" class="section active">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 style="display: flex; align-items: center; gap: 8px; font-size: 1.8em; color: #fff;">
+                        📦 Stock Actual
+                    </h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+
+                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;">
+                    + AGREGAR producto
+                </button>
+
+                <div id="stockDisplay" class="stock-table-container"></div>
+            </div>
+
+            <!-- Recetas/Combos -->
+            <div id="recipes" class="section">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 style="display: flex; align-items: center; gap: 8px; font-size: 1.8em; color: #fff;">
+                        🍔 Recetas y Combos
+                    </h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+
+                <div id="savedRecipes" class="recipes-grid"></div>
+
+                <button class="btn btn-gold" onclick="openAddRecipeModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-top: 20px;">
+                    + AGREGAR Combo/Receta
+                </button>
+            </div>
+
+            <!-- Registrar Ventas -->
+            <div id="sales" class="section">
+                <h2>💰 Registrar Venta</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div id="salesButtons" class="sales-grid"></div>
+            </div>
+
+            <!-- Reportes -->
+            <div id="reports" class="section">
+                <h2>📊 Reportes</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div class="sales-report">
+                    <h3>📈 Ventas de Hoy</h3>
+                    <div id="todaySales"></div>
+                </div>
+                <div class="sales-report">
+                    <h3>📋 Historial de Movimientos</h3>
+                    <div id="movementHistory"></div>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="confirmClearAllData()">
+                        🗑️ Limpiar Todos los Datos
+                    </button>
+                    <button class="btn" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;"
+                            onclick="exportDataAndPDF()">
+                        📤 Exportar Base de Datos + PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Cargar Stock -->
+    <div id="addStockModal" class="edit-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-modal" onclick="closeAddStockModal()">×</button>
+            <div class="modal-header">
+                <h3>➕ Cargar Stock</h3>
+                <p>Agrega productos al inventario</p>
+            </div>
+            <div class="modal-form-group">
+                <label for="productNameModal">Nombre del Producto:</label>
+                <input type="text" id="productNameModal" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
+            </div>
+            <div class="modal-form-group">
+                <label for="productQuantityModal">Cantidad:</label>
+                <input type="number" id="productQuantityModal" placeholder="0" min="0">
+            </div>
+            <div class="modal-form-group">
+                <label for="productUnitModal">Unidad:</label>
+                <select id="productUnitModal">
+                    <option value="unidades">Unidades</option>
+                    <option value="kg">Kilogramos</option>
+                    <option value="litros">Litros</option>
+                    <option value="gramos">Gramos</option>
+                    <option value="ml">Mililitros</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-gold" onclick="addStockFromModal()">Agregar Producto</button>
+                <button class="btn btn-danger" onclick="closeAddStockModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar recetas -->
+    <div id="editModal" class="edit-modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeEditModal()">×</button>
+            <div class="modal-header">
+                <h3>✏️ Editar Receta</h3>
+                <p>Modifica los datos y guarda los cambios</p>
+            </div>
+            <div class="modal-form-group">
+                <label for="editRecipeName">Nombre del Combo/Receta:</label>
+                <input type="text" id="editRecipeName" placeholder="Nombre de la receta">
+            </div>
+            <div class="modal-form-group">
+                <label for="editRecipePrice">Precio de Venta ($):</label>
+                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
+            </div>
+            <div class="modal-form-group">
+                <label>Ingredientes:</label>
+                <div id="editIngredientsList" class="modal-ingredients"></div>
+                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
+                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para editar producto -->
+    <div id="editProductModal" class="edit-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-modal" onclick="closeEditProductModal()">×</button>
+            <div class="modal-header">
+                <h3>✏️ Editar Producto</h3>
+                <p>Modifica la cantidad o unidad</p>
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductName">Nombre del Producto:</label>
+                <input type="text" id="editProductName" readonly>
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductQuantity">Cantidad:</label>
+                <input type="number" id="editProductQuantity" min="0">
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductUnit">Unidad:</label>
+                <select id="editProductUnit">
+                    <option value="unidades">Unidades</option>
+                    <option value="kg">Kilogramos</option>
+                    <option value="litros">Litros</option>
+                    <option value="gramos">Gramos</option>
+                    <option value="ml">Mililitros</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-gold" onclick="saveEditedProduct()">💾 Guardar Cambios</button>
+                <button class="btn btn-danger" onclick="closeEditProductModal()">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <datalist id="productSuggestions"></datalist>
+
+    <!-- Fondo de partículas animadas -->
+    <div id="particles"></div>
+
+    <script src="script.js" defer></script>
+</body>
+</html>
