@@ -56,14 +56,23 @@
 
             <!-- Recetas/Combos -->
             <div id="recipes" class="section">
-                <h2><span style="margin-right: 8px;">🍽️</span> Recetas y Combos</h2>
-                <div class="vintage-decoration" style="margin: 0; text-align: center; font-size: 0.8em;">
-                    ◆ ◆ ◆
+                <h2>🍽️ Recetas y Combos</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div class="form-group">
+                    <label for="recipeName">Nombre del Combo/Receta:</label>
+                    <input type="text" id="recipeName" placeholder="Ej: Danny's Special Burger">
                 </div>
-                <button class="btn btn-gold" onclick="openAddRecipeModal()" style="width: 300px; margin: 20px auto; padding: 15px; font-size: 1.1em; border-radius: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <span>+</span> AGREGAR Combo/Receta
-                </button>
-                <div id="recipesDisplay" class="recipes-grid"></div>
+                <div class="form-group">
+                    <label for="recipePrice">Precio de Venta ($):</label>
+                    <input type="number" id="recipePrice" placeholder="0" min="0" step="0.01">
+                </div>
+                <div id="recipeIngredients">
+                    <h3>Ingredientes:</h3>
+                    <div id="ingredientsList"></div>
+                    <button class="btn" onclick="addIngredient()">Agregar Ingrediente</button>
+                </div>
+                <button class="btn btn-gold" onclick="saveRecipe()">Guardar Receta</button>
+                <div id="savedRecipes"></div>
             </div>
 
             <!-- Registrar Ventas -->
