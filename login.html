@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny's Burger - Login</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <span class="burger-icon">🍔</span>
+                </div>
+                <div>
+                    <h1>DANNY'S</h1>
+                    <div class="subtitle">BURGER • 2024</div>
+                </div>
+            </div>
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
+        </div>
+
+        <div class="content">
+            <div class="section active" id="login">
+                <h2>¡Bienvenido al Burger World!</h2>
+                <div class="vintage-decoration">◆ ◇ ◆</div>
+                
+                <form id="loginForm" class="form-group">
+                    <div class="modal-form-group">
+                        <label for="email">Correo Electrónico:</label>
+                        <input type="email" id="email" placeholder="Ingresa tu email" required>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-gold">Entrar al Burger World</button>
+                        <button type="button" class="btn btn-danger" onclick="showRegisterForm()">Registrarse</button>
+                    </div>
+                </form>
+
+                <form id="registerForm" class="form-group" style="display: none;">
+                    <div class="modal-form-group">
+                        <label for="registerName">Nombre:</label>
+                        <input type="text" id="registerName" placeholder="Ingresa tu nombre" required>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="registerEmail">Correo Electrónico:</label>
+                        <input type="email" id="registerEmail" placeholder="Ingresa tu email" required>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="registerPassword">Contraseña:</label>
+                        <input type="password" id="registerPassword" placeholder="Crea una contraseña" required>
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="registerRole">Rol:</label>
+                        <select id="registerRole" required>
+                            <option value="cliente">Cliente</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-gold">Crear Cuenta</button>
+                        <button type="button" class="btn btn-danger" onclick="showLoginForm()">Volver al Login</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="particles"></div>
+    <script src="login.js"></script>
+</body>
+</html>
