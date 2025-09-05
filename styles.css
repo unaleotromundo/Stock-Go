@@ -965,4 +965,30 @@ tr:hover {
         height: 26px;
         font-size: 0.8em;
     }
+/* Botón de Cerrar Sesión */
+#logoutButton {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#logoutButton:hover {
+    background: #c0392b;
+    transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+}
 }

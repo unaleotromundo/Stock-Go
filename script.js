@@ -930,3 +930,22 @@ function createParticles() {
         }
     }, 30000);
 }
+// === Cerrar sesión con confirmación ===
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    // ✅ Pregunta con confirm()
+    const deseaCerrar = confirm('¿Estás seguro de que deseas cerrar sesión?\n\nSe perderá tu acceso al sistema hasta que vuelvas a iniciar.');
+
+    if (deseaCerrar) {
+        // Limpia la sesión
+        sessionStorage.clear();
+
+        // Muestra alerta de despedida
+        showAlert('success', '👋 Sesión cerrada. Hasta luego!');
+
+        // Redirige al login después de un breve delay
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 800);
+    }
+    // Si hace clic en "Cancelar", no hace nada
+});

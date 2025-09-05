@@ -79,7 +79,7 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 5000);
 }
 
-// === Tema y Partículas (opcional en login.html) ===
+// === Tema y Partículas (opcional en index.html) ===
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
