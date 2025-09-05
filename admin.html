@@ -14,7 +14,7 @@
     <!-- Protección de acceso -->
     <script>
         if (!sessionStorage.getItem('userRole')) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
         if (sessionStorage.getItem('userRole') !== 'admin') {
             alert('Acceso denegado. Solo administradores.');
@@ -65,8 +65,14 @@
                     </div>
                 </div>
 
-                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;">
+                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 10px;">
                     + AGREGAR producto
+                </button>
+
+                <!-- ✅ Botón para cargar datos de ejemplo -->
+                <button class="btn" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;"
+                        onclick="loadSampleData()">
+                    🍔 Cargar Datos de Ejemplo
                 </button>
 
                 <div id="stockDisplay" class="stock-table-container"></div>

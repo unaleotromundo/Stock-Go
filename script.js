@@ -2,13 +2,13 @@
 let currentEditingRecipe = null;
 let stock = {};
 let recipes = {};
-let sales = [];
+let sales = []; // Cada venta tiene: date, product, price, user
 let movements = [];
 
-// === Carrito de ventas con cantidades ===
+// === Carrito de ventas ===
 let selectedSales = {};
 
-// === Referencias al widget flotante ===
+// === Referencias al carrito flotante ===
 let floatingCart, floatingCartItems, floatingTotal, closeFloatingCart, confirmFloatingSale;
 
 // === Cargar datos al iniciar ===
@@ -18,17 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRecipesDisplay();
     updateSalesButtons();
     updateReports();
+    updateMySales(); // ✅ Actualizar mis ventas al cargar
     updateProductSuggestions();
     createParticles();
 
-    // Inicializar referencias al widget flotante
+    // Inicializar referencias al carrito flotante
     floatingCart = document.getElementById('floatingCart');
     floatingCartItems = document.getElementById('floatingCartItems');
     floatingTotal = document.getElementById('floatingTotal');
     closeFloatingCart = document.getElementById('closeFloatingCart');
     confirmFloatingSale = document.getElementById('confirmFloatingSale');
 
-    // Eventos del widget
+    // Eventos del carrito
     if (closeFloatingCart) {
         closeFloatingCart.onclick = () => {
             floatingCart.style.display = 'none';
@@ -49,7 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Actualizar carrito inicial
     updateFloatingCart();
 });
 
@@ -63,24 +63,23 @@ function loadData() {
             recipes = data.recipes || {};
             sales = data.sales || [];
             movements = data.movements || [];
-            showAlert('success', '✅ Datos recuperados automáticamente.');
+            showAlert('success', '✅ Datos cargados');
         }
     } catch (e) {
-        console.error('Error al cargar datos:', e);
+        console.error('Error al cargar:', e);
         resetData();
     }
 }
 
-// === Guardar en localStorage antes de salir ===
+// === Guardar en localStorage ===
 window.addEventListener('beforeunload', saveData);
 
-// === Guardar datos ===
 function saveData() {
     try {
         const data = { stock, recipes, sales, movements };
         localStorage.setItem('dannysBurgerData', JSON.stringify(data));
     } catch (e) {
-        console.error('No se pudo guardar:', e);
+        console.error('Error al guardar:', e);
     }
 }
 
@@ -112,40 +111,32 @@ function showSection(sectionName) {
         case 'recipes': updateRecipesDisplay(); break;
         case 'sales': updateSalesButtons(); break;
         case 'reports': updateReports(); break;
+        case 'mySales': updateMySales(); break; // ✅ Nueva sección
     }
 }
 
-// === Escapar HTML para evitar inyección ===
+// === Escapar y desescapar HTML ===
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-// === Desescapar texto para usarlo en JS ===
 function unescapeHtml(text) {
     const div = document.createElement('div');
     div.innerHTML = text;
     return div.textContent || div.innerText || '';
 }
 
-// === Eventos delegados con data-* (seguro con comillas y tildes) ===
+// === Eventos delegados ===
 document.addEventListener('click', function(e) {
     const target = e.target.closest('[data-action]');
     if (!target) return;
 
     const action = target.dataset.action;
-    let name = target.dataset.name;
+    let name = target.dataset.name || target.closest('[data-name]')?.dataset.name;
 
-    // Si no está en el botón, buscar en el contenedor padre
-    if (!name) {
-        const parent = target.closest('[data-name]');
-        if (parent) name = parent.dataset.name;
-    }
-
-    if (name) {
-        name = unescapeHtml(name);
-    }
+    if (name) name = unescapeHtml(name);
 
     switch (action) {
         case 'add-to-sale':
@@ -169,45 +160,64 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// === Actualizar display de stock ===
+// === Actualizar stock (con protección contra null) ===
 function updateStockDisplay() {
     const container = document.getElementById('stockDisplay');
+    if (!container) return; // ✅ Protección
+
     if (Object.keys(stock).length === 0) {
-        container.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #ccc;">
-                <p>No hay productos en stock.</p>
-                <button class="btn btn-gold" onclick="loadSampleData()">Cargar Datos de Ejemplo</button>
-            </div>
-        `;
+        container.innerHTML = '<p style="text-align:center;color:#ccc;">No hay productos</p>';
         return;
     }
 
-    let tableHTML = `<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Acciones</th></tr></thead><tbody>`;
+    const isUserAdmin = sessionStorage.getItem('userRole') === 'admin';
+
+    let html = `<table><thead><tr><th>Producto</th><th>Cantidad</th>`;
+    if (isUserAdmin) html += `<th>Acciones</th>`;
+    html += `</tr></thead><tbody>`;
+
     for (let [name, data] of Object.entries(stock)) {
         const escapedName = escapeHtml(name);
-        const quantityClass = data.quantity <= 5 ? 'low' : data.quantity <= 15 ? 'medium' : 'good';
-        tableHTML += `
+        const cls = data.quantity <= 5 ? 'low' : data.quantity <= 15 ? 'medium' : 'good';
+
+        html += `
             <tr>
                 <td>${escapedName}</td>
-                <td class="stock-quantity ${quantityClass}">${data.quantity} ${escapeHtml(data.unit)}</td>
+                <td class="stock-quantity ${cls}">${data.quantity} ${escapeHtml(data.unit)}</td>
+        `;
+
+        if (isUserAdmin) {
+            html += `
                 <td class="actions">
                     <button class="edit-btn" data-action="edit-product" data-name="${escapedName}">✏️</button>
                     <button class="delete-btn" data-action="delete-product" data-name="${escapedName}">🗑️</button>
                 </td>
-            </tr>
-        `;
+            `;
+        }
+        html += `</tr>`;
     }
-    tableHTML += '</tbody></table>';
-    container.innerHTML = tableHTML;
+    html += '</tbody></table>';
+    container.innerHTML = html;
 }
 
 // === Editar producto ===
 function editProduct(name) {
     const product = stock[name];
     if (!product) return;
-    document.getElementById('editProductName').value = name;
-    document.getElementById('editProductQuantity').value = product.quantity;
-    document.getElementById('editProductUnit').value = product.unit;
+
+    const nameInput = document.getElementById('editProductName');
+    const qtyInput = document.getElementById('editProductQuantity');
+    const unitSelect = document.getElementById('editProductUnit');
+
+    if (!nameInput || !qtyInput || !unitSelect) {
+        console.error('❌ No se encontraron los elementos del modal');
+        return;
+    }
+
+    nameInput.value = name;
+    qtyInput.value = product.quantity;
+    unitSelect.value = product.unit;
+
     document.getElementById('editProductModal').classList.add('show');
 }
 
@@ -218,54 +228,59 @@ function saveEditedProduct() {
     const unit = document.getElementById('editProductUnit').value;
 
     if (!name || isNaN(quantity) || quantity < 0) {
-        alert('Por favor completa todos los campos correctamente');
+        alert('Completa todos los campos correctamente');
         return;
-    }
-
-    // Si el nombre cambió, eliminar el antiguo
-    const oldName = document.getElementById('editProductName').dataset.original || '';
-    if (oldName && oldName !== name) {
-        delete stock[oldName];
     }
 
     stock[name] = { quantity, unit };
     updateStockDisplay();
-    showAlert('success', `✅ Producto "${name}" actualizado correctamente`);
     closeEditProductModal();
+    showAlert('success', `✅ Producto "${name}" actualizado`);
     saveData();
 }
 
-// === Cerrar modal de edición de producto ===
+// === Cerrar modal de producto ===
 function closeEditProductModal() {
     document.getElementById('editProductModal').classList.remove('show');
 }
 
 // === Eliminar producto ===
 function removeProduct(name) {
-    if (confirm(`¿Estás seguro de eliminar "${name}" del stock?`)) {
+    if (confirm(`¿Eliminar "${name}" del stock?`)) {
         delete stock[name];
         updateStockDisplay();
         updateProductSuggestions();
-        showAlert('warning', `⚠️ Se eliminó ${name} del stock`);
+        showAlert('warning', `⚠️ Se eliminó ${name}`);
         saveData();
     }
 }
 
-// === Actualizar recetas (tarjetas) ===
+// === Actualizar recetas ===
 function updateRecipesDisplay() {
     const container = document.getElementById('savedRecipes');
+    if (!container) return;
+
     container.innerHTML = '';
 
     if (Object.keys(recipes).length === 0) {
-        container.innerHTML = '<p>No hay recetas creadas aún. Haz clic en "AGREGAR Combo/Receta" para comenzar.</p>';
+        container.innerHTML = '<p>No hay recetas creadas aún.</p>';
         return;
     }
+
+    const isUserAdmin = sessionStorage.getItem('userRole') === 'admin';
 
     for (let [name, recipe] of Object.entries(recipes)) {
         const escapedName = escapeHtml(name);
         const ingredientsList = Object.entries(recipe.ingredients)
             .map(([ing, qty]) => `${qty} ${escapeHtml(ing)}`)
             .join(', ');
+
+        const actionsHTML = isUserAdmin
+            ? `<div class="actions">
+                <button class="edit-btn" data-action="edit-recipe" data-name="${escapedName}">✏️ Editar</button>
+                <button class="delete-btn" data-action="delete-recipe" data-name="${escapedName}">🗑️ Eliminar</button>
+              </div>`
+            : '';
 
         const card = document.createElement('div');
         card.className = 'recipe-card';
@@ -274,18 +289,16 @@ function updateRecipesDisplay() {
             <h3>${escapedName}</h3>
             <div class="price">Precio: $${recipe.price}</div>
             <div class="ingredients"><strong>Ingredientes:</strong><span>${escapeHtml(ingredientsList)}</span></div>
-            <div class="actions">
-                <button class="edit-btn" data-action="edit-recipe" data-name="${escapedName}">✏️ Editar</button>
-                <button class="delete-btn" data-action="delete-recipe" data-name="${escapedName}">🗑️ Eliminar</button>
-            </div>
+            ${actionsHTML}
         `;
         container.appendChild(card);
     }
 }
 
-// === Actualizar sugerencias de productos ===
+// === Actualizar sugerencias ===
 function updateProductSuggestions() {
     const datalist = document.getElementById('productSuggestions');
+    if (!datalist) return;
     datalist.innerHTML = '';
     Object.keys(stock).forEach(name => {
         const option = document.createElement('option');
@@ -329,24 +342,15 @@ function addEditIngredient(ingredient = '', quantity = '') {
     container.appendChild(div);
 }
 
-// === Guardar receta editada ===
+// === Guardar receta ===
 function saveEditedRecipe() {
     const name = document.getElementById('editRecipeName').value.trim();
     const price = parseFloat(document.getElementById('editRecipePrice').value);
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
 
-    if (!name) {
-        alert('El nombre de la receta no puede estar vacío');
-        return;
-    }
-    if (isNaN(price) || price <= 0) {
-        alert('El precio debe ser un número mayor a 0');
-        return;
-    }
-    if (items.length === 0) {
-        alert('Agrega al menos un ingrediente');
-        return;
-    }
+    if (!name) return alert('Nombre requerido');
+    if (isNaN(price) || price <= 0) return alert('Precio inválido');
+    if (items.length === 0) return alert('Agrega al menos un ingrediente');
 
     const ingredients = {};
     for (const item of items) {
@@ -357,8 +361,7 @@ function saveEditedRecipe() {
         if (ingName && qty > 0) {
             ingredients[ingName] = qty;
         } else {
-            alert('Todos los ingredientes deben tener producto y cantidad válida');
-            return;
+            return alert('Ingrediente o cantidad inválida');
         }
     }
 
@@ -378,11 +381,6 @@ function closeEditModal() {
     document.getElementById('editModal').classList.remove('show');
     currentEditingRecipe = null;
 }
-
-// Cerrar modal al hacer clic fuera
-document.getElementById('editModal')?.addEventListener('click', e => {
-    if (e.target === document.getElementById('editModal')) closeEditModal();
-});
 
 // === Eliminar receta ===
 function deleteRecipe(name) {
@@ -404,7 +402,7 @@ function checkCanMakeRecipe(name) {
     return true;
 }
 
-// === Verifica si agregar 1 más excede el stock disponible ===
+// === Verifica si agregar 1 más excede el stock ===
 function wouldExceedStock(name, currentQty) {
     const recipe = recipes[name];
     for (let [ing, neededPerUnit] of Object.entries(recipe.ingredients)) {
@@ -416,7 +414,7 @@ function wouldExceedStock(name, currentQty) {
     return false;
 }
 
-// === Agregar un ítem al carrito (puede sumar si ya existe) ===
+// === Agregar al carrito ===
 function addToSale(name) {
     if (!checkCanMakeRecipe(name)) {
         showAlert('warning', `⚠️ No hay stock suficiente para ${name}`);
@@ -424,7 +422,7 @@ function addToSale(name) {
     }
 
     if (selectedSales[name] && wouldExceedStock(name, selectedSales[name])) {
-        showAlert('warning', `⚠️ No puedes agregar más: alcanzaste el límite de stock para ${name}`);
+        showAlert('warning', `⚠️ Alcanzaste el límite de stock para ${name}`);
         return;
     }
 
@@ -433,17 +431,14 @@ function addToSale(name) {
     updateFloatingCart();
 }
 
-// === Actualizar botones de venta (versión con acumulación) ===
+// === Actualizar botones de venta ===
 function updateSalesButtons() {
     const container = document.getElementById('salesButtons');
+    if (!container) return;
     container.innerHTML = '';
 
     if (Object.keys(recipes).length === 0) {
-        container.innerHTML = `
-            <div class="sale-btn" style="background:#95a5a6;color:white;cursor:not-allowed;height:80px;display:flex;align-items:center;justify-content:center;">
-                🍔 No hay recetas disponibles<br><small>Crea recetas primero</small>
-            </div>
-        `;
+        container.innerHTML = '<div class="sale-btn" style="background:#95a5a6;cursor:not-allowed;">🍔 No hay recetas</div>';
         return;
     }
 
@@ -461,18 +456,10 @@ function updateSalesButtons() {
             if (selectedSales[name]) {
                 button.classList.add('selected');
                 const badge = document.createElement('span');
-                badge.style.position = 'absolute';
-                badge.style.top = '4px';
-                badge.style.right = '4px';
-                badge.style.background = '#27ae60';
-                badge.style.color = 'white';
-                badge.style.borderRadius = '50%';
-                badge.style.width = '18px';
-                badge.style.height = '18px';
-                badge.style.fontSize = '0.7em';
-                badge.style.display = 'flex';
-                badge.style.alignItems = 'center';
-                badge.style.justifyContent = 'center';
+                badge.style.position = 'absolute'; badge.style.top = '4px'; badge.style.right = '4px';
+                badge.style.background = '#27ae60'; badge.style.color = 'white'; badge.style.borderRadius = '50%';
+                badge.style.width = '18px'; badge.style.height = '18px'; badge.style.fontSize = '0.7em';
+                badge.style.display = 'flex'; badge.style.alignItems = 'center'; badge.style.justifyContent = 'center';
                 badge.textContent = selectedSales[name];
                 button.appendChild(badge);
             }
@@ -485,7 +472,7 @@ function updateSalesButtons() {
     }
 }
 
-// === Actualizar el widget flotante ===
+// === Actualizar carrito flotante ===
 function updateFloatingCart() {
     if (!floatingCartItems) return;
     floatingCartItems.innerHTML = '';
@@ -505,26 +492,16 @@ function updateFloatingCart() {
         total += itemTotal;
 
         const item = document.createElement('div');
-        item.style.margin = '6px 0';
-        item.style.padding = '8px';
-        item.style.background = 'var(--card-bg)';
-        item.style.borderRadius = '8px';
-        item.style.fontSize = '0.9em';
-        item.style.display = 'flex';
-        item.style.justifyContent = 'space-between';
-        item.style.alignItems = 'center';
-
+        item.style.margin = '6px 0'; item.style.padding = '8px';
+        item.style.background = 'var(--card-bg)'; item.style.borderRadius = '8px';
+        item.style.fontSize = '0.9em'; item.style.display = 'flex'; item.style.justifyContent = 'space-between';
         item.innerHTML = `
             <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 🍔 ×${qty} ${escapeHtml(name)}
             </span>
             <span style="color: var(--accent-gold); margin: 0 8px;">$${itemTotal}</span>
-            <button class="btn btn-danger"
-                    style="padding:4px 8px;font-size:0.8em;"
-                    data-action="remove-one"
-                    data-name="${escapeHtml(name)}">
-                ➖
-            </button>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
+                    data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
         `;
         floatingCartItems.appendChild(item);
     });
@@ -533,7 +510,7 @@ function updateFloatingCart() {
     floatingCart.style.display = 'flex';
 }
 
-// === Quitar solo una unidad del carrito ===
+// === Quitar uno del carrito ===
 function removeOneFromSelection(name) {
     if (selectedSales[name] > 1) {
         selectedSales[name]--;
@@ -544,17 +521,24 @@ function removeOneFromSelection(name) {
     updateFloatingCart();
 }
 
-// === Confirmar todas las ventas ===
+// === Confirmar venta ===
 function confirmSelectedSales() {
     if (Object.keys(selectedSales).length === 0) return;
 
-    const totalAmount = Object.entries(selectedSales).reduce((sum, [name, qty]) => {
-        return sum + (recipes[name].price * qty);
-    }, 0);
+    const userName = sessionStorage.getItem('userName') || 'Desconocido';
 
     Object.entries(selectedSales).forEach(([name, qty]) => {
         const recipe = recipes[name];
         for (let i = 0; i < qty; i++) {
+            // ✅ Registrar la venta con el usuario
+            sales.push({
+                date: new Date().toLocaleString('es-AR'),
+                product: name,
+                price: recipe.price,
+                user: userName
+            });
+
+            // Registrar movimientos de stock
             for (let [ing, needed] of Object.entries(recipe.ingredients)) {
                 stock[ing].quantity -= needed;
                 movements.push({
@@ -562,34 +546,25 @@ function confirmSelectedSales() {
                     type: 'Salida',
                     product: ing,
                     quantity: needed,
-                    description: `Venta: ${name}`
+                    description: `Venta: ${name} (por ${userName})`
                 });
             }
-            sales.push({
-                date: new Date().toLocaleString('es-AR'),
-                product: name,
-                price: recipe.price
-            });
         }
     });
 
     const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
-    showAlert('success', `✅ Venta registrada: ${Object.keys(selectedSales).length} productos, ${totalItems} ítems - Total: $${totalAmount}`);
+    showAlert('success', `✅ Venta registrada: ${Object.keys(selectedSales).length} productos, ${totalItems} ítems`);
 
     selectedSales = {};
     updateSalesButtons();
     updateStockDisplay();
     updateReports();
+    updateMySales(); // ✅ Actualizar mis ventas
     saveData();
     floatingCart.style.display = 'none';
 }
 
-// === Sumar todas las cantidades ===
-function sumQuantities(obj) {
-    return Object.values(obj).reduce((a, b) => a + b, 0);
-}
-
-// === Actualizar reportes ===
+// === Actualizar reportes (para admin) ===
 function updateReports() {
     const today = new Date().toLocaleDateString('es-AR');
     const todaySales = sales.filter(s => {
@@ -598,40 +573,44 @@ function updateReports() {
     });
 
     const todayContainer = document.getElementById('todaySales');
-    if (todaySales.length === 0) {
-        todayContainer.innerHTML = '<p>No hay ventas hoy 📊</p>';
-    } else {
-        const total = todaySales.reduce((sum, s) => sum + s.price, 0);
-        let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
-        todaySales.forEach(s => {
-            const time = s.date.split(' ')[1];
-            html += `<tr><td>${escapeHtml(s.product)}</td><td>$${s.price}</td><td>${time}</td></tr>`;
-        });
-        html += `</table><p style="text-align:center;font-size:1.3em;margin-top:15px;"><strong>💵 Total: $${total}</strong></p>`;
-        todayContainer.innerHTML = html;
+    if (todayContainer) {
+        if (todaySales.length === 0) {
+            todayContainer.innerHTML = '<p>No hay ventas hoy 📊</p>';
+        } else {
+            const total = todaySales.reduce((sum, s) => sum + s.price, 0);
+            let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th><th>👤 Usuario</th></tr>';
+            todaySales.forEach(s => {
+                const time = s.date.split(' ')[1];
+                html += `<tr><td>${escapeHtml(s.product)}</td><td>$${s.price}</td><td>${time}</td><td>${s.user}</td></tr>`;
+            });
+            html += `</table><p style="text-align:center;font-size:1.3em;margin-top:15px;"><strong>💵 Total: $${total}</strong></p>`;
+            todayContainer.innerHTML = html;
+        }
     }
 
     const historyContainer = document.getElementById('movementHistory');
-    if (movements.length === 0) {
-        historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
-    } else {
-        let html = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
-        movements.slice(-20).reverse().forEach(mov => {
-            const escapedProduct = escapeHtml(mov.product);
-            const escapedDesc = escapeHtml(mov.description);
-            const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-            html += `
-                <tr>
-                    <td style="font-size:0.9em;">${mov.date}</td>
-                    <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
-                    <td>${escapedProduct}</td>
-                    <td>${mov.quantity}</td>
-                    <td style="font-size:0.9em;">${escapedDesc}</td>
-                </tr>
-            `;
-        });
-        html += '</table>';
-        historyContainer.innerHTML = html;
+    if (historyContainer) {
+        if (movements.length === 0) {
+            historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
+        } else {
+            let html = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
+            movements.slice(-20).reverse().forEach(mov => {
+                const escapedProduct = escapeHtml(mov.product);
+                const escapedDesc = escapeHtml(mov.description);
+                const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
+                html += `
+                    <tr>
+                        <td style="font-size:0.9em;">${mov.date}</td>
+                        <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
+                        <td>${escapedProduct}</td>
+                        <td>${mov.quantity}</td>
+                        <td style="font-size:0.9em;">${escapedDesc}</td>
+                    </tr>
+                `;
+            });
+            html += '</table>';
+            historyContainer.innerHTML = html;
+        }
     }
 }
 
@@ -641,15 +620,16 @@ function showAlert(type, message) {
     alert.className = `alert alert-${type}`;
     alert.textContent = message;
     const content = document.querySelector('.content');
-    content.insertBefore(alert, content.firstChild);
-    setTimeout(() => alert.remove(), 4000);
+    if (content) {
+        content.insertBefore(alert, content.firstChild);
+        setTimeout(() => alert.remove(), 4000);
+    }
 }
 
 // === Cargar datos de ejemplo ===
 function loadSampleData() {
     if (Object.keys(stock).length > 0 || Object.keys(recipes).length > 0) {
-        const confirmLoad = confirm('¿Estás seguro? Esto sobrescribirá el stock y recetas actuales.');
-        if (!confirmLoad) return;
+        if (!confirm('¿Sobrescribir datos actuales?')) return;
     }
 
     stock = {
@@ -695,16 +675,11 @@ function loadSampleData() {
     saveData();
 }
 
-// === Confirmar limpieza total ===
+// === Limpiar todos los datos ===
 function confirmClearAllData() {
-    const confirmation = confirm(
-        '⚠️ ¿Eliminar TODOS los datos?\n' +
-        'Se borrarán:\n' +
-        '  • Stock\n' +
-        '  • Recetas\n  • Ventas\n  • Historial\n' +
-        'Esta acción NO se puede deshacer.\n¿Continuar?'
-    );
-    if (confirmation) clearAllData();
+    if (confirm('¿Eliminar TODOS los datos? Esta acción NO se puede deshacer.')) {
+        clearAllData();
+    }
 }
 
 function clearAllData() {
@@ -717,188 +692,240 @@ function clearAllData() {
     saveData();
 }
 
-// === Exportar XML + PDF ===
-function exportDataAndPDF() {
+// === Exportar a Excel (.xlsx) con icono y formato ===
+function exportToExcel() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
         return;
     }
 
-    // Crear XML
-    const exportedAt = new Date().toLocaleString('es-AR');
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<DannysBurgerData exportedAt="${exportedAt}">
-    <Stock>\n`;
-    
+    const wb = XLSX.utils.book_new();
+
+    // Hoja: Stock
+    const stockData = [
+        ["🍔 Danny's Burger - Stock Actual", "", ""],
+        ["Producto", "Cantidad", "Unidad"]
+    ];
     for (let [name, data] of Object.entries(stock)) {
-        const escapedName = escapeHtml(name);
-        xml += `        <Producto nombre="${escapedName}" cantidad="${data.quantity}" unidad="${data.unit}"/>\n`;
+        stockData.push([name, data.quantity, data.unit]);
     }
-    xml += `    </Stock>\n    <Recetas>\n`;
+    const wsStock = XLSX.utils.aoa_to_sheet(stockData);
+    XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
 
+    // Hoja: Recetas
+    const recipesData = [
+        ["🍔 Danny's Burger - Recetas y Combos", "", ""],
+        ["Receta", "Precio", "Ingredientes"]
+    ];
     for (let [name, recipe] of Object.entries(recipes)) {
-        const escapedName = escapeHtml(name);
-        xml += `        <Receta nombre="${escapedName}" precio="${recipe.price}">\n`;
-        for (let [ing, qty] of Object.entries(recipe.ingredients)) {
-            const escapedIng = escapeHtml(ing);
-            xml += `            <Ingrediente nombre="${escapedIng}" cantidad="${qty}"/>\n`;
-        }
-        xml += `        </Receta>\n`;
+        const ingredients = Object.entries(recipe.ingredients)
+            .map(([ing, qty]) => `${qty} ${ing}`).join(", ");
+        recipesData.push([name, recipe.price, ingredients]);
     }
-    xml += `    </Recetas>\n    <Ventas>\n`;
+    const wsRecipes = XLSX.utils.aoa_to_sheet(recipesData);
+    XLSX.utils.book_append_sheet(wb, wsRecipes, "Recetas");
 
-    sales.forEach(s => {
-        const escapedProduct = escapeHtml(s.product);
-        xml += `        <Venta fecha="${s.date}" producto="${escapedProduct}" precio="${s.price}"/>\n`;
+    // Hoja: Ventas de Hoy
+    const today = new Date().toLocaleDateString('es-AR');
+    const todaySales = sales.filter(s => {
+        const date = new Date(s.date.split(' ')[0].split('/').reverse().join('-')).toLocaleDateString('es-AR');
+        return date === today;
     });
-    xml += `    </Ventas>\n    <Movimientos>\n`;
 
-    movements.forEach(mov => {
-        const escapedProduct = escapeHtml(mov.product);
-        const escapedDesc = escapeHtml(mov.description);
-        xml += `        <Movimiento fecha="${mov.date}" tipo="${mov.type}" producto="${escapedProduct}" cantidad="${mov.quantity}" descripcion="${escapedDesc}"/>\n`;
+    const salesData = [
+        ["💰 Danny's Burger - Ventas de Hoy", "", "", ""],
+        ["Fecha", "Hora", "Producto", "Precio", "Usuario"]
+    ];
+    todaySales.forEach(s => {
+        const [date, time] = s.date.split(' ');
+        salesData.push([date, time, s.product, s.price, s.user]);
     });
-    xml += `    </Movimientos>\n</DannysBurgerData>`;
+    const wsSales = XLSX.utils.aoa_to_sheet(salesData);
+    XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
 
-    // Descargar XML
-    const xmlBlob = new Blob([xml], { type: 'application/xml' });
-    const xmlUrl = URL.createObjectURL(xmlBlob);
-    const xmlLink = document.createElement('a');
-    xmlLink.href = xmlUrl;
-    xmlLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xml`;
-    xmlLink.click();
+    // Hoja: Movimientos
+    const historyData = [
+        ["📋 Danny's Burger - Historial de Movimientos", "", "", "", ""],
+        ["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]
+    ];
+    movements.slice(-100).forEach(mov => {
+        historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
+    });
+    const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
+    XLSX.utils.book_append_sheet(wb, wsHistory, "Movimientos");
 
-    // Esperar un momento antes de generar el PDF (para que no bloquee)
-    setTimeout(() => {
-        const pdfWindow = window.open('', '_blank');
-        if (!pdfWindow) {
-            showAlert('danger', '❌ No se pudo abrir el PDF. Desactiva el bloqueador de pop-ups.');
-            return;
-        }
-        const pdfContent = `
-            <!DOCTYPE html>
-            <html lang="es">
-            <head>
-                <meta charset="UTF-8">
-                <title>Historial de Movimientos - Danny's Burger</title>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-                <style>
-                    body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
-                    h1, h2 { text-align: center; color: #1a1a1a; }
-                    h1 { font-size: 2.5em; margin-bottom: 10px; }
-                    h2 { color: #6c757d; margin-bottom: 30px; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
-                    th { background: #f4d03f; color: #1a1a1a; font-weight: bold; }
-                    tr:hover { background: #f9f9f9; }
-                    .footer { text-align: center; margin-top: 50px; color: #999; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px; }
-                    .burger-icon { font-size: 2em; color: #f4d03f; text-align: center; display: block; }
-                </style>
-            </head>
-            <body>
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <div class="burger-icon">🍔</div>
-                    <h1>Danny's Burger</h1>
-                    <h2>Historial de Movimientos • 2024</h2>
-                    <p><strong>Fecha de exportación:</strong> ${exportedAt}</p>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>📅 Fecha</th>
-                            <th>📊 Tipo</th>
-                            <th>🥪 Producto</th>
-                            <th>🔢 Cantidad</th>
-                            <th>📝 Descripción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${movements.map(mov => {
-                            const escapedProduct = escapeHtml(mov.product);
-                            const escapedDesc = escapeHtml(mov.description);
-                            const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                            return `
-                                <tr>
-                                    <td style="font-size:0.9em;">${mov.date}</td>
-                                    <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
-                                    <td>${escapedProduct}</td>
-                                    <td>${mov.quantity}</td>
-                                    <td style="font-size:0.9em;">${escapedDesc}</td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-                <div class="footer">🍔 Danny's Burger - Sistema de Gestión de Stock</div>
-                <script>
-                    window.onload = function() {
-                        const opt = {
-                            margin: 1,
-                            filename: 'Historial-Movimientos-DannysBurger-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf',
-                            image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, backgroundColor: '#fff' },
-                            jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-                        };
-                        html2pdf().set(opt).from(document.body).save();
-                    };
-                <\/script>
-            </body>
-            </html>
-        `;
-        pdfWindow.document.write(pdfContent);
-        pdfWindow.document.close();
-    }, 600);
+    // Descargar
+    const fileName = `Danny's_Burger_Reporte_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showAlert('success', '✅ Excel exportado correctamente');
 }
 
-// === Modales: Cargar Stock ===
-function openAddStockModal() {
-    document.getElementById('addStockModal').classList.add('show');
-    document.getElementById('productNameModal').focus();
-}
-
-function closeAddStockModal() {
-    document.getElementById('addStockModal').classList.remove('show');
-    document.getElementById('productNameModal').value = '';
-    document.getElementById('productQuantityModal').value = '';
-}
-
-function addStockFromModal() {
-    const name = document.getElementById('productNameModal').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('editProductUnit').value;
-
-    if (!name || isNaN(quantity) || quantity < 0) {
-        alert('Completa todos los campos');
+// === Exportar a PDF con icono de hamburguesa ===
+function exportToPDF() {
+    if (movements.length === 0) {
+        alert('No hay movimientos para exportar.');
         return;
     }
 
-    if (stock[name]) {
-        stock[name].quantity += quantity;
-    } else {
-        stock[name] = { quantity, unit };
+    const pdfWindow = window.open('', '_blank');
+    if (!pdfWindow) {
+        showAlert('danger', '❌ No se pudo abrir el PDF. Desactiva el bloqueador de pop-ups.');
+        return;
     }
 
-    movements.push({
-        date: new Date().toLocaleString('es-AR'),
-        type: 'Entrada',
-        product: name,
-        quantity: quantity,
-        description: `Carga de stock: ${quantity} ${unit}`
-    });
+    const exportedAt = new Date().toLocaleString('es-AR');
 
-    showAlert('success', `✅ ${quantity} ${unit} de ${name} agregados`);
-    updateStockDisplay();
-    updateProductSuggestions();
-    saveData();
-    closeAddStockModal();
+    const pdfContent = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Reporte - Danny's Burger</title>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <style>
+                body { 
+                    font-family: 'Segoe UI', sans-serif; 
+                    padding: 50px; 
+                    background: white; 
+                    color: #2c3e50; 
+                }
+                .header {
+                    text-align: center;
+                    margin-bottom: 40px;
+                }
+                .burger-icon {
+                    font-size: 2.5em;
+                    color: #f4d03f;
+                    display: block;
+                }
+                h1 {
+                    color: #1a1a1a;
+                    margin: 10px 0;
+                }
+                h2 {
+                    color: #6c757d;
+                    margin: 5px 0;
+                }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    margin: 20px 0; 
+                }
+                th, td { 
+                    padding: 12px; 
+                    text-align: left; 
+                    border-bottom: 1px solid #ddd; 
+                }
+                th { 
+                    background: #f4d03f; 
+                    color: #1a1a1a; 
+                    font-weight: bold; 
+                }
+                tr:hover { 
+                    background: #f9f9f9; 
+                }
+                .footer { 
+                    text-align: center; 
+                    margin-top: 50px; 
+                    color: #999; 
+                    font-size: 0.9em; 
+                    border-top: 1px solid #eee; 
+                    padding-top: 20px; 
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <div class="burger-icon">🍔</div>
+                <h1>Danny's Burger</h1>
+                <h2>Reporte de Movimientos • 2024</h2>
+                <p><strong>Fecha de exportación:</strong> ${exportedAt}</p>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>📅 Fecha</th>
+                        <th>📊 Tipo</th>
+                        <th>🥪 Producto</th>
+                        <th>🔢 Cantidad</th>
+                        <th>📝 Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${movements.slice(-50).map(mov => `
+                        <tr>
+                            <td style="font-size:0.9em;">${mov.date}</td>
+                            <td style="color:${mov.type === 'Entrada' ? '#27ae60' : '#e74c3c'}; font-weight:bold;">
+                                ${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}
+                            </td>
+                            <td>${mov.product}</td>
+                            <td>${mov.quantity}</td>
+                            <td style="font-size:0.9em;">${mov.description}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            <div class="footer">🍔 Danny's Burger - Sistema de Gestión de Stock</div>
+            <script>
+                window.onload = function() {
+                    const opt = {
+                        margin: 1,
+                        filename: 'Reporte-DannysBurger-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf',
+                        image: { type: 'jpeg', quality: 0.98 },
+                        html2canvas: { scale: 2 },
+                        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
+                    };
+                    html2pdf().set(opt).from(document.body).save();
+                };
+            <\/script>
+        </body>
+        </html>
+    `;
+
+    pdfWindow.document.write(pdfContent);
+    pdfWindow.document.close();
 }
 
-// Cerrar modal al hacer clic fuera
-document.getElementById('addStockModal')?.addEventListener('click', e => {
-    if (e.target === document.getElementById('addStockModal')) closeAddStockModal();
+// === Actualizar mis ventas (solo para empleados) ===
+function updateMySales() {
+    const container = document.getElementById('mySalesList');
+    if (!container) return;
+
+    const userName = sessionStorage.getItem('userName') || 'Desconocido';
+    const today = new Date().toLocaleDateString('es-AR');
+    const myTodaySales = sales.filter(s => {
+        const saleDate = s.date.split(' ')[0];
+        return s.user === userName && saleDate === today;
+    });
+
+    if (myTodaySales.length === 0) {
+        container.innerHTML = '<p>No has realizado ventas hoy.</p>';
+        return;
+    }
+
+    let total = myTodaySales.reduce((sum, s) => sum + s.price, 0);
+    let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
+    myTodaySales.forEach(s => {
+        const time = s.date.split(' ')[1];
+        html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+    });
+    html += `</table><p style="text-align:center; margin-top:15px;"><strong>Total: $${total}</strong></p>`;
+    container.innerHTML = html;
+}
+
+// === Cerrar sesión → redirige a index.html ===
+document.getElementById('logoutButton')?.addEventListener('click', () => {
+    const confirmLogout = confirm('¿Estás seguro de que deseas cerrar sesión?\n\nSerás redirigido a la página principal.');
+    if (confirmLogout) {
+        sessionStorage.clear();
+        showAlert('success', '👋 Sesión cerrada. Hasta luego!');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 800);
+    }
 });
 
-// === Partículas animadas (fondo decorativo) ===
+// === Partículas animadas ===
 function createParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
@@ -919,33 +946,9 @@ function createParticles() {
         }, 20000);
     };
 
-    for (let i = 0; i < count; i++) {
-        setTimeout(create, i * 1000);
-    }
-
+    for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
     setInterval(() => {
         document.querySelectorAll('#particles .particle').forEach(p => p.remove());
-        for (let i = 0; i < count; i++) {
-            setTimeout(create, i * 500);
-        }
+        for (let i = 0; i < count; i++) setTimeout(create, i * 500);
     }, 30000);
 }
-// === Cerrar sesión con confirmación ===
-document.getElementById('logoutButton')?.addEventListener('click', () => {
-    // ✅ Pregunta con confirm()
-    const deseaCerrar = confirm('¿Estás seguro de que deseas cerrar sesión?\n\nSe perderá tu acceso al sistema hasta que vuelvas a iniciar.');
-
-    if (deseaCerrar) {
-        // Limpia la sesión
-        sessionStorage.clear();
-
-        // Muestra alerta de despedida
-        showAlert('success', '👋 Sesión cerrada. Hasta luego!');
-
-        // Redirige al login después de un breve delay
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 800);
-    }
-    // Si hace clic en "Cancelar", no hace nada
-});

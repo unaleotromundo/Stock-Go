@@ -10,7 +10,7 @@
     <!-- Protección de acceso -->
     <script>
         if (!sessionStorage.getItem('userRole')) {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         }
     </script>
 
@@ -42,6 +42,7 @@
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍔 Recetas</button>
+            <button class="nav-btn" onclick="showSection('mySales')">📈 Ventas de Hoy</button>
         </div>
 
         <div class="content">
@@ -68,8 +69,25 @@
                 </div>
                 <div id="savedRecipes" class="recipes-grid"></div>
             </div>
+
+            <!-- Mis Ventas de Hoy -->
+            <div id="mySales" class="section">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 class="section-title">📈 Mis Ventas de Hoy</h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+                <div id="mySalesList"></div>
+            </div>
         </div>
     </div>
+
+    <!-- Contenedores ocultos para evitar errores en script.js -->
+    <div id="stockDisplay" style="display: none;"></div>
+    <div id="todaySales" style="display: none;"></div>
+    <div id="movementHistory" style="display: none;"></div>
 
     <!-- Widget flotante de carrito -->
     <div id="floatingCart" style="
