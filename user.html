@@ -42,7 +42,7 @@
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍔 Recetas</button>
-            <button class="nav-btn" onclick="showSection('mySales')">📈 Ventas de Hoy</button>
+            <button class="nav-btn" onclick="showSection('mySales')">📈 Mis Ventas (En Vivo)</button>
         </div>
 
         <div class="content">
@@ -70,21 +70,21 @@
                 <div id="savedRecipes" class="recipes-grid"></div>
             </div>
 
-            <!-- Mis Ventas de Hoy -->
+            <!-- Mis Ventas (En Vivo) -->
             <div id="mySales" class="section">
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">📈 Mis Ventas de Hoy</h2>
+                    <h2 class="section-title">📈 Mis Ventas (En Vivo)</h2>
                     <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
                     <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
                         ◆ ◆ ◆
                     </div>
                 </div>
-                <div id="mySalesList"></div>
+                <div id="liveSalesList"></div>
             </div>
         </div>
     </div>
 
-    <!-- Contenedores ocultos para evitar errores en script.js -->
+    <!-- Contenedores ocultos para evitar errores -->
     <div id="stockDisplay" style="display: none;"></div>
     <div id="todaySales" style="display: none;"></div>
     <div id="movementHistory" style="display: none;"></div>

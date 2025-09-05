@@ -111,7 +111,7 @@ function showSection(sectionName) {
         case 'recipes': updateRecipesDisplay(); break;
         case 'sales': updateSalesButtons(); break;
         case 'reports': updateReports(); break;
-        case 'mySales': updateMySales(); break; // ✅ Nueva sección
+        case 'mySales': updateMySales(); break;
     }
 }
 
@@ -163,7 +163,7 @@ document.addEventListener('click', function(e) {
 // === Actualizar stock (con protección contra null) ===
 function updateStockDisplay() {
     const container = document.getElementById('stockDisplay');
-    if (!container) return; // ✅ Protección
+    if (!container) return;
 
     if (Object.keys(stock).length === 0) {
         container.innerHTML = '<p style="text-align:center;color:#ccc;">No hay productos</p>';
@@ -530,15 +530,18 @@ function confirmSelectedSales() {
     Object.entries(selectedSales).forEach(([name, qty]) => {
         const recipe = recipes[name];
         for (let i = 0; i < qty; i++) {
-            // ✅ Registrar la venta con el usuario
-            sales.push({
-                date: new Date().toLocaleString('es-AR'),
-                product: name,
-                price: recipe.price,
-                user: userName
-            });
+const now = new Date();
+const dateStr = now.toLocaleDateString('es-AR'); // Formato: dd/mm/yyyy
+const timeStr = now.toLocaleTimeString('es-AR'); // Formato: hh:mm:ss
+const dateTimeStr = `${dateStr} ${timeStr}`;
 
-            // Registrar movimientos de stock
+sales.push({
+    date: dateTimeStr,
+    product: name,
+    price: recipe.price,
+    user: userName
+});
+
             for (let [ing, needed] of Object.entries(recipe.ingredients)) {
                 stock[ing].quantity -= needed;
                 movements.push({
@@ -567,38 +570,65 @@ function confirmSelectedSales() {
 // === Actualizar reportes (para admin) ===
 function updateReports() {
     const today = new Date().toLocaleDateString('es-AR');
-    const todaySales = sales.filter(s => {
-        const date = new Date(s.date.split(' ')[0].split('/').reverse().join('-')).toLocaleDateString('es-AR');
-        return date === today;
+    const allTodaySales = sales.filter(s => {
+        const saleDate = s.date.split(' ')[0];
+        return saleDate === today;
     });
 
-    const todayContainer = document.getElementById('todaySales');
-    if (todayContainer) {
-        if (todaySales.length === 0) {
-            todayContainer.innerHTML = '<p>No hay ventas hoy 📊</p>';
-        } else {
-            const total = todaySales.reduce((sum, s) => sum + s.price, 0);
-            let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th><th>👤 Usuario</th></tr>';
-            todaySales.forEach(s => {
-                const time = s.date.split(' ')[1];
-                html += `<tr><td>${escapeHtml(s.product)}</td><td>$${s.price}</td><td>${time}</td><td>${s.user}</td></tr>`;
-            });
-            html += `</table><p style="text-align:center;font-size:1.3em;margin-top:15px;"><strong>💵 Total: $${total}</strong></p>`;
-            todayContainer.innerHTML = html;
-        }
+    const adminSales = allTodaySales.filter(s => s.user === 'Administrador');
+    const userSales = allTodaySales.filter(s => s.user === 'Empleado');
+
+    const container = document.getElementById('todaySales');
+    if (!container) return;
+
+    let html = '';
+
+    // Ventas del Admin
+    if (adminSales.length > 0) {
+        const totalAdmin = adminSales.reduce((sum, s) => sum + s.price, 0);
+        html += '<h3>💼 Ventas del Administrador</h3>';
+        html += '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
+        adminSales.forEach(s => {
+            const time = s.date.split(' ')[1];
+            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+        });
+        html += `</table><p><strong>Total: $${totalAdmin}</strong></p>`;
     }
 
+    // Ventas del Empleado
+    if (userSales.length > 0) {
+        const totalUser = userSales.reduce((sum, s) => sum + s.price, 0);
+        html += '<h3>👷 Ventas del Empleado</h3>';
+        html += '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
+        userSales.forEach(s => {
+            const time = s.date.split(' ')[1];
+            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+        });
+        html += `</table><p><strong>Total: $${totalUser}</strong></p>`;
+    }
+
+    // Total general
+    const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
+    html += `<p style="text-align:center; font-size:1.3em; margin-top:20px;"><strong>💵 Total General: $${totalGeneral}</strong></p>`;
+
+    if (allTodaySales.length === 0) {
+        html = '<p>No hay ventas hoy 📊</p>';
+    }
+
+    container.innerHTML = html;
+
+    // Historial de movimientos
     const historyContainer = document.getElementById('movementHistory');
     if (historyContainer) {
         if (movements.length === 0) {
             historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
         } else {
-            let html = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
+            let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
             movements.slice(-20).reverse().forEach(mov => {
                 const escapedProduct = escapeHtml(mov.product);
                 const escapedDesc = escapeHtml(mov.description);
                 const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                html += `
+                histHtml += `
                     <tr>
                         <td style="font-size:0.9em;">${mov.date}</td>
                         <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
@@ -608,8 +638,8 @@ function updateReports() {
                     </tr>
                 `;
             });
-            html += '</table>';
-            historyContainer.innerHTML = html;
+            histHtml += '</table>';
+            historyContainer.innerHTML = histHtml;
         }
     }
 }
@@ -692,7 +722,7 @@ function clearAllData() {
     saveData();
 }
 
-// === Exportar a Excel (.xlsx) con icono y formato ===
+// === Exportar a Excel (.xlsx) ===
 function exportToExcel() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
@@ -702,10 +732,7 @@ function exportToExcel() {
     const wb = XLSX.utils.book_new();
 
     // Hoja: Stock
-    const stockData = [
-        ["🍔 Danny's Burger - Stock Actual", "", ""],
-        ["Producto", "Cantidad", "Unidad"]
-    ];
+    const stockData = [["Producto", "Cantidad", "Unidad"]];
     for (let [name, data] of Object.entries(stock)) {
         stockData.push([name, data.quantity, data.unit]);
     }
@@ -713,13 +740,9 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
 
     // Hoja: Recetas
-    const recipesData = [
-        ["🍔 Danny's Burger - Recetas y Combos", "", ""],
-        ["Receta", "Precio", "Ingredientes"]
-    ];
+    const recipesData = [["Receta", "Precio", "Ingredientes"]];
     for (let [name, recipe] of Object.entries(recipes)) {
-        const ingredients = Object.entries(recipe.ingredients)
-            .map(([ing, qty]) => `${qty} ${ing}`).join(", ");
+        const ingredients = Object.entries(recipe.ingredients).map(([ing, qty]) => `${qty} ${ing}`).join(", ");
         recipesData.push([name, recipe.price, ingredients]);
     }
     const wsRecipes = XLSX.utils.aoa_to_sheet(recipesData);
@@ -731,11 +754,7 @@ function exportToExcel() {
         const date = new Date(s.date.split(' ')[0].split('/').reverse().join('-')).toLocaleDateString('es-AR');
         return date === today;
     });
-
-    const salesData = [
-        ["💰 Danny's Burger - Ventas de Hoy", "", "", ""],
-        ["Fecha", "Hora", "Producto", "Precio", "Usuario"]
-    ];
+    const salesData = [["Fecha", "Hora", "Producto", "Precio", "Usuario"]];
     todaySales.forEach(s => {
         const [date, time] = s.date.split(' ');
         salesData.push([date, time, s.product, s.price, s.user]);
@@ -744,10 +763,7 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
 
     // Hoja: Movimientos
-    const historyData = [
-        ["📋 Danny's Burger - Historial de Movimientos", "", "", "", ""],
-        ["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]
-    ];
+    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]];
     movements.slice(-100).forEach(mov => {
         historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
     });
@@ -760,7 +776,7 @@ function exportToExcel() {
     showAlert('success', '✅ Excel exportado correctamente');
 }
 
-// === Exportar a PDF con icono de hamburguesa ===
+// === Exportar a PDF ===
 function exportToPDF() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
@@ -783,55 +799,16 @@ function exportToPDF() {
             <title>Reporte - Danny's Burger</title>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <style>
-                body { 
-                    font-family: 'Segoe UI', sans-serif; 
-                    padding: 50px; 
-                    background: white; 
-                    color: #2c3e50; 
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 40px;
-                }
-                .burger-icon {
-                    font-size: 2.5em;
-                    color: #f4d03f;
-                    display: block;
-                }
-                h1 {
-                    color: #1a1a1a;
-                    margin: 10px 0;
-                }
-                h2 {
-                    color: #6c757d;
-                    margin: 5px 0;
-                }
-                table { 
-                    width: 100%; 
-                    border-collapse: collapse; 
-                    margin: 20px 0; 
-                }
-                th, td { 
-                    padding: 12px; 
-                    text-align: left; 
-                    border-bottom: 1px solid #ddd; 
-                }
-                th { 
-                    background: #f4d03f; 
-                    color: #1a1a1a; 
-                    font-weight: bold; 
-                }
-                tr:hover { 
-                    background: #f9f9f9; 
-                }
-                .footer { 
-                    text-align: center; 
-                    margin-top: 50px; 
-                    color: #999; 
-                    font-size: 0.9em; 
-                    border-top: 1px solid #eee; 
-                    padding-top: 20px; 
-                }
+                body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
+                .header { text-align: center; margin-bottom: 40px; }
+                .burger-icon { font-size: 2.5em; color: #f4d03f; display: block; }
+                h1 { color: #1a1a1a; margin: 10px 0; }
+                h2 { color: #6c757d; margin: 5px 0; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background: #f4d03f; color: #1a1a1a; font-weight: bold; }
+                tr:hover { background: #f9f9f9; }
+                .footer { text-align: center; margin-top: 50px; color: #999; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px; }
             </style>
         </head>
         <body>
@@ -854,13 +831,13 @@ function exportToPDF() {
                 <tbody>
                     ${movements.slice(-50).map(mov => `
                         <tr>
-                            <td style="font-size:0.9em;">${mov.date}</td>
+                            <td>${mov.date}</td>
                             <td style="color:${mov.type === 'Entrada' ? '#27ae60' : '#e74c3c'}; font-weight:bold;">
                                 ${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}
                             </td>
                             <td>${mov.product}</td>
                             <td>${mov.quantity}</td>
-                            <td style="font-size:0.9em;">${mov.description}</td>
+                            <td>${mov.description}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -868,14 +845,7 @@ function exportToPDF() {
             <div class="footer">🍔 Danny's Burger - Sistema de Gestión de Stock</div>
             <script>
                 window.onload = function() {
-                    const opt = {
-                        margin: 1,
-                        filename: 'Reporte-DannysBurger-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.pdf',
-                        image: { type: 'jpeg', quality: 0.98 },
-                        html2canvas: { scale: 2 },
-                        jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-                    };
-                    html2pdf().set(opt).from(document.body).save();
+                    html2pdf().from(document.body).save();
                 };
             <\/script>
         </body>
@@ -888,7 +858,7 @@ function exportToPDF() {
 
 // === Actualizar mis ventas (solo para empleados) ===
 function updateMySales() {
-    const container = document.getElementById('mySalesList');
+    const container = document.getElementById('liveSalesList'); // ✅ Corregido: coincide con user.html
     if (!container) return;
 
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
@@ -899,17 +869,30 @@ function updateMySales() {
     });
 
     if (myTodaySales.length === 0) {
-        container.innerHTML = '<p>No has realizado ventas hoy.</p>';
+        container.innerHTML = '<p style="text-align:center; color:#ccc;">No has realizado ventas hoy</p>';
         return;
     }
 
     let total = myTodaySales.reduce((sum, s) => sum + s.price, 0);
-    let html = '<table><tr><th>🍔 Producto</th><th>💰 Precio</th><th>🕒 Hora</th></tr>';
+    let html = '<table style="width:100%; border-collapse: collapse; margin: 10px 0;"><tr>';
+    html += '<th style="text-align:left; padding:8px; border-bottom:1px solid #333;">🍔 Producto</th>';
+    html += '<th style="text-align:right; padding:8px; border-bottom:1px solid #333;">💰 Precio</th>';
+    html += '<th style="text-align:right; padding:8px; border-bottom:1px solid #333;">🕒 Hora</th></tr>';
+
     myTodaySales.forEach(s => {
         const time = s.date.split(' ')[1];
-        html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+        html += `<tr>
+            <td style="padding:8px; border-bottom:1px solid #333;">${s.product}</td>
+            <td style="text-align:right; padding:8px; border-bottom:1px solid #333;">$${s.price}</td>
+            <td style="text-align:right; padding:8px; border-bottom:1px solid #333;">${time}</td>
+        </tr>`;
     });
-    html += `</table><p style="text-align:center; margin-top:15px;"><strong>Total: $${total}</strong></p>`;
+
+    html += `</table>
+    <p style="text-align:center; margin-top:15px; font-size:1.2em; color:#f4d03f;">
+        <strong>Total: $${total}</strong>
+    </p>`;
+
     container.innerHTML = html;
 }
 
