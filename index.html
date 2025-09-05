@@ -5,80 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danny's Burger - Login</title>
     <link rel="stylesheet" href="styles.css">
-    
-    <!-- Firebase SDK con módulos -->
-    <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
-        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
-        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
-
-        // Configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQYm3bnopb82-l_0zpejACXCz3xFD0wys",
-            authDomain: "stock-go-e5919.firebaseapp.com",
-            projectId: "stock-go-e5919",
-            storageBucket: "stock-go-e5919.firebasestorage.app",
-            messagingSenderId: "1076533357182",
-            appId: "1:1076533357182:web:6d432216677def2edfc62f"
-        };
-
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Manejar el login
-        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
-
-            try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
-
-                const userDoc = await getDoc(doc(db, 'users', user.uid));
-                if (userDoc.exists()) {
-                    const userData = userDoc.data();
-                    const role = userData.role || 'user';
-
-                    sessionStorage.setItem('userRole', role);
-                    sessionStorage.setItem('userName', userData.name || 'Usuario');
-                    sessionStorage.setItem('userEmail', email);
-
-                    if (role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else {
-                        window.location.href = 'user.html';
-                    }
-                } else {
-                    showAlert('danger', '❌ No tienes permisos. Contacta al administrador.');
-                }
-            } catch (error) {
-                let message = 'Correo o contraseña incorrectos.';
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                        message = 'No se encontró una cuenta.';
-                        break;
-                    case 'auth/wrong-password':
-                        message = 'Contraseña incorrecta.';
-                        break;
-                    default:
-                        message = error.message;
-                }
-                showAlert('danger', '❌ ' + message);
-            }
-        });
-
-        function showAlert(type, message) {
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.textContent = message;
-            const container = document.querySelector('.content') || document.body;
-            container.insertBefore(alert, container.firstChild);
-            setTimeout(() => alert.remove(), 5000);
-        }
-    </script>
 </head>
 <body data-theme="dark">
     <div class="container">
@@ -96,18 +22,18 @@
         </div>
 
         <div class="content">
-            <div class="section active" id="login">
+            <div class="section active">
                 <h2>¡Bienvenido al Burger World!</h2>
                 <div class="vintage-decoration">◆ ◇ ◆</div>
                 
                 <form id="loginForm" class="form-group">
                     <div class="modal-form-group">
-                        <label for="email">Correo Electrónico:</label>
-                        <input type="email" id="email" placeholder="Ingresa tu email" required>
+                        <label for="username">Usuario:</label>
+                        <input type="text" id="username" placeholder="admin o empleado" required>
                     </div>
                     <div class="modal-form-group">
                         <label for="password">Contraseña:</label>
-                        <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
+                        <input type="password" id="password" placeholder="Ingresa la contraseña" required>
                     </div>
                     <div class="modal-actions">
                         <button type="submit" class="btn btn-gold">Entrar al Burger World</button>
@@ -120,6 +46,7 @@
     <div id="particles"></div>
 
     <script>
+        // Toggle tema
         function toggleTheme() {
             const body = document.body;
             const currentTheme = body.getAttribute('data-theme');
@@ -128,6 +55,7 @@
             document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
         }
 
+        // Partículas (igual que antes)
         function createParticles() {
             const container = document.getElementById('particles');
             if (!container) return;
@@ -152,7 +80,57 @@
                 for (let i = 0; i < count; i++) setTimeout(create, i * 500);
             }, 30000);
         }
+
+        // Iniciar partículas
         document.addEventListener('DOMContentLoaded', createParticles);
+
+        // Validar login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            const CONTRASEÑA_FIJA = 'dannys2024';
+
+            if (password !== CONTRASEÑA_FIJA) {
+                showAlert('danger', '❌ Contraseña incorrecta');
+                return;
+            }
+
+            let role, name;
+            if (username === 'admin') {
+                role = 'admin';
+                name = 'Administrador';
+            } else if (username === 'empleado') {
+                role = 'user';
+                name = 'Empleado';
+            } else {
+                showAlert('danger', '❌ Usuario no válido. Usa "admin" o "empleado"');
+                return;
+            }
+
+            // Guardar en sesión
+            sessionStorage.setItem('userRole', role);
+            sessionStorage.setItem('userName', name);
+            sessionStorage.setItem('userUsername', username);
+
+            // Redirigir
+            if (role === 'admin') {
+                window.location.href = 'admin.html';
+            } else {
+                window.location.href = 'user.html';
+            }
+        });
+
+        // Mostrar alertas
+        function showAlert(type, message) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            const container = document.querySelector('.content') || document.body;
+            container.insertBefore(alert, container.firstChild);
+            setTimeout(() => alert.remove(), 5000);
+        }
     </script>
 </body>
 </html>
