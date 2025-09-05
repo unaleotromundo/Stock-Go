@@ -1,9 +1,9 @@
-// === script.js (sin cambios, ya incluye partículas) ===
+// === Variables globales ===
 let currentEditingRecipe = null;
 let stock = {};
 let recipes = {};
 let sales = [];
-let movements = {};
+let movements = [];
 
 // === Carrito de ventas con cantidades ===
 let selectedSales = {};
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSalesButtons();
     updateReports();
     updateProductSuggestions();
-    createParticles(); // ✅ Partículas activadas
+    createParticles();
 
     // Inicializar referencias al widget flotante
     floatingCart = document.getElementById('floatingCart');
@@ -129,13 +129,19 @@ function unescapeHtml(text) {
     return div.textContent || div.innerText || '';
 }
 
-// === Eventos delegados con data-* (seguro con apostrofes) ===
+// === Eventos delegados con data-* (seguro con comillas y tildes) ===
 document.addEventListener('click', function(e) {
     const target = e.target.closest('[data-action]');
     if (!target) return;
 
     const action = target.dataset.action;
-    let name = target.dataset.name || target.closest('[data-name]')?.dataset.name;
+    let name = target.dataset.name;
+
+    // Si no está en el botón, buscar en el contenedor padre
+    if (!name) {
+        const parent = target.closest('[data-name]');
+        if (parent) name = parent.dataset.name;
+    }
 
     if (name) {
         name = unescapeHtml(name);
@@ -214,6 +220,12 @@ function saveEditedProduct() {
     if (!name || isNaN(quantity) || quantity < 0) {
         alert('Por favor completa todos los campos correctamente');
         return;
+    }
+
+    // Si el nombre cambió, eliminar el antiguo
+    const oldName = document.getElementById('editProductName').dataset.original || '';
+    if (oldName && oldName !== name) {
+        delete stock[oldName];
     }
 
     stock[name] = { quantity, unit };

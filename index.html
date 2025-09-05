@@ -23,20 +23,24 @@
 
         <div class="content">
             <div class="section active">
-                <h2>¡Bienvenido al Burger World!</h2>
+                <h2>🔐 Iniciar Sesión</h2>
                 <div class="vintage-decoration">◆ ◇ ◆</div>
                 
                 <form id="loginForm" class="form-group">
                     <div class="modal-form-group">
-                        <label for="username">Usuario:</label>
-                        <input type="text" id="username" placeholder="admin o empleado" required>
+                        <label for="userType">Tipo de Usuario:</label>
+                        <select id="userType" required>
+                            <option value="">Seleccionar...</option>
+                            <option value="admin">Administrador</option>
+                            <option value="user">Empleado</option>
+                        </select>
                     </div>
                     <div class="modal-form-group">
                         <label for="password">Contraseña:</label>
                         <input type="password" id="password" placeholder="Ingresa la contraseña" required>
                     </div>
                     <div class="modal-actions">
-                        <button type="submit" class="btn btn-gold">Entrar al Burger World</button>
+                        <button type="submit" class="btn btn-gold">Entrar al Sistema</button>
                     </div>
                 </form>
             </div>
@@ -46,7 +50,6 @@
     <div id="particles"></div>
 
     <script>
-        // Toggle tema
         function toggleTheme() {
             const body = document.body;
             const currentTheme = body.getAttribute('data-theme');
@@ -55,7 +58,6 @@
             document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
         }
 
-        // Partículas (igual que antes)
         function createParticles() {
             const container = document.getElementById('particles');
             if (!container) return;
@@ -81,48 +83,28 @@
             }, 30000);
         }
 
-        // Iniciar partículas
-        document.addEventListener('DOMContentLoaded', createParticles);
-
-        // Validar login
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const username = document.getElementById('username').value.trim();
+            
+            const userType = document.getElementById('userType').value;
             const password = document.getElementById('password').value;
 
-            const CONTRASEÑA_FIJA = 'admin';
+            const PASS_ADMIN = 'admin2024';
+            const PASS_USER = 'empleado2024';
 
-            if (password !== CONTRASEÑA_FIJA) {
-                showAlert('danger', '❌ Contraseña incorrecta');
-                return;
-            }
-
-            let role, name;
-            if (username === 'admin') {
-                role = 'admin';
-                name = 'Administrador';
-            } else if (username === 'empleado') {
-                role = 'user';
-                name = 'Empleado';
-            } else {
-                showAlert('danger', '❌ Usuario no válido. Usa "admin" o "empleado"');
-                return;
-            }
-
-            // Guardar en sesión
-            sessionStorage.setItem('userRole', role);
-            sessionStorage.setItem('userName', name);
-            sessionStorage.setItem('userUsername', username);
-
-            // Redirigir
-            if (role === 'admin') {
+            if (userType === 'admin' && password === PASS_ADMIN) {
+                sessionStorage.setItem('userRole', 'admin');
+                sessionStorage.setItem('userName', 'Administrador');
                 window.location.href = 'admin.html';
-            } else {
+            } else if (userType === 'user' && password === PASS_USER) {
+                sessionStorage.setItem('userRole', 'user');
+                sessionStorage.setItem('userName', 'Empleado');
                 window.location.href = 'user.html';
+            } else {
+                showAlert('danger', '❌ Contraseña incorrecta o tipo de usuario inválido');
             }
         });
 
-        // Mostrar alertas
         function showAlert(type, message) {
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
@@ -131,6 +113,8 @@
             container.insertBefore(alert, container.firstChild);
             setTimeout(() => alert.remove(), 5000);
         }
+
+        document.addEventListener('DOMContentLoaded', createParticles);
     </script>
 </body>
 </html>
