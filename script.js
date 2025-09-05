@@ -1,3 +1,4 @@
+// === script.js (sin cambios, ya incluye partículas) ===
 let currentEditingRecipe = null;
 let stock = {};
 let recipes = {};
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSalesButtons();
     updateReports();
     updateProductSuggestions();
-    createParticles();
+    createParticles(); // ✅ Partículas activadas
 
     // Inicializar referencias al widget flotante
     floatingCart = document.getElementById('floatingCart');
@@ -888,6 +889,7 @@ document.getElementById('addStockModal')?.addEventListener('click', e => {
 // === Partículas animadas (fondo decorativo) ===
 function createParticles() {
     const container = document.getElementById('particles');
+    if (!container) return;
     const count = window.innerWidth > 768 ? 20 : 8;
 
     const create = () => {

@@ -8,6 +8,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 </head>
 <body data-theme="dark" data-role="user">
+    <!-- 🔒 Protección: si no hay sesión, redirige al login -->
+    <script>
+        if (!sessionStorage.getItem('userRole')) {
+            window.location.href = 'login.html';
+        }
+        // Opcional: si querés que solo usuarios comunes entren (no admins por error)
+        const userRole = sessionStorage.getItem('userRole');
+        if (userRole !== 'user' && userRole !== 'admin') {
+            alert('Acceso denegado.');
+            window.location.href = 'login.html';
+        }
+    </script>
+
     <div class="container">
         <div class="header">
             <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
@@ -24,17 +37,15 @@
             </div>
             <div class="vintage-decoration">◆ ◇ ◆</div>
         </div>
-
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍔 Recetas</button>
         </div>
-
         <div class="content">
             <!-- Registrar Ventas -->
             <div id="sales" class="section active">
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">💰 Ventas</h2>
+                    <h2 class="section-title">💰 Registrar Venta</h2>
                     <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
                     <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
                         ◆ ◆ ◆

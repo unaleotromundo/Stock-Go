@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny's Burger - Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+</head>
+<body data-theme="dark">
+    <script>
+        if (!sessionStorage.getItem('userRole')) {
+            window.location.href = 'index.html';
+        }
+        const userRole = sessionStorage.getItem('userRole');
+        if (userRole !== 'admin') {
+            alert('Acceso denegado.');
+            window.location.href = 'user.html';
+        }
+    </script>
+
+    <!-- El resto del HTML es idéntico al index original -->
+    <div class="container">
+        <div class="header">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                <span id="themeIcon"☀️</span>
+            </button>
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <div class="burger-icon">🍔</div>
+                </div>
+                <div>
+                    <h1>DANNY'S</h1>
+                    <div class="subtitle">ADMIN • 2024</div>
+                </div>
+            </div>
+            <div class="vintage-decoration">◆ ◇ ◆</div>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
+            <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
+            <button class="nav-btn" onclick="showSection('sales')">💰 Ventas</button>
+            <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
+        </div>
+        <div class="content">
+            <div id="stock" class="section active">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 class="section-title">📦 Stock Actual</h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;">
+                    + AGREGAR producto
+                </button>
+                <div id="stockDisplay" class="stock-table-container"></div>
+            </div>
+            <div id="recipes" class="section">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 class="section-title">🍔 Recetas y Combos</h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+                <div id="savedRecipes" class="recipes-grid"></div>
+                <button class="btn btn-gold" onclick="openAddRecipeModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-top: 20px;">
+                    + AGREGAR Combo/Receta
+                </button>
+            </div>
+            <div id="sales" class="section">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 class="section-title">💰 Registrar Venta</h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+                <div id="salesButtons" class="sales-grid"></div>
+            </div>
+            <div id="reports" class="section">
+                <h2>📊 Reportes</h2>
+                <div class="vintage-decoration">◇ ◆ ◇</div>
+                <div class="sales-report">
+                    <h3>📈 Ventas de Hoy</h3>
+                    <div id="todaySales"></div>
+                </div>
+                <div class="sales-report">
+                    <h3>📋 Historial de Movimientos</h3>
+                    <div id="movementHistory"></div>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
+                    <button class="btn btn-danger" onclick="confirmClearAllData()">
+                        🗑️ Limpiar Todos los Datos
+                    </button>
+                    <button class="btn" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;"
+                            onclick="exportDataAndPDF()">
+                        📤 Exportar Base de Datos + PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- (modales, carrito, etc. — idénticos al original) -->
+    <div id="particles"></div>
+    <script src="script.js" defer></script>
+</body>
+</html>

@@ -3,277 +3,156 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danny's Burger - Gestión de Stock</title>
+    <title>Danny's Burger - Login</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
-</head>
-<body data-theme="dark">
-    <!-- 🔒 Protección: si no hay sesión, redirige al login -->
-    <script>
-        if (!sessionStorage.getItem('userRole')) {
-            window.location.href = 'login.html';
-        }
-        // Opcional: si querés que solo los admins entren
-        const userRole = sessionStorage.getItem('userRole');
-        if (userRole !== 'admin') {
-            alert('Acceso denegado. Solo administradores tienen acceso a esta sección.');
-            window.location.href = 'user.html';
+    
+    <!-- Firebase SDK con módulos -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js';
+        import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js';
+
+        // Configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQYm3bnopb82-l_0zpejACXCz3xFD0wys",
+            authDomain: "stock-go-e5919.firebaseapp.com",
+            projectId: "stock-go-e5919",
+            storageBucket: "stock-go-e5919.firebasestorage.app",
+            messagingSenderId: "1076533357182",
+            appId: "1:1076533357182:web:6d432216677def2edfc62f"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Manejar el login
+        document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                const userDoc = await getDoc(doc(db, 'users', user.uid));
+                if (userDoc.exists()) {
+                    const userData = userDoc.data();
+                    const role = userData.role || 'user';
+
+                    sessionStorage.setItem('userRole', role);
+                    sessionStorage.setItem('userName', userData.name || 'Usuario');
+                    sessionStorage.setItem('userEmail', email);
+
+                    if (role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        window.location.href = 'user.html';
+                    }
+                } else {
+                    showAlert('danger', '❌ No tienes permisos. Contacta al administrador.');
+                }
+            } catch (error) {
+                let message = 'Correo o contraseña incorrectos.';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        message = 'No se encontró una cuenta.';
+                        break;
+                    case 'auth/wrong-password':
+                        message = 'Contraseña incorrecta.';
+                        break;
+                    default:
+                        message = error.message;
+                }
+                showAlert('danger', '❌ ' + message);
+            }
+        });
+
+        function showAlert(type, message) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            const container = document.querySelector('.content') || document.body;
+            container.insertBefore(alert, container.firstChild);
+            setTimeout(() => alert.remove(), 5000);
         }
     </script>
-
+</head>
+<body data-theme="dark">
     <div class="container">
         <div class="header">
-            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
-                <span id="themeIcon">☀️</span>
-            </button>
             <div class="logo-section">
                 <div class="logo-circle">
-                    <div class="burger-icon">🍔</div>
+                    <span class="burger-icon">🍔</span>
                 </div>
                 <div>
                     <h1>DANNY'S</h1>
                     <div class="subtitle">BURGER • 2024</div>
                 </div>
             </div>
-            <div class="vintage-decoration">◆ ◇ ◆</div>
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
         </div>
-        <div class="nav-buttons">
-            <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
-            <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
-            <button class="nav-btn" onclick="showSection('sales')">💰 Ventas</button>
-            <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
-        </div>
+
         <div class="content">
-            <!-- Stock Actual -->
-            <div id="stock" class="section active">
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">📦 Stock Actual</h2>
-                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
-                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
-                        ◆ ◆ ◆
+            <div class="section active" id="login">
+                <h2>¡Bienvenido al Burger World!</h2>
+                <div class="vintage-decoration">◆ ◇ ◆</div>
+                
+                <form id="loginForm" class="form-group">
+                    <div class="modal-form-group">
+                        <label for="email">Correo Electrónico:</label>
+                        <input type="email" id="email" placeholder="Ingresa tu email" required>
                     </div>
-                </div>
-
-                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;">
-                    + AGREGAR producto
-                </button>
-
-                <div id="stockDisplay" class="stock-table-container"></div>
-            </div>
-
-            <!-- Recetas/Combos -->
-            <div id="recipes" class="section">
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">🍔 Recetas y Combos</h2>
-                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
-                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
-                        ◆ ◆ ◆
+                    <div class="modal-form-group">
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" placeholder="Ingresa tu contraseña" required>
                     </div>
-                </div>
-
-                <div id="savedRecipes" class="recipes-grid"></div>
-
-                <button class="btn btn-gold" onclick="openAddRecipeModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-top: 20px;">
-                    + AGREGAR Combo/Receta
-                </button>
-            </div>
-
-            <!-- Registrar Ventas -->
-            <div id="sales" class="section">
-                <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">💰 Registrar Venta</h2>
-                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
-                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
-                        ◆ ◆ ◆
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-gold">Entrar al Burger World</button>
                     </div>
-                </div>
-                <div id="salesButtons" class="sales-grid"></div>
-            </div>
-
-            <!-- Reportes -->
-            <div id="reports" class="section">
-                <h2>📊 Reportes</h2>
-                <div class="vintage-decoration">◇ ◆ ◇</div>
-                <div class="sales-report">
-                    <h3>📈 Ventas de Hoy</h3>
-                    <div id="todaySales"></div>
-                </div>
-                <div class="sales-report">
-                    <h3>📋 Historial de Movimientos</h3>
-                    <div id="movementHistory"></div>
-                </div>
-                <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
-                    <button class="btn btn-danger" onclick="confirmClearAllData()">
-                        🗑️ Limpiar Todos los Datos
-                    </button>
-                    <button class="btn" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;"
-                            onclick="exportDataAndPDF()">
-                        📤 Exportar Base de Datos + PDF
-                    </button>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Modal para Cargar Stock -->
-    <div id="addStockModal" class="edit-modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <button class="close-modal" onclick="closeAddStockModal()">×</button>
-            <div class="modal-header">
-                <h3>➕ Cargar Stock</h3>
-                <p>Agrega productos al inventario</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="productNameModal">Nombre del Producto:</label>
-                <input type="text" id="productNameModal" placeholder="Ej: Pan de hamburguesa" list="productSuggestions" autocomplete="off">
-            </div>
-            <div class="modal-form-group">
-                <label for="productQuantityModal">Cantidad:</label>
-                <input type="number" id="productQuantityModal" placeholder="0" min="0">
-            </div>
-            <div class="modal-form-group">
-                <label for="productUnitModal">Unidad:</label>
-                <select id="productUnitModal">
-                    <option value="unidades">Unidades</option>
-                    <option value="kg">Kilogramos</option>
-                    <option value="litros">Litros</option>
-                    <option value="gramos">Gramos</option>
-                    <option value="ml">Mililitros</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="addStockFromModal()">Agregar Producto</button>
-                <button class="btn btn-danger" onclick="closeAddStockModal()">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para editar recetas -->
-    <div id="editModal" class="edit-modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeEditModal()">×</button>
-            <div class="modal-header">
-                <h3>✏️ Editar Receta</h3>
-                <p>Modifica los datos y guarda los cambios</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipeName">Nombre del Combo/Receta:</label>
-                <input type="text" id="editRecipeName" placeholder="Nombre de la receta">
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipePrice">Precio de Venta ($):</label>
-                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
-            </div>
-            <div class="modal-form-group">
-                <label>Ingredientes:</label>
-                <div id="editIngredientsList" class="modal-ingredients"></div>
-                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
-                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para editar producto -->
-    <div id="editProductModal" class="edit-modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <button class="close-modal" onclick="closeEditProductModal()">×</button>
-            <div class="modal-header">
-                <h3>✏️ Editar Producto</h3>
-                <p>Modifica la cantidad o unidad</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="editProductName">Nombre del Producto:</label>
-                <input type="text" id="editProductName" readonly>
-            </div>
-            <div class="modal-form-group">
-                <label for="editProductQuantity">Cantidad:</label>
-                <input type="number" id="editProductQuantity" min="0">
-            </div>
-            <div class="modal-form-group">
-                <label for="editProductUnit">Unidad:</label>
-                <select id="editProductUnit">
-                    <option value="unidades">Unidades</option>
-                    <option value="kg">Kilogramos</option>
-                    <option value="litros">Litros</option>
-                    <option value="gramos">Gramos</option>
-                    <option value="ml">Mililitros</option>
-                </select>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="saveEditedProduct()">💾 Guardar Cambios</button>
-                <button class="btn btn-danger" onclick="closeEditProductModal()">❌ Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Widget flotante de carrito de ventas -->
-    <div id="floatingCart" style="
-        position: fixed;
-        top: 80px;
-        right: 20px;
-        width: 320px;
-        max-height: 70vh;
-        background: var(--secondary-bg);
-        border: 2px solid var(--accent-gold);
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        z-index: 1000;
-        overflow: hidden;
-        font-family: 'Segoe UI', sans-serif;
-        display: none;
-        flex-direction: column;
-        transition: all 0.3s ease;
-    ">
-        <div style="background: linear-gradient(135deg, var(--accent-gold), var(--accent-gold-hover)); color: #1a1a1a; padding: 12px 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-            <span>🛒 Carrito de Venta</span>
-            <button id="closeFloatingCart" style="
-                background: rgba(0,0,0,0.2);
-                color: #1a1a1a;
-                border: none;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                font-size: 1.1em;
-                cursor: pointer;
-            " title="Cerrar">✕</button>
-        </div>
-
-        <div id="floatingCartItems" style="
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 10px;
-            background: var(--primary-bg);
-            font-size: 0.9em;
-        ">
-            <p style="color:#ccc;text-align:center;">Vacío</p>
-        </div>
-
-        <div style="padding: 12px 15px; text-align: right; border-top: 1px solid var(--border-color); background: var(--card-bg);">
-            <div style="font-size: 1.1em; color: var(--accent-gold); font-weight: bold;">
-                Total: <span id="floatingTotal">$0</span>
-            </div>
-            <button id="confirmFloatingSale" style="
-                margin-top: 10px;
-                background: linear-gradient(135deg, var(--success), #2ecc71);
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 8px;
-                font-size: 0.95em;
-                cursor: pointer;
-                box-shadow: 0 4px 10px rgba(39, 174, 96, 0.3);
-            ">✅ Confirmar Venta</button>
-        </div>
-    </div>
-
-    <datalist id="productSuggestions"></datalist>
-
-    <!-- Fondo de partículas animadas -->
     <div id="particles"></div>
 
-    <script src="script.js" defer></script>
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = window.innerWidth > 768 ? 20 : 8;
+            const create = () => {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}vw`;
+                p.style.animationDelay = `${Math.random() * 5}s`;
+                p.style.animationDuration = `${Math.random() * 10 + 10}s`;
+                container.appendChild(p);
+                setTimeout(() => {
+                    if (p.parentElement === container) container.removeChild(p);
+                }, 20000);
+            };
+            for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
+            setInterval(() => {
+                document.querySelectorAll('#particles .particle').forEach(p => p.remove());
+                for (let i = 0; i < count; i++) setTimeout(create, i * 500);
+            }, 30000);
+        }
+        document.addEventListener('DOMContentLoaded', createParticles);
+    </script>
 </body>
 </html>
