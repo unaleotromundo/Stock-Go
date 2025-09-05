@@ -1,3 +1,0 @@
-hola te voy a pasar 5 archivos de mi sitio y quiero que hagas una cosa puntual sacar todas las referencias a firebase que todo sea localstorage pero no modifiques nada del resto del codigo de nada por favor . despues seguiremos trabajando sobre la pagina
-
-no hagas comentarios hasta que termine de pasarte los 5 archivos
