@@ -5,33 +5,44 @@
 }
 
 :root {
-    --primary-bg: #1a1a1a;
-    --secondary-bg: #2d2d2d;
-    --card-bg: #3a3a3a;
-    --text-primary: #ffffff;
-    --text-secondary: #cccccc;
-    --accent-gold: #f4d03f;
-    --accent-gold-hover: #f7dc6f;
-    --success: #27ae60;
-    --warning: #f39c12;
-    --danger: #e74c3c;
-    --border-color: #555555;
-    --shadow: rgba(0, 0, 0, 0.5);
+    /* ===== COLORES PRINCIPALES ===== */
+    --primary: #d43725;           /* Rojo fuego (marca) */
+    --accent-gold: #f4d03f;       /* Dorado premium */
+    --accent-gold-hover: #f7dc6f; /* Dorado claro (hover) */
+
+    /* ===== FONDOS (modo oscuro) ===== */
+    --primary-bg: #1a1a1a;        /* Fondo principal */
+    --secondary-bg: #2d2d2d;      /* Fondo secundario (contenedores) */
+    --card-bg: #3a3a3a;           /* Fondo de tarjetas */
+
+    /* ===== TEXTOS (modo oscuro) ===== */
+    --text-primary: #ffffff;      /* Texto principal */
+    --text-secondary: #cccccc;    /* Texto secundario */
+
+    /* ===== ESTADOS ===== */
+    --success: #27ae60;           /* Verde éxito */
+    --warning: #f39c12;           /* Naranja advertencia */
+    --danger: #e74c3c;            /* Rojo peligro */
+
+    /* ===== BORDES Y SOMBRAS ===== */
+    --border-color: #555555;      /* Bordes en modo oscuro */
+    --shadow: rgba(0, 0, 0, 0.5); /* Sombra fuerte */
 }
 
+/* ===== MODO CLARO ===== */
 [data-theme="light"] {
-    --primary-bg: #f8f9fa;
-    --secondary-bg: #ffffff;
-    --card-bg: #ffffff;
-    --text-primary: #2c3e50;
-    --text-secondary: #6c757d;
-    --accent-gold: #d4a574;
-    --accent-gold-hover: #c89456;
-    --success: #27ae60;
-    --warning: #f39c12;
-    --danger: #e74c3c;
-    --border-color: #dee2e6;
-    --shadow: rgba(0, 0, 0, 0.1);
+    --primary-bg: #f8f9fa;        /* Fondo claro */
+    --secondary-bg: #ffffff;      /* Fondo tarjetas */
+    --card-bg: #ffffff;           /* Fondo cards */
+
+    --text-primary: #2c3e50;      /* Texto oscuro */
+    --text-secondary: #6c757d;    /* Texto secundario */
+
+    --accent-gold: #d4a574;       /* Dorado tierra (versión clara) */
+    --accent-gold-hover: #c89456; /* Dorado más oscuro */
+
+    --border-color: #dee2e6;      /* Bordes claros */
+    --shadow: rgba(0, 0, 0, 0.1); /* Sombra suave */
 }
 
 body {
@@ -70,7 +81,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
+    background: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
     pointer-events: none;
 }
 
@@ -216,16 +227,13 @@ body {
 }
 
 .section h2 {
-    color: #ffffff;
+    color: var(--text-primary);
     margin-bottom: 25px;
     font-size: 2em;
     text-align: center;
     position: relative;
 }
 
-[data-theme="light"] .section h2 {
-    color: #1a1a1a;
-}
 .section h2::after {
     content: '';
     position: absolute;

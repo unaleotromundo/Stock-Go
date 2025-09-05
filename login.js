@@ -1,19 +1,16 @@
-// Configuración de Firebase (reemplazá con tus credenciales)
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_AUTH_DOMAIN",
-    projectId: "TU_PROJECT_ID",
-    storageBucket: "TU_STORAGE_BUCKET",
-    messagingSenderId: "TU_MESSAGING_SENDER_ID",
-    appId: "TU_APP_ID"
+    apiKey: "AIzaSyAQYm3bnopb82-l_0zpejACXCz3xFD0wys",
+    authDomain: "stock-go-e5919.firebaseapp.com",
+    projectId: "stock-go-e5919",
+    storageBucket: "stock-go-e5919.firebasestorage.app",
+    messagingSenderId: "1076533357182",
+    appId: "1:1076533357182:web:6d432216677def2edfc62f"
 };
 
-// Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// === Cargar partículas animadas ===
 function createParticles() {
     const container = document.getElementById('particles');
     const count = window.innerWidth > 768 ? 20 : 8;
@@ -45,7 +42,6 @@ function createParticles() {
     }, 30000);
 }
 
-// === Cambiar tema ===
 function toggleTheme() {
     const body = document.body;
     const currentTheme = body.getAttribute('data-theme');
@@ -54,18 +50,6 @@ function toggleTheme() {
     document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
 }
 
-// === Mostrar formulario de login o registro ===
-function showLoginForm() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-}
-
-function showRegisterForm() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-}
-
-// === Manejar login ===
 document.getElementById('loginForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
@@ -74,13 +58,11 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
     auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
             const user = userCredential.user;
-            // Obtener rol del usuario desde Firestore
             db.collection('users').doc(user.uid).get()
                 .then((doc) => {
                     if (doc.exists) {
                         const userData = doc.data();
                         showAlert('success', `¡Bienvenido, ${userData.name}!`);
-                        // Redirigir a index.html
                         window.location.href = 'index.html';
                     } else {
                         showAlert('warning', 'No se encontraron datos de usuario.');
@@ -97,41 +79,6 @@ document.getElementById('loginForm').addEventListener('submit', (e) => {
         });
 });
 
-// === Manejar registro ===
-document.getElementById('registerForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('registerName').value.trim();
-    const email = document.getElementById('registerEmail').value;
-    const password = document.getElementById('registerPassword').value;
-    const role = document.getElementById('registerRole').value;
-
-    if (!name || !email || !password || !role) {
-        showAlert('warning', 'Por favor, completa todos los campos.');
-        return;
-    }
-
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
-            // Guardar datos adicionales en Firestore
-            return db.collection('users').doc(user.uid).set({
-                name: name,
-                email: email,
-                role: role,
-                createdAt: new Date().toLocaleString('es-AR')
-            });
-        })
-        .then(() => {
-            showAlert('success', `Cuenta creada para ${name}. ¡Inicia sesión!`);
-            showLoginForm();
-        })
-        .catch((error) => {
-            console.error('Error en registro:', error);
-            showAlert('danger', 'Error al crear la cuenta. Inténtalo de nuevo.');
-        });
-});
-
-// === Mostrar alertas ===
 function showAlert(type, message) {
     const alert = document.createElement('div');
     alert.className = `alert alert-${type}`;
@@ -141,8 +88,6 @@ function showAlert(type, message) {
     setTimeout(() => alert.remove(), 4000);
 }
 
-// === Inicializar al cargar la página ===
 document.addEventListener('DOMContentLoaded', () => {
     createParticles();
-    showLoginForm();
 });

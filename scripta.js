@@ -704,62 +704,26 @@ function clearAllData() {
     saveData();
 }
 
-// === Exportar XML + PDF ===
+// === Exportar JSON + PDF ===
 function exportDataAndPDF() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
         return;
     }
 
-    // Crear XML
-    const exportedAt = new Date().toLocaleString('es-AR');
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<DannysBurgerData exportedAt="${exportedAt}">
-    <Stock>\n`;
-    
-    for (let [name, data] of Object.entries(stock)) {
-        const escapedName = escapeHtml(name);
-        xml += `        <Producto nombre="${escapedName}" cantidad="${data.quantity}" unidad="${data.unit}"/>\n`;
-    }
-    xml += `    </Stock>\n    <Recetas>\n`;
+    const exportData = { stock, recipes, sales, movements, exportedAt: new Date().toLocaleString('es-AR') };
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const jsonBlob = new Blob([jsonStr], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const link = document.createElement('a');
+    link.href = jsonUrl;
+    link.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.json`;
+    link.click();
 
-    for (let [name, recipe] of Object.entries(recipes)) {
-        const escapedName = escapeHtml(name);
-        xml += `        <Receta nombre="${escapedName}" precio="${recipe.price}">\n`;
-        for (let [ing, qty] of Object.entries(recipe.ingredients)) {
-            const escapedIng = escapeHtml(ing);
-            xml += `            <Ingrediente nombre="${escapedIng}" cantidad="${qty}"/>\n`;
-        }
-        xml += `        </Receta>\n`;
-    }
-    xml += `    </Recetas>\n    <Ventas>\n`;
-
-    sales.forEach(s => {
-        const escapedProduct = escapeHtml(s.product);
-        xml += `        <Venta fecha="${s.date}" producto="${escapedProduct}" precio="${s.price}"/>\n`;
-    });
-    xml += `    </Ventas>\n    <Movimientos>\n`;
-
-    movements.forEach(mov => {
-        const escapedProduct = escapeHtml(mov.product);
-        const escapedDesc = escapeHtml(mov.description);
-        xml += `        <Movimiento fecha="${mov.date}" tipo="${mov.type}" producto="${escapedProduct}" cantidad="${mov.quantity}" descripcion="${escapedDesc}"/>\n`;
-    });
-    xml += `    </Movimientos>\n</DannysBurgerData>`;
-
-    // Descargar XML
-    const xmlBlob = new Blob([xml], { type: 'application/xml' });
-    const xmlUrl = URL.createObjectURL(xmlBlob);
-    const xmlLink = document.createElement('a');
-    xmlLink.href = xmlUrl;
-    xmlLink.download = `dannys-burger-datos-${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xml`;
-    xmlLink.click();
-
-    // Esperar un momento antes de generar el PDF (para que no bloquee)
     setTimeout(() => {
         const pdfWindow = window.open('', '_blank');
         if (!pdfWindow) {
-            showAlert('danger', '❌ No se pudo abrir el PDF. Desactiva el bloqueador de pop-ups.');
+            alert('Bloqueador de pop-ups activado. Por favor, habilítalo.');
             return;
         }
         const pdfContent = `
@@ -787,7 +751,7 @@ function exportDataAndPDF() {
                     <div class="burger-icon">🍔</div>
                     <h1>Danny's Burger</h1>
                     <h2>Historial de Movimientos • 2024</h2>
-                    <p><strong>Fecha de exportación:</strong> ${exportedAt}</p>
+                    <p><strong>Fecha de exportación:</strong> ${new Date().toLocaleString('es-AR')}</p>
                 </div>
                 <table>
                     <thead>
@@ -852,7 +816,7 @@ function closeAddStockModal() {
 function addStockFromModal() {
     const name = document.getElementById('productNameModal').value.trim();
     const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('editProductUnit').value;
+    const unit = document.getElementById('productUnitModal').value;
 
     if (!name || isNaN(quantity) || quantity < 0) {
         alert('Completa todos los campos');
