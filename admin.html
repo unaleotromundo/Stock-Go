@@ -1,47 +1,59 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danny's Burger - Gestión de Stock</title>
+    <title>Danny's Burger - Admin</title>
     <link rel="stylesheet" href="styles.css">
+    
+    <!-- Librerías para exportar -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.8/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 </head>
 <body data-theme="dark">
-    <!-- 🔒 Protección de acceso (opcional) -->
-    <!-- Si querés usar login local, dejá este script -->
-    <!-- Si no, podés borrarlo -->
+    <!-- Protección de acceso -->
     <script>
-        /*
         if (!sessionStorage.getItem('userRole')) {
             window.location.href = 'login.html';
         }
-        */
+        if (sessionStorage.getItem('userRole') !== 'admin') {
+            alert('Acceso denegado. Solo administradores.');
+            window.location.href = 'user.html';
+        }
     </script>
 
     <div class="container">
         <div class="header">
-            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
-                <span id="themeIcon☀️</span>
+            <!-- Botón de Cerrar Sesión -->
+            <button id="logoutButton" class="logout-toggle" title="Cerrar sesión">
+                🚪 Cerrar Sesión
             </button>
+
+            <!-- Botón de Tema -->
+            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+                <span id="themeIcon"☀️</span>
+            </button>
+
+            <!-- Logo -->
             <div class="logo-section">
                 <div class="logo-circle">
                     <div class="burger-icon">🍔</div>
                 </div>
                 <div>
                     <h1>DANNY'S</h1>
-                    <div class="subtitle">BURGER • 2024</div>
+                    <div class="subtitle">ADMIN • 2024</div>
                 </div>
             </div>
             <div class="vintage-decoration">◆ ◇ ◆</div>
         </div>
+
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
             <button class="nav-btn" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
         </div>
+
         <div class="content">
             <!-- Stock Actual -->
             <div id="stock" class="section active">
@@ -105,16 +117,20 @@
                     <button class="btn btn-danger" onclick="confirmClearAllData()">
                         🗑️ Limpiar Todos los Datos
                     </button>
-                    <button class="btn" style="background: linear-gradient(135deg, #2980b9, #3498db); color: white;"
-                            onclick="exportDataAndPDF()">
-                        📤 Exportar Base de Datos + PDF
+                    <button class="btn" style="background: linear-gradient(135deg, #27ae60, #2ecc71); color: white;"
+                            onclick="exportToExcel()">
+                        📊 Exportar a Excel
+                    </button>
+                    <button class="btn" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white;"
+                            onclick="exportToPDF()">
+                        📄 Exportar Reporte a PDF
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ✅ MODAL PARA CARGAR STOCK -->
+    <!-- Modal para Cargar Stock -->
     <div id="addStockModal" class="edit-modal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="close-modal" onclick="closeAddStockModal()">×</button>
@@ -147,7 +163,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL PARA EDITAR RECETAS -->
+    <!-- Modal para editar recetas -->
     <div id="editModal" class="edit-modal">
         <div class="modal-content">
             <button class="close-modal" onclick="closeEditModal()">×</button>
@@ -175,7 +191,7 @@
         </div>
     </div>
 
-    <!-- ✅ MODAL PARA EDITAR PRODUCTO (CORREGIDO: TIENE LOS ID CORRECTOS) -->
+    <!-- Modal para editar producto -->
     <div id="editProductModal" class="edit-modal">
         <div class="modal-content" style="max-width: 500px;">
             <button class="close-modal" onclick="closeEditProductModal()">×</button>
@@ -210,7 +226,7 @@
 
     <datalist id="productSuggestions"></datalist>
 
-    <!-- ✅ WIDGET FLOTANTE DE CARRITO -->
+    <!-- Widget flotante de carrito -->
     <div id="floatingCart" style="
         position: fixed;
         top: 80px;
@@ -241,7 +257,6 @@
                 cursor: pointer;
             " title="Cerrar">✕</button>
         </div>
-
         <div id="floatingCartItems" style="
             max-height: 300px;
             overflow-y: auto;
@@ -251,7 +266,6 @@
         ">
             <p style="color:#ccc;text-align:center;">Vacío</p>
         </div>
-
         <div style="padding: 12px 15px; text-align: right; border-top: 1px solid var(--border-color); background: var(--card-bg);">
             <div style="font-size: 1.1em; color: var(--accent-gold); font-weight: bold;">
                 Total: <span id="floatingTotal">$0</span>
@@ -270,10 +284,7 @@
         </div>
     </div>
 
-    <!-- Fondo de partículas -->
     <div id="particles"></div>
-
-    <!-- Cargar script principal -->
     <script src="script.js" defer></script>
 </body>
 </html>
