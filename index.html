@@ -8,6 +8,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
 </head>
 <body data-theme="dark">
+    <!-- 🔒 Protección: si no hay sesión, redirige al login -->
+    <script>
+        if (!sessionStorage.getItem('userRole')) {
+            window.location.href = 'login.html';
+        }
+        // Opcional: si querés que solo los admins entren
+        const userRole = sessionStorage.getItem('userRole');
+        if (userRole !== 'admin') {
+            alert('Acceso denegado. Solo administradores tienen acceso a esta sección.');
+            window.location.href = 'user.html';
+        }
+    </script>
+
     <div class="container">
         <div class="header">
             <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
@@ -68,7 +81,7 @@
             <!-- Registrar Ventas -->
             <div id="sales" class="section">
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">💰 Ventas</h2>
+                    <h2 class="section-title">💰 Registrar Venta</h2>
                     <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
                     <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
                         ◆ ◆ ◆
