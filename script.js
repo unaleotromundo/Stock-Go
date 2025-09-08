@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateRecipesDisplay();
     updateSalesButtons();
     updateReports();
-    updateMySales(); // ✅ Actualizar mis ventas al cargar
     updateProductSuggestions();
     createParticles();
 
@@ -449,6 +448,7 @@ function updateSalesButtons() {
         button.className = 'sale-btn';
         button.dataset.name = name;
         button.dataset.action = 'add-to-sale';
+        button.title = name; // Tooltip con nombre completo
 
         const canMake = checkCanMakeRecipe(name);
         const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
@@ -456,13 +456,14 @@ function updateSalesButtons() {
         if (canMake && !willExceed) {
             button.innerHTML = `
                 <div class="button-content">
-                    🍔<br><strong>$${recipe.price}</strong>
+                    🍔<br><strong>$${recipe.price}</strong><br>
+                    <span class="combo-name">${escapeHtml(name)}</span>
                 </div>
                 <span class="quantity-badge" style="display: none;"></span>
             `;
             button.style.position = 'relative';
 
-            // Mostrar badge si hay más de 1
+            // ✅ Mostrar badge si hay más de 1 unidad seleccionada
             if (selectedSales[name] > 1) {
                 const badge = button.querySelector('.quantity-badge');
                 badge.textContent = `×${selectedSales[name]}`;
@@ -470,6 +471,7 @@ function updateSalesButtons() {
                 badge.classList.add('flash'); // Animación de destello
                 setTimeout(() => badge.classList.remove('flash'), 500);
             }
+
         } else {
             button.disabled = true;
             button.innerHTML = `❌<br><small>Sin stock</small>`;
@@ -530,7 +532,10 @@ function removeOneFromSelection(name) {
 
 // === Confirmar venta ===
 function confirmSelectedSales() {
-    if (Object.keys(selectedSales).length === 0) return;
+    if (Object.keys(selectedSales).length === 0) {
+        showAlert('warning', '⚠️ El carrito está vacío');
+        return;
+    }
 
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
     const now = new Date();
@@ -702,7 +707,7 @@ function loadSampleData() {
             ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 1, 'Bacon Ahumado': 3, 'Queso Cheddar': 2, 'Cebolla Morada': 2, 'Salsa Danny\'s': 1 },
             price: 4500
         },
-        'Combo Danny\'s Special': {
+        'Combo Special': {
             ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 1, 'Bacon Ahumado': 2, 'Queso Cheddar': 1, 'Lechuga Criolla': 2, 'Tomate Cherry': 3, 'Salsa Danny\'s': 1, 'Papas Rústicas': 1, 'Coca Cola': 1 },
             price: 5200
         },
@@ -818,7 +823,7 @@ function exportToPDF() {
         <head>
             <meta charset="UTF-8">
             <title>Reporte - Danny's Burger</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js  "></script>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
                 .header { text-align: center; margin-bottom: 40px; }
@@ -879,7 +884,7 @@ function exportToPDF() {
 
 // === Actualizar mis ventas (solo para empleados) ===
 function updateMySales() {
-    const container = document.getElementById('liveSalesList'); // ✅ Corregido: coincide con user.html
+    const container = document.getElementById('liveSalesList');
     if (!container) return;
 
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
@@ -895,7 +900,7 @@ function updateMySales() {
     });
 
     if (myTodaySales.length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#ccc;">No has realizado ventas hoy</p>';
+        container.innerHTML = '<p style="text-align:center; color:#ccc;">¡Aún no has registrado ventas hoy!<br>¡Vamos, que el día es largo! 💪🍔</p>';
         return;
     }
 
