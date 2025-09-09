@@ -39,12 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmFloatingSale.onclick = confirmSelectedSales;
     }
 
-    // ✅ Asignar evento al botón de agregar stock (CORRECCIÓN PRINCIPAL)
-    const addStockButton = document.getElementById('addStockButton');
-    if (addStockButton) {
-        addStockButton.addEventListener('click', openAddStockModal);
-    }
-
     // Cerrar con Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -177,7 +171,7 @@ function updateStockDisplay() {
 
     const isUserAdmin = sessionStorage.getItem('userRole') === 'admin';
 
-    let html = `<table><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unit.</th><th>Total</th>`;
+    let html = `<table><thead><tr><th>Producto</th><th>Cantidad</th>`;
     if (isUserAdmin) html += `<th>Acciones</th>`;
     html += `</tr></thead><tbody>`;
 
@@ -185,16 +179,10 @@ function updateStockDisplay() {
         const escapedName = escapeHtml(name);
         const cls = data.quantity <= 5 ? 'low' : data.quantity <= 15 ? 'medium' : 'good';
 
-        // Calcular precio unitario y total
-        const pricePerUnit = data.pricePerUnit || 0;
-        const totalPrice = pricePerUnit * data.quantity;
-
         html += `
             <tr>
                 <td>${escapedName}</td>
                 <td class="stock-quantity ${cls}">${data.quantity} ${escapeHtml(data.unit)}</td>
-                <td>$${pricePerUnit > 0 ? pricePerUnit.toFixed(2) : '—'}</td>
-                <td>$${totalPrice > 0 ? totalPrice.toFixed(2) : '—'}</td>
         `;
 
         if (isUserAdmin) {
@@ -219,9 +207,8 @@ function editProduct(name) {
     const nameInput = document.getElementById('editProductName');
     const qtyInput = document.getElementById('editProductQuantity');
     const unitSelect = document.getElementById('editProductUnit');
-    const priceInput = document.getElementById('editProductPricePerUnit'); // ✅ Nuevo campo
 
-    if (!nameInput || !qtyInput || !unitSelect || !priceInput) {
+    if (!nameInput || !qtyInput || !unitSelect) {
         console.error('❌ No se encontraron los elementos del modal');
         return;
     }
@@ -229,13 +216,6 @@ function editProduct(name) {
     nameInput.value = name;
     qtyInput.value = product.quantity;
     unitSelect.value = product.unit;
-
-    // ✅ Cargar precio si existe
-    if (product.pricePerUnit) {
-        priceInput.value = product.pricePerUnit;
-    } else {
-        priceInput.value = '';
-    }
 
     document.getElementById('editProductModal').classList.add('show');
 }
@@ -245,20 +225,13 @@ function saveEditedProduct() {
     const name = document.getElementById('editProductName').value.trim();
     const quantity = parseInt(document.getElementById('editProductQuantity').value);
     const unit = document.getElementById('editProductUnit').value;
-    const pricePerUnit = parseFloat(document.getElementById('editProductPricePerUnit').value) || 0; // ✅ Nuevo campo
 
     if (!name || isNaN(quantity) || quantity < 0) {
         alert('Completa todos los campos correctamente');
         return;
     }
 
-    // ✅ Guardar con precio (undefined si es 0)
-    stock[name] = { 
-        quantity, 
-        unit, 
-        pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined 
-    };
-
+    stock[name] = { quantity, unit };
     updateStockDisplay();
     closeEditProductModal();
     showAlert('success', `✅ Producto "${name}" actualizado`);
@@ -279,59 +252,6 @@ function removeProduct(name) {
         showAlert('warning', `⚠️ Se eliminó ${name}`);
         saveData();
     }
-}
-
-// === Abrir modal para agregar stock ===
-function openAddStockModal() {
-    document.getElementById('productNameModal').value = '';
-    document.getElementById('productQuantityModal').value = '';
-    document.getElementById('productUnitModal').value = 'unidades';
-    const priceInput = document.getElementById('productPricePerUnitModal');
-    if (priceInput) priceInput.value = '';
-    document.getElementById('addStockModal').classList.add('show');
-}
-
-// === Cerrar modal de agregar stock ===
-function closeAddStockModal() {
-    document.getElementById('addStockModal').classList.remove('show');
-}
-
-// === Agregar stock desde el modal ===
-function addStockFromModal() {
-    const name = document.getElementById('productNameModal').value.trim();
-    const quantity = parseInt(document.getElementById('productQuantityModal').value);
-    const unit = document.getElementById('productUnitModal').value;
-    const priceInput = document.getElementById('productPricePerUnitModal');
-    const pricePerUnit = priceInput ? parseFloat(priceInput.value) || 0 : 0;
-
-    if (!name) {
-        alert('Por favor, ingresa el nombre del producto.');
-        return;
-    }
-    if (isNaN(quantity) || quantity < 0) {
-        alert('Por favor, ingresa una cantidad válida.');
-        return;
-    }
-
-    // Si ya existe, sumar cantidad (opcional: podrías preguntar si quiere reemplazar o sumar)
-    if (stock[name]) {
-        stock[name].quantity += quantity;
-        if (pricePerUnit > 0) stock[name].pricePerUnit = pricePerUnit; // Actualizar precio si se ingresó
-        showAlert('info', `✅ Cantidad actualizada para "${name}"`);
-    } else {
-        // Crear nuevo producto
-        stock[name] = {
-            quantity,
-            unit,
-            pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined
-        };
-        showAlert('success', `✅ Producto "${name}" agregado al stock`);
-    }
-
-    updateStockDisplay();
-    updateProductSuggestions();
-    closeAddStockModal();
-    saveData();
 }
 
 // === Actualizar recetas ===
@@ -758,18 +678,44 @@ function showAlert(type, message) {
 
 // === Cargar datos de ejemplo ===
 function loadSampleData() {
-    if (typeof sampleData === 'undefined') {
-        showAlert('danger', '❌ No se encontraron los datos de ejemplo. Verifica que sample-data.js esté cargado.');
-        return;
-    }
-
     if (Object.keys(stock).length > 0 || Object.keys(recipes).length > 0) {
         if (!confirm('¿Sobrescribir datos actuales?')) return;
     }
 
-    // ✅ Usamos los datos externos
-    stock = { ...sampleData.stock };
-    recipes = { ...sampleData.recipes };
+    stock = {
+        'Pan Brioche': { quantity: 50, unit: 'unidades' },
+        'Medallón Danny\'s': { quantity: 45, unit: 'unidades' },
+        'Queso Cheddar': { quantity: 40, unit: 'fetas' },
+        'Bacon Ahumado': { quantity: 30, unit: 'tiras' },
+        'Tomate Cherry': { quantity: 25, unit: 'unidades' },
+        'Lechuga Criolla': { quantity: 35, unit: 'hojas' },
+        'Cebolla Morada': { quantity: 20, unit: 'rodajas' },
+        'Salsa Danny\'s': { quantity: 15, unit: 'porciones' },
+        'Papas Rústicas': { quantity: 40, unit: 'porciones' },
+        'Aros de Cebolla': { quantity: 25, unit: 'porciones' },
+        'Coca Cola': { quantity: 48, unit: 'latas' },
+        'Cerveza Artesanal': { quantity: 24, unit: 'botellas' },
+        'Agua Saborizada': { quantity: 36, unit: 'botellas' }
+    };
+
+    recipes = {
+        'Danny\'s Classic': {
+            ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 1, 'Queso Cheddar': 1, 'Lechuga Criolla': 2, 'Tomate Cherry': 3, 'Salsa Danny\'s': 1 },
+            price: 3800
+        },
+        'Bacon Deluxe': {
+            ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 1, 'Bacon Ahumado': 3, 'Queso Cheddar': 2, 'Cebolla Morada': 2, 'Salsa Danny\'s': 1 },
+            price: 4500
+        },
+        'Combo Special': {
+            ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 1, 'Bacon Ahumado': 2, 'Queso Cheddar': 1, 'Lechuga Criolla': 2, 'Tomate Cherry': 3, 'Salsa Danny\'s': 1, 'Papas Rústicas': 1, 'Coca Cola': 1 },
+            price: 5200
+        },
+        'Combo Premium': {
+            ingredients: { 'Pan Brioche': 1, 'Medallón Danny\'s': 2, 'Bacon Ahumado': 3, 'Queso Cheddar': 2, 'Cebolla Morada': 3, 'Salsa Danny\'s': 1, 'Aros de Cebolla': 1, 'Cerveza Artesanal': 1 },
+            price: 6800
+        }
+    };
 
     showAlert('success', '🍔 ¡Datos de ejemplo cargados!');
     updateStockDisplay();
@@ -806,9 +752,9 @@ function exportToExcel() {
     const wb = XLSX.utils.book_new();
 
     // Hoja: Stock
-    const stockData = [["Producto", "Cantidad", "Unidad", "Precio Unitario"]];
+    const stockData = [["Producto", "Cantidad", "Unidad"]];
     for (let [name, data] of Object.entries(stock)) {
-        stockData.push([name, data.quantity, data.unit, data.pricePerUnit || 0]);
+        stockData.push([name, data.quantity, data.unit]);
     }
     const wsStock = XLSX.utils.aoa_to_sheet(stockData);
     XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
@@ -877,7 +823,7 @@ function exportToPDF() {
         <head>
             <meta charset="UTF-8">
             <title>Reporte - Danny's Burger</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js  "></script>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
                 .header { text-align: center; margin-bottom: 40px; }

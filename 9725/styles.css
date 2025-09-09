@@ -793,21 +793,6 @@ tr:hover {
     background: #252525;
 }
 
-/* ✅ NUEVO: Estilo para columnas de precios */
-.stock-table-container th:nth-child(3),
-.stock-table-container td:nth-child(3),
-.stock-table-container th:nth-child(4),
-.stock-table-container td:nth-child(4) {
-    text-align: right;
-    font-family: 'Courier New', monospace;
-    font-weight: 500;
-}
-
-.stock-table-container th:nth-child(3),
-.stock-table-container th:nth-child(4) {
-    color: #a0d8ef;
-}
-
 .recipes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));

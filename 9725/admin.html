@@ -31,7 +31,7 @@
 
             <!-- Botón de Tema -->
             <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
-                <span id="themeIcon">☀️</span>
+                <span id="themeIcon"☀️</span>
             </button>
 
             <!-- Logo -->
@@ -65,8 +65,7 @@
                     </div>
                 </div>
 
-                <!-- ✅ BOTÓN CORREGIDO: sin onclick, con ID -->
-                <button id="addStockButton" class="btn btn-gold" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 10px;">
+                <button class="btn btn-gold" onclick="openAddStockModal()" style="width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 10px;">
                     + AGREGAR producto
                 </button>
 
@@ -163,11 +162,6 @@
                     <option value="ml">Mililitros</option>
                 </select>
             </div>
-            <!-- ✅ NUEVO CAMPO: Precio por Unidad -->
-            <div class="modal-form-group">
-                <label for="productPricePerUnitModal">Precio por Unidad ($):</label>
-                <input type="number" id="productPricePerUnitModal" placeholder="0" min="0" step="0.01">
-            </div>
             <div class="modal-actions">
                 <button class="btn btn-gold" onclick="addStockFromModal()">Agregar Producto</button>
                 <button class="btn btn-danger" onclick="closeAddStockModal()">Cancelar</button>
@@ -209,7 +203,7 @@
             <button class="close-modal" onclick="closeEditProductModal()">×</button>
             <div class="modal-header">
                 <h3>✏️ Editar Producto</h3>
-                <p>Modifica la cantidad, unidad o precio</p>
+                <p>Modifica la cantidad o unidad</p>
             </div>
             <div class="modal-form-group">
                 <label for="editProductName">Nombre del Producto:</label>
@@ -228,11 +222,6 @@
                     <option value="gramos">Gramos</option>
                     <option value="ml">Mililitros</option>
                 </select>
-            </div>
-            <!-- ✅ NUEVO CAMPO: Precio por Unidad -->
-            <div class="modal-form-group">
-                <label for="editProductPricePerUnit">Precio por Unidad ($):</label>
-                <input type="number" id="editProductPricePerUnit" placeholder="0" min="0" step="0.01">
             </div>
             <div class="modal-actions">
                 <button class="btn btn-gold" onclick="saveEditedProduct()">💾 Guardar Cambios</button>
@@ -301,8 +290,6 @@
         </div>
     </div>
     <div id="particles"></div>
-    <!-- ✅ Cargar datos de ejemplo ANTES que script.js -->
-    <script src="sample-data.js"></script>
     <script src="script.js" defer></script>
 </body>
 </html>
