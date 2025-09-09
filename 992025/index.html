@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danny's Burger - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <div class="header">
+            <div class="logo-section">
+                <div class="logo-circle">
+                    <span class="burger-icon">🍔</span>
+                </div>
+                <div>
+                    <h1>DANNY'S</h1>
+                    <div class="subtitle">BURGER • 2024</div>
+                </div>
+            </div>
+            <button id="themeToggle" class="theme-toggle" onclick="toggleTheme()">☀️</button>
+        </div>
+
+        <div class="content">
+            <div class="section active">
+                <h2>🔐 Iniciar Sesión</h2>
+                <div class="vintage-decoration">◆ ◇ ◆</div>
+                
+                <form id="loginForm" class="form-group">
+                    <div class="modal-form-group">
+                        <label for="userType">Nombre de Usuario:</label>
+                        <input type="text" id="userType" placeholder="Escribe 'Administrador' o 'Empleado'" required autocomplete="off">
+                        <!-- ✅ Opcional: puedes agregar esta línea para ayudar al usuario -->
+                        <!-- <small style="color: #f4d03f; display: block; margin-top: 4px; font-size: 0.85em;">Escribe exactamente: Administrador o Empleado</small> -->
+                    </div>
+                    <div class="modal-form-group">
+                        <label for="password">Contraseña:</label>
+                        <input type="password" id="password" placeholder="Ingresa la contraseña" required>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="submit" class="btn btn-gold">Entrar al Sistema</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="particles"></div>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            document.getElementById('themeToggle').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            const count = window.innerWidth > 768 ? 20 : 8;
+            const create = () => {
+                const p = document.createElement('div');
+                p.classList.add('particle');
+                const size = Math.random() * 6 + 2;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = `${Math.random() * 100}vw`;
+                p.style.animationDelay = `${Math.random() * 5}s`;
+                p.style.animationDuration = `${Math.random() * 10 + 10}s`;
+                container.appendChild(p);
+                setTimeout(() => {
+                    if (p.parentElement === container) container.removeChild(p);
+                }, 20000);
+            };
+            for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
+            setInterval(() => {
+                document.querySelectorAll('#particles .particle').forEach(p => p.remove());
+                for (let i = 0; i < count; i++) setTimeout(create, i * 500);
+            }, 30000);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userTypeInput = document.getElementById('userType').value.trim();
+            const password = document.getElementById('password').value;
+
+            // ✅ Validar que el nombre sea exactamente "Administrador" o "Empleado" (case-insensitive)
+            const validUsers = ['administrador', 'empleado'];
+            const userType = validUsers.find(u => u === userTypeInput.toLowerCase());
+
+            const PASS_ADMIN = 'admin';
+            const PASS_USER = 'admin';
+
+            if (userType === 'administrador' && password === PASS_ADMIN) {
+                sessionStorage.setItem('userRole', 'admin');
+                sessionStorage.setItem('userName', 'Administrador');
+                window.location.href = 'admin.html';
+            } else if (userType === 'empleado' && password === PASS_USER) {
+                sessionStorage.setItem('userRole', 'user');
+                sessionStorage.setItem('userName', 'Empleado');
+                window.location.href = 'user.html';
+            } else {
+                showAlert('danger', '❌ Usuario o contraseña incorrectos');
+            }
+        });
+
+        function showAlert(type, message) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            const container = document.querySelector('.content') || document.body;
+            container.insertBefore(alert, container.firstChild);
+            setTimeout(() => alert.remove(), 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', createParticles);
+    </script>
+</body>
+</html>

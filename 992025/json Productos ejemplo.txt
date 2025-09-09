@@ -1,0 +1,107 @@
+{
+  stock {
+    Pan Brioche {
+      quantity 50,
+      unit unidades
+    },
+    Medallón Danny's {
+      quantity 45,
+      unit unidades
+    },
+    Queso Cheddar {
+      quantity 40,
+      unit fetas
+    },
+    Bacon Ahumado {
+      quantity 30,
+      unit tiras
+    },
+    Tomate Cherry {
+      quantity 25,
+      unit unidades
+    },
+    Lechuga Criolla {
+      quantity 35,
+      unit hojas
+    },
+    Cebolla Morada {
+      quantity 20,
+      unit rodajas
+    },
+    Salsa Danny's {
+      quantity 15,
+      unit porciones
+    },
+    Papas Rústicas {
+      quantity 40,
+      unit porciones
+    },
+    Aros de Cebolla {
+      quantity 25,
+      unit porciones
+    },
+    Coca Cola {
+      quantity 48,
+      unit latas
+    },
+    Cerveza Artesanal {
+      quantity 24,
+      unit botellas
+    },
+    Agua Saborizada {
+      quantity 36,
+      unit botellas
+    }
+  },
+  recipes {
+    Danny's Classic {
+      ingredients {
+        Pan Brioche 1,
+        Medallón Danny's 1,
+        Queso Cheddar 1,
+        Lechuga Criolla 2,
+        Tomate Cherry 3,
+        Salsa Danny's 1
+      },
+      price 3800
+    },
+    Bacon Deluxe {
+      ingredients {
+        Pan Brioche 1,
+        Medallón Danny's 1,
+        Bacon Ahumado 3,
+        Queso Cheddar 2,
+        Cebolla Morada 2,
+        Salsa Danny's 1
+      },
+      price 4500
+    },
+    Combo Danny's Special {
+      ingredients {
+        Pan Brioche 1,
+        Medallón Danny's 1,
+        Bacon Ahumado 2,
+        Queso Cheddar 1,
+        Lechuga Criolla 2,
+        Tomate Cherry 3,
+        Salsa Danny's 1,
+        Papas Rústicas 1,
+        Coca Cola 1
+      },
+      price 5200
+    },
+    Combo Premium {
+      ingredients {
+        Pan Brioche 1,
+        Medallón Danny's 2,
+        Bacon Ahumado 3,
+        Queso Cheddar 2,
+        Cebolla Morada 3,
+        Salsa Danny's 1,
+        Aros de Cebolla 1,
+        Cerveza Artesanal 1
+      },
+      price 6800
+    }
+  }
+}
