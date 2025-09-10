@@ -1,19 +1,39 @@
+// === Supabase Client ===
+const SUPABASE_URL = 'https://uknsqhlejuxpbnakebdp.supabase.co';
+// ✅ SERVICE ROLE KEY — REAL, SIN ESPACIOS, VERIFICADA
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbnNxaGxlanV4cGJuYWtlYmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0Mzg2MDgsImV4cCI6MjA3MzAxNDYwOH0.6QBdfVyZjuGmnSarZ3dvyCnEM06kJfjR7bkvwdoeYEU';
+
+let supabase;
+
+// Verificar si el SDK está cargado
+if (typeof window.supabase !== 'undefined') {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log("✅ Supabase SDK cargado correctamente");
+} else {
+    console.error("❌ ERROR: Supabase SDK no está cargado. Verifica el orden de los scripts en tu HTML.");
+    alert("Error crítico: Supabase no está disponible. Recarga la página o verifica la conexión.");
+}
+
 // === Variables globales ===
 let currentEditingRecipe = null;
 let stock = {};
 let recipes = {};
-let sales = []; // Cada venta tiene: date, product, price, user
+let sales = [];
 let movements = [];
-
-// === Carrito de ventas ===
 let selectedSales = {};
 
 // === Referencias al carrito flotante ===
 let floatingCart, floatingCartItems, floatingTotal, closeFloatingCart, confirmFloatingSale;
 
 // === Cargar datos al iniciar ===
-document.addEventListener('DOMContentLoaded', () => {
-    loadData();
+document.addEventListener('DOMContentLoaded', async () => {
+    if (!supabase) {
+        console.error("⛔ Supabase no está inicializado. Abortando.");
+        return;
+    }
+
+    console.log("🚀 Iniciando carga de datos desde Supabase...");
+    await loadDataFromSupabase();
     updateStockDisplay();
     updateRecipesDisplay();
     updateSalesButtons();
@@ -21,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateProductSuggestions();
     createParticles();
 
-    // Inicializar referencias al carrito flotante
+    // Inicializar referencias al carrito
     floatingCart = document.getElementById('floatingCart');
     floatingCartItems = document.getElementById('floatingCartItems');
     floatingTotal = document.getElementById('floatingTotal');
@@ -39,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmFloatingSale.onclick = confirmSelectedSales;
     }
 
-    // ✅ Asignar evento al botón de agregar stock (CORRECCIÓN PRINCIPAL)
+    // Asignar evento al botón de agregar stock
     const addStockButton = document.getElementById('addStockButton');
     if (addStockButton) {
         addStockButton.addEventListener('click', openAddStockModal);
@@ -56,44 +76,103 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     updateFloatingCart();
+
+    // Cerrar sesión
+    document.getElementById('logoutButton')?.addEventListener('click', () => {
+        const confirmLogout = confirm('¿Estás seguro de que deseas cerrar sesión?\n\nSerás redirigido a la página principal.');
+        if (confirmLogout) {
+            sessionStorage.clear();
+            showAlert('success', '👋 Sesión cerrada. Hasta luego!');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 800);
+        }
+    });
 });
 
-// === Cargar desde localStorage ===
-function loadData() {
+// === Cargar datos desde Supabase ===
+async function loadDataFromSupabase() {
+    if (!supabase) return;
+
     try {
-        const saved = localStorage.getItem('dannysBurgerData');
-        if (saved) {
-            const data = JSON.parse(saved);
-            stock = data.stock || {};
-            recipes = data.recipes || {};
-            sales = data.sales || [];
-            movements = data.movements || [];
-            showAlert('success', '✅ Datos cargados');
+        console.log("📦 Cargando stock...");
+        const { data: stockData, error: stockError } = await supabase
+            .from('stock')
+            .select('*')
+            .throwOnError();
+        if (stockError) throw stockError;
+        stock = {};
+        if (stockData) {
+            stockData.forEach(item => {
+                stock[item.name] = {
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    pricePerUnit: item.price_per_unit
+                };
+            });
         }
+        console.log("✅ Stock cargado:", stockData ? stockData.length : 0, "productos");
+
+        console.log("🍽️ Cargando recetas...");
+        const { data: recipesData, error: recipesError } = await supabase
+            .from('recipes')
+            .select('*')
+            .throwOnError();
+        if (recipesError) throw recipesError;
+        recipes = {};
+        if (recipesData) {
+            recipesData.forEach(recipe => {
+                recipes[recipe.name] = {
+                    ingredients: recipe.ingredients,
+                    price: recipe.price
+                };
+            });
+        }
+        console.log("✅ Recetas cargadas:", recipesData ? recipesData.length : 0, "recetas");
+
+        console.log("💰 Cargando ventas...");
+        const { data: salesData, error: salesError } = await supabase
+            .from('sales')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100)
+            .throwOnError();
+        if (salesError) throw salesError;
+        sales = [];
+        if (salesData) {
+            sales = salesData.map(s => ({
+                date: new Date(s.created_at).toLocaleString('es-AR'),
+                product: s.product_name,
+                price: s.price,
+                user: s.user_id
+            }));
+        }
+        console.log("✅ Ventas cargadas:", sales.length);
+
+        console.log("📋 Cargando movimientos...");
+        const { data: movementsData, error: movementsError } = await supabase
+            .from('movements')
+            .select('*')
+            .order('created_at', { ascending: false })
+            // .limit(100) <-- Eliminamos el límite para cargar TODO el historial
+            .throwOnError();        if (movementsError) throw movementsError;
+        movements = [];
+        if (movementsData) {
+            movements = movementsData.map(m => ({
+                date: new Date(m.created_at).toLocaleString('es-AR'),
+                type: m.type,
+                product: m.product_name,
+                quantity: m.quantity,
+                description: m.description
+            }));
+        }
+        console.log("✅ Movimientos cargados:", movements.length);
+
+        showAlert('success', '✅ Datos cargados desde Supabase');
     } catch (e) {
-        console.error('Error al cargar:', e);
-        resetData();
+        console.error('❌ Error al cargar desde Supabase:', e);
+        showAlert('danger', '❌ Error al cargar datos. Verifica conexión o permisos.');
     }
-}
-
-// === Guardar en localStorage ===
-window.addEventListener('beforeunload', saveData);
-
-function saveData() {
-    try {
-        const data = { stock, recipes, sales, movements };
-        localStorage.setItem('dannysBurgerData', JSON.stringify(data));
-    } catch (e) {
-        console.error('Error al guardar:', e);
-    }
-}
-
-// === Resetear datos ===
-function resetData() {
-    stock = {};
-    recipes = {};
-    sales = [];
-    movements = [];
 }
 
 // === Cambiar tema ===
@@ -102,7 +181,14 @@ function toggleTheme() {
     const currentTheme = body.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     body.setAttribute('data-theme', newTheme);
-    document.getElementById('themeIcon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    const themeIcon = document.getElementById('themeIcon');
+    if (themeIcon) {
+        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
 }
 
 // === Mostrar sección activa ===
@@ -120,7 +206,7 @@ function showSection(sectionName) {
     }
 }
 
-// === Escapar y desescapar HTML ===
+// === Escapar HTML ===
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -165,7 +251,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// === Actualizar stock (con protección contra null) ===
+// === Actualizar stock ===
 function updateStockDisplay() {
     const container = document.getElementById('stockDisplay');
     if (!container) return;
@@ -184,8 +270,6 @@ function updateStockDisplay() {
     for (let [name, data] of Object.entries(stock)) {
         const escapedName = escapeHtml(name);
         const cls = data.quantity <= 5 ? 'low' : data.quantity <= 15 ? 'medium' : 'good';
-
-        // Calcular precio unitario y total
         const pricePerUnit = data.pricePerUnit || 0;
         const totalPrice = pricePerUnit * data.quantity;
 
@@ -219,7 +303,7 @@ function editProduct(name) {
     const nameInput = document.getElementById('editProductName');
     const qtyInput = document.getElementById('editProductQuantity');
     const unitSelect = document.getElementById('editProductUnit');
-    const priceInput = document.getElementById('editProductPricePerUnit'); // ✅ Nuevo campo
+    const priceInput = document.getElementById('editProductPricePerUnit');
 
     if (!nameInput || !qtyInput || !unitSelect || !priceInput) {
         console.error('❌ No se encontraron los elementos del modal');
@@ -229,40 +313,57 @@ function editProduct(name) {
     nameInput.value = name;
     qtyInput.value = product.quantity;
     unitSelect.value = product.unit;
-
-    // ✅ Cargar precio si existe
-    if (product.pricePerUnit) {
-        priceInput.value = product.pricePerUnit;
-    } else {
-        priceInput.value = '';
-    }
+    priceInput.value = product.pricePerUnit || '';
 
     document.getElementById('editProductModal').classList.add('show');
 }
 
 // === Guardar producto editado ===
-function saveEditedProduct() {
+async function saveEditedProduct() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     const name = document.getElementById('editProductName').value.trim();
     const quantity = parseInt(document.getElementById('editProductQuantity').value);
     const unit = document.getElementById('editProductUnit').value;
-    const pricePerUnit = parseFloat(document.getElementById('editProductPricePerUnit').value) || 0; // ✅ Nuevo campo
+    const pricePerUnit = parseFloat(document.getElementById('editProductPricePerUnit').value) || 0;
 
     if (!name || isNaN(quantity) || quantity < 0) {
         alert('Completa todos los campos correctamente');
         return;
     }
 
-    // ✅ Guardar con precio (undefined si es 0)
-    stock[name] = { 
-        quantity, 
-        unit, 
-        pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined 
-    };
+    console.log("💾 Guardando producto editado:", { name, quantity, unit, pricePerUnit });
 
-    updateStockDisplay();
-    closeEditProductModal();
-    showAlert('success', `✅ Producto "${name}" actualizado`);
-    saveData();
+    try {
+        const { error } = await supabase
+            .from('stock')
+            .upsert({
+                name: name,
+                quantity: quantity,
+                unit: unit,
+                price_per_unit: pricePerUnit > 0 ? pricePerUnit : null
+            }, { onConflict: 'name' });
+
+        if (error) throw error;
+
+        stock[name] = { 
+            quantity, 
+            unit, 
+            pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined 
+        };
+
+        updateStockDisplay();
+        closeEditProductModal();
+        showAlert('success', `✅ Producto "${name}" actualizado`);
+        updateProductSuggestions();
+        console.log("✅ Producto guardado correctamente");
+    } catch (e) {
+        console.error('❌ Error al guardar producto:', e);
+        alert('Error al guardar. Verifica conexión.');
+    }
 }
 
 // === Cerrar modal de producto ===
@@ -271,13 +372,31 @@ function closeEditProductModal() {
 }
 
 // === Eliminar producto ===
-function removeProduct(name) {
+async function removeProduct(name) {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     if (confirm(`¿Eliminar "${name}" del stock?`)) {
-        delete stock[name];
-        updateStockDisplay();
-        updateProductSuggestions();
-        showAlert('warning', `⚠️ Se eliminó ${name}`);
-        saveData();
+        console.log("🗑️ Eliminando producto:", name);
+        try {
+            const { error } = await supabase
+                .from('stock')
+                .delete()
+                .eq('name', name);
+
+            if (error) throw error;
+
+            delete stock[name];
+            updateStockDisplay();
+            updateProductSuggestions();
+            showAlert('warning', `⚠️ Se eliminó ${name}`);
+            console.log("✅ Producto eliminado correctamente");
+        } catch (e) {
+            console.error('❌ Error al eliminar producto:', e);
+            alert('Error al eliminar. Verifica conexión.');
+        }
     }
 }
 
@@ -297,7 +416,12 @@ function closeAddStockModal() {
 }
 
 // === Agregar stock desde el modal ===
-function addStockFromModal() {
+async function addStockFromModal() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     const name = document.getElementById('productNameModal').value.trim();
     const quantity = parseInt(document.getElementById('productQuantityModal').value);
     const unit = document.getElementById('productUnitModal').value;
@@ -313,25 +437,57 @@ function addStockFromModal() {
         return;
     }
 
-    // Si ya existe, sumar cantidad (opcional: podrías preguntar si quiere reemplazar o sumar)
-    if (stock[name]) {
-        stock[name].quantity += quantity;
-        if (pricePerUnit > 0) stock[name].pricePerUnit = pricePerUnit; // Actualizar precio si se ingresó
-        showAlert('info', `✅ Cantidad actualizada para "${name}"`);
-    } else {
-        // Crear nuevo producto
-        stock[name] = {
-            quantity,
-            unit,
+    console.log("➕ Agregando stock:", { name, quantity, unit, pricePerUnit });
+
+    try {
+        // Sanitizar y codificar nombre
+        const cleanName = String(name).trim();
+        const encodedName = encodeURIComponent(cleanName);
+
+const { data: currentStock, error: stockError } = await supabase
+    .from('stock')
+    .select('quantity')
+    .eq('name', ing)
+    .single();
+
+
+        if (error && error.code !== 'PGRST116') { // no rows
+            throw error;
+        }
+
+        let newQuantity = quantity;
+        if (currentStock) {
+            newQuantity = currentStock.quantity + quantity;
+        }
+
+        const { error: upsertError } = await supabase
+            .from('stock')
+            .upsert({
+                name: cleanName,
+                quantity: newQuantity,
+                unit: unit,
+                price_per_unit: pricePerUnit > 0 ? pricePerUnit : null
+            }, { onConflict: 'name' })
+            .throwOnError();
+
+        if (upsertError) throw upsertError;
+
+        stock[cleanName] = {
+            quantity: newQuantity,
+            unit: unit,
             pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined
         };
-        showAlert('success', `✅ Producto "${name}" agregado al stock`);
-    }
 
-    updateStockDisplay();
-    updateProductSuggestions();
-    closeAddStockModal();
-    saveData();
+        updateStockDisplay();
+        updateProductSuggestions();
+        closeAddStockModal();
+        showAlert('success', `✅ Producto "${cleanName}" actualizado`);
+        console.log("✅ Stock agregado/actualizado correctamente");
+
+    } catch (e) {
+        console.error('❌ Error al agregar stock:', e);
+        alert('Error al guardar. Verifica conexión.');
+    }
 }
 
 // === Actualizar recetas ===
@@ -422,7 +578,12 @@ function addEditIngredient(ingredient = '', quantity = '') {
 }
 
 // === Guardar receta ===
-function saveEditedRecipe() {
+async function saveEditedRecipe() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     const name = document.getElementById('editRecipeName').value.trim();
     const price = parseFloat(document.getElementById('editRecipePrice').value);
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
@@ -444,15 +605,31 @@ function saveEditedRecipe() {
         }
     }
 
-    recipes[name] = { ingredients, price };
-    if (currentEditingRecipe && currentEditingRecipe !== name) {
-        delete recipes[currentEditingRecipe];
+    try {
+        const { error } = await supabase
+            .from('recipes')
+            .upsert({
+                name: name,
+                ingredients: ingredients,
+                price: price
+            }, { onConflict: 'name' })
+            .throwOnError();
+
+        if (error) throw error;
+
+        recipes[name] = { ingredients, price };
+        if (currentEditingRecipe && currentEditingRecipe !== name) {
+            delete recipes[currentEditingRecipe];
+        }
+        closeEditModal();
+        showAlert('success', `✅ Receta "${name}" guardada`);
+        updateRecipesDisplay();
+        updateSalesButtons();
+        console.log("✅ Receta guardada correctamente");
+    } catch (e) {
+        console.error('❌ Error al guardar receta:', e);
+        alert('Error al guardar. Verifica conexión.');
     }
-    closeEditModal();
-    showAlert('success', `✅ Receta "${name}" guardada`);
-    updateRecipesDisplay();
-    updateSalesButtons();
-    saveData();
 }
 
 // === Cerrar modal de receta ===
@@ -462,13 +639,31 @@ function closeEditModal() {
 }
 
 // === Eliminar receta ===
-function deleteRecipe(name) {
+async function deleteRecipe(name) {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     if (confirm(`¿Eliminar la receta "${name}"?`)) {
-        delete recipes[name];
-        updateRecipesDisplay();
-        updateSalesButtons();
-        showAlert('warning', `⚠️ Se eliminó la receta ${name}`);
-        saveData();
+        try {
+            const { error } = await supabase
+                .from('recipes')
+                .delete()
+                .eq('name', name)
+                .throwOnError();
+
+            if (error) throw error;
+
+            delete recipes[name];
+            updateRecipesDisplay();
+            updateSalesButtons();
+            showAlert('warning', `⚠️ Se eliminó la receta ${name}`);
+            console.log("✅ Receta eliminada correctamente");
+        } catch (e) {
+            console.error('❌ Error al eliminar receta:', e);
+            alert('Error al eliminar. Verifica conexión.');
+        }
     }
 }
 
@@ -528,7 +723,7 @@ function updateSalesButtons() {
         button.className = 'sale-btn';
         button.dataset.name = name;
         button.dataset.action = 'add-to-sale';
-        button.title = name; // Tooltip con nombre completo
+        button.title = name;
 
         const canMake = checkCanMakeRecipe(name);
         const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
@@ -543,12 +738,11 @@ function updateSalesButtons() {
             `;
             button.style.position = 'relative';
 
-            // ✅ Mostrar badge si hay más de 1 unidad seleccionada
             if (selectedSales[name] > 1) {
                 const badge = button.querySelector('.quantity-badge');
                 badge.textContent = `×${selectedSales[name]}`;
                 badge.style.display = 'flex';
-                badge.classList.add('flash'); // Animación de destello
+                badge.classList.add('flash');
                 setTimeout(() => badge.classList.remove('flash'), 500);
             }
 
@@ -610,55 +804,166 @@ function removeOneFromSelection(name) {
     updateFloatingCart();
 }
 
-// === Confirmar venta ===
-function confirmSelectedSales() {
+// === Confirmar venta optimizada ===
+async function confirmSelectedSales() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     if (Object.keys(selectedSales).length === 0) {
         showAlert('warning', '⚠️ El carrito está vacío');
         return;
     }
 
+    // 🔄 MOSTRAR LOADING STATE
+    const confirmButton = document.getElementById('confirmFloatingSale');
+    const originalText = confirmButton.textContent;
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = '🔄 Procesando...';
+    confirmButton.style.opacity = '0.6';
+
+    const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('es-AR');
-    const timeStr = now.toLocaleTimeString('es-AR');
-    const dateTimeStr = `${dateStr} ${timeStr}`;
 
-    Object.entries(selectedSales).forEach(([name, qty]) => {
-        const recipe = recipes[name];
-        for (let i = 0; i < qty; i++) {
-            sales.push({
-                date: dateTimeStr,
-                product: name,
-                price: recipe.price,
-                user: userName
-            });
+    try {
+        // 📊 PREPARAR DATOS EN LOTES
+        const salesData = [];
+        const movementsData = [];
+        const stockUpdates = new Map(); // Para agrupar actualizaciones de stock
 
-            for (let [ing, needed] of Object.entries(recipe.ingredients)) {
-                stock[ing].quantity -= needed;
-                movements.push({
-                    date: dateTimeStr,
-                    type: 'Salida',
-                    product: ing,
-                    quantity: needed,
-                    description: `Venta: ${name} (por ${userName})`
+        // 1️⃣ PREPARAR TODAS LAS OPERACIONES
+        for (const [recipeName, qty] of Object.entries(selectedSales)) {
+            const recipe = recipes[recipeName];
+            if (!recipe) {
+                throw new Error(`Receta "${recipeName}" no encontrada`);
+            }
+
+            // Preparar ventas (una por cada unidad vendida)
+            for (let i = 0; i < qty; i++) {
+                salesData.push({
+                    product_name: recipeName,
+                    price: recipe.price,
+                    user_id: userId
                 });
+
+                // Preparar movimientos y actualizaciones de stock
+                for (const [ingredientName, neededPerUnit] of Object.entries(recipe.ingredients)) {
+                    // Acumular cambios de stock
+                    const currentReduction = stockUpdates.get(ingredientName) || 0;
+                    stockUpdates.set(ingredientName, currentReduction + neededPerUnit);
+
+                    // Preparar movimientos
+                    movementsData.push({
+                        type: 'Salida',
+                        product_name: ingredientName,
+                        quantity: neededPerUnit,
+                        description: `Venta: ${recipeName} (por ${userName})`,
+                        user_id: userId || 'Empleado' // <-- Esta es la línea clave
+                    });
+                }
             }
         }
-    });
 
-    const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
-    showAlert('success', `✅ Venta registrada: ${Object.keys(selectedSales).length} productos, ${totalItems} ítems`);
+        console.log('📋 Operaciones preparadas:', {
+            ventas: salesData.length,
+            movimientos: movementsData.length,
+            productos_a_actualizar: stockUpdates.size
+        });
 
-    selectedSales = {};
-    updateSalesButtons();
-    updateStockDisplay();
-    updateReports();
-    updateMySales(); // ✅ Actualizar mis ventas
-    saveData();
-    floatingCart.style.display = 'none';
+        // 2️⃣ VERIFICAR STOCK DISPONIBLE
+        for (const [ingredientName, totalNeeded] of stockUpdates) {
+            if (!stock[ingredientName] || stock[ingredientName].quantity < totalNeeded) {
+                throw new Error(`Stock insuficiente para "${ingredientName}". Disponible: ${stock[ingredientName]?.quantity || 0}, Necesario: ${totalNeeded}`);
+            }
+        }
+
+        // 3️⃣ EJECUTAR OPERACIONES EN LOTES (más rápido)
+        
+        // Insertar todas las ventas de una vez
+        if (salesData.length > 0) {
+            const { error: salesError } = await supabase
+                .from('sales')
+                .insert(salesData);
+            if (salesError) throw salesError;
+        }
+
+        // Insertar todos los movimientos de una vez
+        if (movementsData.length > 0) {
+            const { error: movementsError } = await supabase
+                .from('movements')
+                .insert(movementsData);
+            if (movementsError) throw movementsError;
+        }
+
+        // Actualizar stock (una operación por producto)
+        const stockPromises = Array.from(stockUpdates.entries()).map(async ([ingredientName, totalUsed]) => {
+            const currentQuantity = stock[ingredientName].quantity;
+            const newQuantity = currentQuantity - totalUsed;
+
+            const { error } = await supabase
+                .from('stock')
+                .update({ quantity: newQuantity })
+                .eq('name', ingredientName);
+
+            if (error) throw error;
+
+            // Actualizar variable local
+            stock[ingredientName].quantity = newQuantity;
+            
+            return { ingredientName, oldQty: currentQuantity, newQty: newQuantity };
+        });
+
+        // Esperar todas las actualizaciones de stock
+        await Promise.all(stockPromises);
+
+        // 4️⃣ FEEDBACK Y CLEANUP
+        const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
+        const totalProducts = Object.keys(selectedSales).length;
+
+        // Limpiar carrito
+        selectedSales = {};
+        
+        // Actualizar UI
+        updateSalesButtons();
+        updateStockDisplay();
+        updateReports();
+        updateMySales();
+        updateFloatingCart();
+        
+        // Cerrar modal inmediatamente
+        if (floatingCart) {
+            floatingCart.style.display = 'none';
+        }
+
+        // Mostrar confirmación
+        showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems`);
+        
+        console.log("✅ Venta confirmada y registrada en Supabase");
+
+    } catch (e) {
+        console.error('❌ Error al confirmar venta:', e);
+        showAlert('danger', `❌ Error: ${e.message}`);
+        
+    } finally {
+        // 🔄 RESTAURAR BOTÓN
+        if (confirmButton) {
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = originalText;
+            confirmButton.style.opacity = '1';
+        }
+    }
 }
 
-// === Actualizar reportes (para admin) ===
+// === Función auxiliar para mostrar progreso (opcional) ===
+function updateConfirmButtonProgress(step, total) {
+    const confirmButton = document.getElementById('confirmFloatingSale');
+    if (confirmButton) {
+        const percentage = Math.round((step / total) * 100);
+        confirmButton.innerHTML = `🔄 ${percentage}%`;
+    }
+}
+// === Actualizar reportes ===
 function updateReports() {
     const today = new Date();
 
@@ -683,7 +988,6 @@ function updateReports() {
 
     let html = '';
 
-    // Ventas del Admin
     if (adminSales.length > 0) {
         const totalAdmin = adminSales.reduce((sum, s) => sum + s.price, 0);
         html += '<h3>💼 Ventas del Administrador</h3>';
@@ -695,7 +999,6 @@ function updateReports() {
         html += `</table><p><strong>Total: $${totalAdmin}</strong></p>`;
     }
 
-    // Ventas del Empleado
     if (userSales.length > 0) {
         const totalUser = userSales.reduce((sum, s) => sum + s.price, 0);
         html += '<h3>👷 Ventas del Empleado</h3>';
@@ -707,7 +1010,6 @@ function updateReports() {
         html += `</table><p><strong>Total: $${totalUser}</strong></p>`;
     }
 
-    // Total general
     const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
     html += `<p style="text-align:center; font-size:1.3em; margin-top:20px;"><strong>💵 Total General: $${totalGeneral}</strong></p>`;
 
@@ -723,20 +1025,17 @@ function updateReports() {
         if (movements.length === 0) {
             historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
         } else {
-            // ✅ MODIFICACIÓN: agregada columna "Precio Unit."
-            let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
+            let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
             movements.slice(-20).reverse().forEach(mov => {
                 const escapedProduct = escapeHtml(mov.product);
                 const escapedDesc = escapeHtml(mov.description);
                 const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                const productPrice = stock[mov.product]?.pricePerUnit || 0; // ✅ Obtener precio del stock
                 histHtml += `
                     <tr>
                         <td style="font-size:0.9em;">${mov.date}</td>
                         <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
                         <td>${escapedProduct}</td>
                         <td>${mov.quantity}</td>
-                        <td class="price-cell">$${productPrice.toFixed(2)}</td>
                         <td style="font-size:0.9em;">${escapedDesc}</td>
                     </tr>
                 `;
@@ -760,7 +1059,12 @@ function showAlert(type, message) {
 }
 
 // === Cargar datos de ejemplo ===
-function loadSampleData() {
+async function loadSampleData() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
     if (typeof sampleData === 'undefined') {
         showAlert('danger', '❌ No se encontraron los datos de ejemplo. Verifica que sample-data.js esté cargado.');
         return;
@@ -770,36 +1074,104 @@ function loadSampleData() {
         if (!confirm('¿Sobrescribir datos actuales?')) return;
     }
 
-    // ✅ Usamos los datos externos
-    stock = { ...sampleData.stock };
-    recipes = { ...sampleData.recipes };
+    console.log("🍔 Cargando datos de ejemplo...");
 
-    showAlert('success', '🍔 ¡Datos de ejemplo cargados!');
-    updateStockDisplay();
-    updateRecipesDisplay();
-    updateSalesButtons();
-    updateProductSuggestions();
-    saveData();
+    try {
+        // Limpiar tablas
+        console.log("🧹 Limpiando tablas...");
+        await supabase.from('movements').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('sales').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('recipes').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('stock').delete().not('id', 'is', null).throwOnError();
+
+        // Insertar stock
+        console.log("📦 Insertando stock...");
+        const stockEntries = Object.entries(sampleData.stock).map(([name, data]) => ({
+            name: name.trim(),
+            quantity: data.quantity,
+            unit: data.unit,
+            price_per_unit: data.pricePerUnit || null
+        }));
+        const { error: stockError } = await supabase.from('stock').insert(stockEntries).throwOnError();
+        if (stockError) throw stockError;
+        console.log(`✅ Insertados ${stockEntries.length} productos en stock`);
+
+        // Insertar recetas
+        console.log("🍽️ Insertando recetas...");
+        const recipeEntries = Object.entries(sampleData.recipes).map(([name, data]) => ({
+            name: name.trim(),
+            ingredients: data.ingredients,
+            price: data.price
+        }));
+        const { error: recipeError } = await supabase.from('recipes').insert(recipeEntries).throwOnError();
+        if (recipeError) throw recipeError;
+        console.log(`✅ Insertadas ${recipeEntries.length} recetas`);
+
+        // Pequeño retraso
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Recargar datos
+        console.log("🔄 Recargando datos desde Supabase...");
+        await loadDataFromSupabase();
+
+        // Verificar
+        console.log("📊 Stock local después de recargar:", Object.keys(stock).length, "productos");
+        console.log("📊 Recetas locales después de recargar:", Object.keys(recipes).length, "recetas");
+
+        if (Object.keys(stock).length === 0) {
+            showAlert('warning', '⚠️ Los datos se insertaron, pero no se cargaron. Intenta recargar la página.');
+            console.warn("⚠️ Stock sigue vacío después de loadDataFromSupabase");
+        } else {
+            showAlert('success', '🍔 ¡Datos de ejemplo cargados!');
+            updateStockDisplay();
+            updateRecipesDisplay();
+            updateSalesButtons();
+            updateProductSuggestions();
+            console.log("✅ Datos de ejemplo cargados correctamente en la UI");
+        }
+    } catch (e) {
+        console.error('❌ Error al cargar datos de ejemplo:', e);
+        showAlert('danger', '❌ Error al cargar datos de ejemplo: ' + (e.message || 'Error desconocido'));
+    }
 }
 
 // === Limpiar todos los datos ===
+async function clearAllData() {
+    if (!supabase) {
+        alert('Error: Supabase no está disponible.');
+        return;
+    }
+
+    try {
+        await supabase.from('movements').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('sales').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('recipes').delete().not('id', 'is', null).throwOnError();
+        await supabase.from('stock').delete().not('id', 'is', null).throwOnError();
+
+        stock = {};
+        recipes = {};
+        sales = [];
+        movements = [];
+
+        updateStockDisplay();
+        updateRecipesDisplay();
+        updateSalesButtons();
+        updateReports();
+        showAlert('warning', '🗑️ Todos los datos eliminados');
+        console.log("✅ Todos los datos limpiados");
+    } catch (e) {
+        console.error('❌ Error al limpiar datos:', e);
+        alert('Error al limpiar datos. Verifica conexión.');
+    }
+}
+
 function confirmClearAllData() {
     if (confirm('¿Eliminar TODOS los datos? Esta acción NO se puede deshacer.')) {
         clearAllData();
     }
 }
 
-function clearAllData() {
-    resetData();
-    updateStockDisplay();
-    updateRecipesDisplay();
-    updateSalesButtons();
-    updateReports();
-    showAlert('warning', '🗑️ Todos los datos eliminados');
-    saveData();
-}
-
-// === Exportar a Excel (.xlsx) ===
+// === Exportar a Excel ===
 function exportToExcel() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
@@ -808,7 +1180,6 @@ function exportToExcel() {
 
     const wb = XLSX.utils.book_new();
 
-    // Hoja: Stock
     const stockData = [["Producto", "Cantidad", "Unidad", "Precio Unitario"]];
     for (let [name, data] of Object.entries(stock)) {
         stockData.push([name, data.quantity, data.unit, data.pricePerUnit || 0]);
@@ -816,7 +1187,6 @@ function exportToExcel() {
     const wsStock = XLSX.utils.aoa_to_sheet(stockData);
     XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
 
-    // Hoja: Recetas
     const recipesData = [["Receta", "Precio", "Ingredientes"]];
     for (let [name, recipe] of Object.entries(recipes)) {
         const ingredients = Object.entries(recipe.ingredients).map(([ing, qty]) => `${qty} ${ing}`).join(", ");
@@ -825,7 +1195,6 @@ function exportToExcel() {
     const wsRecipes = XLSX.utils.aoa_to_sheet(recipesData);
     XLSX.utils.book_append_sheet(wb, wsRecipes, "Recetas");
 
-    // Hoja: Ventas de Hoy
     const today = new Date();
     const todaySales = sales.filter(s => {
         const [datePart] = s.date.split(' ');
@@ -845,16 +1214,13 @@ function exportToExcel() {
     const wsSales = XLSX.utils.aoa_to_sheet(salesData);
     XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
 
-    // Hoja: Movimientos
-    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Precio Unitario", "Descripción"]]; // ✅ Agregada columna en exportación
+    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]];
     movements.slice(-100).forEach(mov => {
-        const productPrice = stock[mov.product]?.pricePerUnit || 0;
-        historyData.push([mov.date, mov.type, mov.product, mov.quantity, productPrice, mov.description]);
+        historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
     });
     const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
     XLSX.utils.book_append_sheet(wb, wsHistory, "Movimientos");
 
-    // Descargar
     const fileName = `Danny's_Burger_Reporte_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
     XLSX.writeFile(wb, fileName);
     showAlert('success', '✅ Excel exportado correctamente');
@@ -881,7 +1247,7 @@ function exportToPDF() {
         <head>
             <meta charset="UTF-8">
             <title>Reporte - Danny's Burger</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js  "></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
                 .header { text-align: center; margin-bottom: 40px; }
@@ -909,7 +1275,6 @@ function exportToPDF() {
                         <th>📊 Tipo</th>
                         <th>🥪 Producto</th>
                         <th>🔢 Cantidad</th>
-                        <th>💰 Precio Unit.</th>
                         <th>📝 Descripción</th>
                     </tr>
                 </thead>
@@ -922,7 +1287,6 @@ function exportToPDF() {
                             </td>
                             <td>${mov.product}</td>
                             <td>${mov.quantity}</td>
-                            <td>$${(stock[mov.product]?.pricePerUnit || 0).toFixed(2)}</td>
                             <td>${mov.description}</td>
                         </tr>
                     `).join('')}
@@ -942,7 +1306,7 @@ function exportToPDF() {
     pdfWindow.document.close();
 }
 
-// === Actualizar mis ventas (solo para empleados) ===
+// === Actualizar mis ventas ===
 function updateMySales() {
     const container = document.getElementById('liveSalesList');
     if (!container) return;
@@ -986,18 +1350,6 @@ function updateMySales() {
 
     container.innerHTML = html;
 }
-
-// === Cerrar sesión → redirige a index.html ===
-document.getElementById('logoutButton')?.addEventListener('click', () => {
-    const confirmLogout = confirm('¿Estás seguro de que deseas cerrar sesión?\n\nSerás redirigido a la página principal.');
-    if (confirmLogout) {
-        sessionStorage.clear();
-        showAlert('success', '👋 Sesión cerrada. Hasta luego!');
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 800);
-    }
-});
 
 // === Partículas animadas ===
 function createParticles() {

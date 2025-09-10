@@ -723,20 +723,17 @@ function updateReports() {
         if (movements.length === 0) {
             historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
         } else {
-            // ✅ MODIFICACIÓN: agregada columna "Precio Unit."
-            let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
+            let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>📝 Descripción</th></tr>';
             movements.slice(-20).reverse().forEach(mov => {
                 const escapedProduct = escapeHtml(mov.product);
                 const escapedDesc = escapeHtml(mov.description);
                 const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-                const productPrice = stock[mov.product]?.pricePerUnit || 0; // ✅ Obtener precio del stock
                 histHtml += `
                     <tr>
                         <td style="font-size:0.9em;">${mov.date}</td>
                         <td style="color:${color};font-weight:bold;">${mov.type === 'Entrada' ? '⬆️' : '⬇️'} ${mov.type}</td>
                         <td>${escapedProduct}</td>
                         <td>${mov.quantity}</td>
-                        <td class="price-cell">$${productPrice.toFixed(2)}</td>
                         <td style="font-size:0.9em;">${escapedDesc}</td>
                     </tr>
                 `;
@@ -846,10 +843,9 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
 
     // Hoja: Movimientos
-    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Precio Unitario", "Descripción"]]; // ✅ Agregada columna en exportación
+    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]];
     movements.slice(-100).forEach(mov => {
-        const productPrice = stock[mov.product]?.pricePerUnit || 0;
-        historyData.push([mov.date, mov.type, mov.product, mov.quantity, productPrice, mov.description]);
+        historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
     });
     const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
     XLSX.utils.book_append_sheet(wb, wsHistory, "Movimientos");
@@ -881,7 +877,7 @@ function exportToPDF() {
         <head>
             <meta charset="UTF-8">
             <title>Reporte - Danny's Burger</title>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js  "></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
             <style>
                 body { font-family: 'Segoe UI', sans-serif; padding: 50px; background: white; color: #2c3e50; }
                 .header { text-align: center; margin-bottom: 40px; }
@@ -909,7 +905,6 @@ function exportToPDF() {
                         <th>📊 Tipo</th>
                         <th>🥪 Producto</th>
                         <th>🔢 Cantidad</th>
-                        <th>💰 Precio Unit.</th>
                         <th>📝 Descripción</th>
                     </tr>
                 </thead>
@@ -922,7 +917,6 @@ function exportToPDF() {
                             </td>
                             <td>${mov.product}</td>
                             <td>${mov.quantity}</td>
-                            <td>$${(stock[mov.product]?.pricePerUnit || 0).toFixed(2)}</td>
                             <td>${mov.description}</td>
                         </tr>
                     `).join('')}
