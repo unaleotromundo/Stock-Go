@@ -1,3 +1,37 @@
+/* Cabecera fija para ventas de hoy */
+.sales-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    background: var(--card-bg);
+    border-radius: 8px 8px 0 0;
+}
+.sales-header-table th {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+/* Cabecera fija para historial de movimientos */
+.movement-header-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0;
+    background: var(--card-bg);
+    border-radius: 8px 8px 0 0;
+}
+.movement-header-table th {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
 /* ===== HISTORIAL DE MOVIMIENTOS SCROLLABLE ===== */
 .movement-scroll {
     max-height: 350px;

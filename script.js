@@ -1008,17 +1008,14 @@ function updateReports() {
         html += `
             <div class="report-section">
                 <h3 class="section-title"><span class="icon">🛒</span> Ventas de Hoy</h3>
+                <table class="sales-header-table"><thead><tr>
+                    <th><span class="icon">🍔</span> Producto</th>
+                    <th><span class="icon">💰</span> Precio</th>
+                    <th><span class="icon">⏱️</span> Hora</th>
+                    <th><span class="icon">🧑‍💼</span> Vendido por</th>
+                </tr></thead></table>
                 <div class="table-wrapper" style="max-height:350px;overflow-y:auto;">
-                    <table class="sales-table">
-                        <thead>
-                            <tr>
-                                <th><span class="icon">🍔</span> Producto</th>
-                                <th><span class="icon">💰</span> Precio</th>
-                                <th><span class="icon">⏱️</span> Hora</th>
-                                <th><span class="icon">🧑‍💼</span> Vendido por</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <table class="sales-table"><tbody>
         `;
         allTodaySales.slice().reverse().forEach(s => {
             const time = s.date.split(' ')[1];
@@ -1031,20 +1028,13 @@ function updateReports() {
             html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td><td>${rol} (${s.users.username || ''})</td></tr>`;
         });
         html += `
-                        </tbody>
-                    </table>
+                        </tbody></table>
                 </div>
-                <div class="total-row"><strong>Total: $${totalGeneral}</strong></div>
+                <div class="total-row"><strong>💵 Total General: $${totalGeneral}</strong></div>
             </div>
         `;
-    }
-
-    // ✅ Total general
-    const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
-    if (allTodaySales.length === 0) {
-        html += '<p class="no-sales">No hay ventas hoy 📊</p>';
     } else {
-        html += `<p class="total-general"><strong>💵 Total General: $${totalGeneral}</strong></p>`;
+        html += '<p class="no-sales">No hay ventas hoy 📊</p>';
     }
 
     html += '</div>';
@@ -1057,7 +1047,8 @@ if (historyContainer) {
     if (totalMovements === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
     } else {
-        let histHtml = '<div class="movement-scroll"><table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
+        let histHtml = '<table class="movement-header-table"><thead><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr></thead></table>';
+        histHtml += '<div class="movement-scroll"><table><tbody>';
         movements.slice().reverse().forEach(mov => {
             const escapedProduct = escapeHtml(mov.product);
             const escapedDesc = escapeHtml(mov.description);
@@ -1074,7 +1065,7 @@ if (historyContainer) {
                 </tr>
             `;
         });
-        histHtml += '</table></div>';
+        histHtml += '</tbody></table></div>';
         historyContainer.innerHTML = histHtml;
     }
 }
