@@ -795,7 +795,13 @@ function updateSalesButtons() {
 
         } else {
             button.disabled = true;
-            button.innerHTML = `❌<br><small>Sin stock</small>`;
+            button.innerHTML = `
+                <div class="button-content">
+                    ❌<br><strong>$${recipe.price}</strong><br>
+                    <span class="combo-name">${escapeHtml(name)}</span>
+                    <small style="color:#e74c3c;display:block;">Sin stock</small>
+                </div>
+            `;
         }
 
         container.appendChild(button);
