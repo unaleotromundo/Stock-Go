@@ -1004,10 +1004,24 @@ function updateReports() {
 
     // ✅ Tabla única de ventas de hoy con columna "Vendido por"
     if (allTodaySales.length > 0) {
+        // Paginación de ventas de hoy
+        if (!window.salesTodayPage) window.salesTodayPage = 1;
+        const pageSize = 12;
+        const totalSales = allTodaySales.length;
+        const maxPage = Math.ceil(totalSales / pageSize);
+        const currentPage = window.salesTodayPage;
+        const startIdx = Math.max(0, totalSales - currentPage * pageSize);
+        const endIdx = totalSales - (currentPage - 1) * pageSize;
+        const pageSales = allTodaySales.slice(startIdx, endIdx).reverse();
         const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
         html += `
             <div class="report-section">
                 <h3 class="section-title"><span class="icon">🛒</span> Ventas de Hoy</h3>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <button id="arrowUpSalesToday" style="background:#f4d03f;border:none;border-radius:6px;padding:6px 12px;font-size:1.2em;cursor:pointer;${currentPage >= maxPage ? 'opacity:0.5;pointer-events:none;' : ''}">⬆️</button>
+                    <span style="font-size:1em;">Ventas ${totalSales - endIdx + 1} - ${totalSales - startIdx} de ${totalSales}</span>
+                    <button id="arrowDownSalesToday" style="background:#f4d03f;border:none;border-radius:6px;padding:6px 12px;font-size:1.2em;cursor:pointer;${currentPage <= 1 ? 'opacity:0.5;pointer-events:none;' : ''}">⬇️</button>
+                </div>
                 <div class="table-wrapper" style="max-height:350px;overflow-y:auto;">
                     <table class="sales-table">
                         <thead>
@@ -1020,7 +1034,7 @@ function updateReports() {
                         </thead>
                         <tbody>
         `;
-        allTodaySales.slice().reverse().forEach(s => {
+        pageSales.forEach(s => {
             const time = s.date.split(' ')[1];
             let rol = 'Empleado';
             if (s.users && s.users.username) {
@@ -1037,6 +1051,27 @@ function updateReports() {
                 <div class="total-row"><strong>Total: $${totalGeneral}</strong></div>
             </div>
         `;
+        // Flechas de navegación
+        setTimeout(() => {
+            const btnUp = document.getElementById('arrowUpSalesToday');
+            if (btnUp) {
+                btnUp.onclick = function() {
+                    if (window.salesTodayPage < maxPage) {
+                        window.salesTodayPage++;
+                        updateReports();
+                    }
+                };
+            }
+            const btnDown = document.getElementById('arrowDownSalesToday');
+            if (btnDown) {
+                btnDown.onclick = function() {
+                    if (window.salesTodayPage > 1) {
+                        window.salesTodayPage--;
+                        updateReports();
+                    }
+                };
+            }
+        }, 0);
     }
 
     // ✅ Total general
