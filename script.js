@@ -1196,57 +1196,26 @@ function confirmClearAllData() {
     }
 }
 
-// === Exportar a Excel ===
-function exportToExcel() {
+// === Exportar movimientos a Excel (simple) ===
+function exportMovementsToExcel() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
         return;
     }
-
+    // Encabezados igual que la tabla de PDF
+    const headers = ['📅 Fecha', '📊 Tipo', '🥪 Producto', '🔢 Cantidad', '💰 Precio Unit.', '📝 Descripción'];
+    const data = movements.slice(-100).map(mov => [
+        mov.date,
+        mov.type,
+        mov.product,
+        mov.quantity,
+        stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—',
+        mov.description
+    ]);
     const wb = XLSX.utils.book_new();
-
-    const stockData = [["Producto", "Cantidad", "Unidad", "Precio Unitario"]];
-    for (let [name, data] of Object.entries(stock)) {
-        stockData.push([name, data.quantity, data.unit, data.pricePerUnit || 0]);
-    }
-    const wsStock = XLSX.utils.aoa_to_sheet(stockData);
-    XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
-
-    const recipesData = [["Receta", "Precio", "Ingredientes"]];
-    for (let [name, recipe] of Object.entries(recipes)) {
-        const ingredients = Object.entries(recipe.ingredients).map(([ing, qty]) => `${qty} ${ing}`).join(", ");
-        recipesData.push([name, recipe.price, ingredients]);
-    }
-    const wsRecipes = XLSX.utils.aoa_to_sheet(recipesData);
-    XLSX.utils.book_append_sheet(wb, wsRecipes, "Recetas");
-
-    const today = new Date();
-    const todaySales = sales.filter(s => {
-        const [datePart] = s.date.split(' ');
-        const [day, month, year] = datePart.split('/');
-        const saleDate = new Date(`${year.length === 2 ? '20' + year : year}-${month}-${day}`);
-        return (
-            saleDate.getDate() === today.getDate() &&
-            saleDate.getMonth() === today.getMonth() &&
-            saleDate.getFullYear() === today.getFullYear()
-        );
-    });
-    const salesData = [["Fecha", "Hora", "Producto", "Precio", "Usuario"]];
-    todaySales.forEach(s => {
-        const [date, time] = s.date.split(' ');
-        salesData.push([date, time, s.product, s.price, s.user]);
-    });
-    const wsSales = XLSX.utils.aoa_to_sheet(salesData);
-    XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
-
-    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]];
-    movements.slice(-100).forEach(mov => {
-        historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
-    });
-    const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
-    XLSX.utils.book_append_sheet(wb, wsHistory, "Movimientos");
-
-    const fileName = `Danny's_Burger_Reporte_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
+    const fileName = `Danny's_Burger_Movimientos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
     XLSX.writeFile(wb, fileName);
     showAlert('success', '✅ Excel exportado correctamente');
 }
