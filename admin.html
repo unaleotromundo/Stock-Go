@@ -140,9 +140,17 @@
             <button class="close-modal" onclick="closeExcelColumnsModal()">×</button>
             <div class="modal-header">
                 <h3>📊 Exportar a Excel</h3>
-                <p>Elige las columnas que quieres exportar:</p>
+                <p>Elige el rango de fechas y las columnas que quieres exportar:</p>
             </div>
             <form id="excelColumnsForm">
+                <div style="margin-bottom:10px;">
+                    <label for="sliderFiltroDias"><strong>Filtrar últimos días:</strong></label>
+                    <div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
+                        <input type="range" id="sliderFiltroDias" min="0" max="4" value="4" style="width:120px;" oninput="actualizarLabelFiltroDias()">
+                        <span id="labelFiltroDias">Todos</span>
+                    </div>
+                    <input type="hidden" id="filtroDias" name="filtroDias" value="">
+                </div>
                 <label><input type="checkbox" name="fecha" checked> <span>📅 Fecha</span></label><br>
                 <label><input type="checkbox" name="tipo" checked> <span>📊 Tipo</span></label><br>
                 <label><input type="checkbox" name="producto" checked> <span>🥪 Producto</span></label><br>

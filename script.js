@@ -1,3 +1,19 @@
+// Selección rápida de rango de días para exportar
+// Slider para rango de días
+function actualizarLabelFiltroDias() {
+    const slider = document.getElementById('sliderFiltroDias');
+    const label = document.getElementById('labelFiltroDias');
+    const hidden = document.getElementById('filtroDias');
+    let dias = '';
+    switch (slider.value) {
+        case '0': dias = 15; label.textContent = '15 días'; break;
+        case '1': dias = 30; label.textContent = '30 días'; break;
+        case '2': dias = 45; label.textContent = '45 días'; break;
+        case '3': dias = 60; label.textContent = '60 días'; break;
+        case '4': dias = ''; label.textContent = 'Todos'; break;
+    }
+    hidden.value = dias;
+}
 // === Supabase Client ===
 const SUPABASE_URL = 'https://uknsqhlejuxpbnakebdp.supabase.co';
 // ✅ SERVICE ROLE KEY — REAL, SIN ESPACIOS, VERIFICADA
@@ -214,7 +230,10 @@ function showSection(sectionName) {
             // Recargar datos desde Supabase antes de actualizar reportes
             loadDataFromSupabase().then(() => updateReports());
             break;
-        case 'mySales': updateMySales(); break;
+        case 'mySales':
+            // Recargar datos antes de mostrar Mis Ventas
+            loadDataFromSupabase().then(() => updateMySales());
+            break;
     }
 }
 
@@ -1225,6 +1244,15 @@ function exportMovementsToExcel() {
         return;
     }
     document.getElementById('excelColumnsModal').style.display = 'flex';
+    // Establecer fechas por defecto
+    setTimeout(() => {
+        if (movements.length > 0) {
+            const primerFecha = movements[0].date.split(' ')[0];
+            const ultimaFecha = movements[movements.length-1].date.split(' ')[0];
+            document.getElementById('fechaInicio').value = primerFecha;
+            document.getElementById('fechaFin').value = ultimaFecha;
+        }
+    }, 100);
 }
 
 function closeExcelColumnsModal() {
@@ -1233,6 +1261,7 @@ function closeExcelColumnsModal() {
 
 function confirmExcelColumns() {
     const form = document.getElementById('excelColumnsForm');
+    // Tomar columnas seleccionadas (si quieres exportar todas, puedes ignorar los checkboxes)
     const selected = Array.from(form.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.name);
     if (selected.length === 0) {
         alert('Selecciona al menos una columna.');
@@ -1249,7 +1278,24 @@ function confirmExcelColumns() {
     ];
     const exportCols = columns.filter(col => selected.includes(col.key));
     const headers = exportCols.map(col => col.label);
-    const data = movements.slice(-100).map(mov => exportCols.map(col => col.get(mov)));
+    // Filtrar por rango de días si está seleccionado
+    let movimientosFiltrados = movements;
+    const filtroDias = document.getElementById('filtroDias').value;
+    if (filtroDias) {
+        const hoy = new Date();
+        movimientosFiltrados = movements.filter(mov => {
+            const fechaMov = mov.date.split(' ')[0];
+            const partes = fechaMov.split('-');
+            const fecha = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+            const diff = (hoy - fecha) / (1000*60*60*24);
+            return diff <= filtroDias;
+        });
+    }
+    if (movimientosFiltrados.length === 0) {
+        alert('No hay movimientos para exportar en ese rango.');
+        return;
+    }
+    const data = movimientosFiltrados.map(mov => exportCols.map(col => col.get(mov)));
     // Crear hoja y libro
     const wb = XLSX.utils.book_new();
     // Agregar emojis y formato condicional en los datos
@@ -1437,6 +1483,9 @@ function updateMySales() {
             saleDate.getDate() === today.getDate() &&
             saleDate.getMonth() === today.getMonth() &&
             saleDate.getFullYear() === today.getFullYear();
+    }).sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero)
+        return new Date(b.date) - new Date(a.date);
     });
 
     if (myTodaySales.length === 0) {
