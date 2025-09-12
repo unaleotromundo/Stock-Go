@@ -133,28 +133,18 @@ async function loadDataFromSupabase() {
         console.log("💰 Cargando ventas...");
         const { data: salesData, error: salesError } = await supabase
             .from('sales')
-            .select('*, users(username)'); // Incluye el username del usuario
+            .select('*') // , users(username)');
         if (salesError) throw salesError;
         sales = [];
         if (salesData) {
-            sales = salesData.map(s => {
-                // Formato: 'YYYY-MM-DD HH:MM:SS'
-                const createdAt = new Date(s.created_at);
-                const year = createdAt.getFullYear();
-                const month = String(createdAt.getMonth() + 1).padStart(2, '0');
-                const day = String(createdAt.getDate()).padStart(2, '0');
-                const hours = String(createdAt.getHours()).padStart(2, '0');
-                const minutes = String(createdAt.getMinutes()).padStart(2, '0');
-                const seconds = String(createdAt.getSeconds()).padStart(2, '0');
-                const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-                return {
-                    date: formattedDate,
-                    product: s.product_name,
-                    price: s.price,
-                    user: s.user_id,
-                    users: s.users || { username: '' }
-                };
-            });
+            sales = salesData.map(s => ({
+                date: new Date(s.created_at).toLocaleString('es-AR'),
+                product: s.product_name,
+                price: s.price,
+                user: s.user_id
+                //,
+               // user: s.users.username  
+            }));
         }
         console.log("✅ Ventas cargadas:", sales.length);
 
@@ -979,21 +969,17 @@ function updateConfirmButtonProgress(step, total) {
 function updateReports() {
     const today = new Date();
     const allTodaySales = sales.filter(s => {
-        // ✅ Las fechas vienen desde Supabase como: "2025-04-05 10:30:22.123"
-        const [datePart, timePart] = s.date.split(' '); // Separa fecha y hora
-        const [year, month, day] = datePart.split('-'); // ✅ Ahora usamos guiones, no barras
-
-        // Crear objeto Date válido
-        const saleDate = new Date(`${year}-${month}-${day}T${timePart}`);
-
-        // Comparar solo día, mes, año
+        const [datePart] = s.date.split(' ');
+        const [day, month, year] = datePart.split('/');
+        const saleDate = new Date(
+            `${year.length === 2 ? '20' + year : year}-${month}-${day}`
+        );
         return (
             saleDate.getDate() === today.getDate() &&
             saleDate.getMonth() === today.getMonth() &&
             saleDate.getFullYear() === today.getFullYear()
         );
     });
-
     const adminSales = allTodaySales.filter(s => s.users.username  === 'Administrador');
     const userSales = allTodaySales.filter(s => s.users.username   === 'Empleado');
     const container = document.getElementById('todaySales');
@@ -1374,12 +1360,10 @@ function updateMySales() {
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
     const today = new Date();
     const myTodaySales = sales.filter(s => {
-        // s.date: 'YYYY-MM-DD HH:MM:SS'
-        if (!s.date) return false;
-        const [datePart, timePart] = s.date.split(' ');
-        const [year, month, day] = datePart.split('-');
-        const saleDate = new Date(`${year}-${month}-${day}T${timePart}`);
-        return s.users && s.users.username === userName &&
+        const [datePart] = s.date.split(' ');
+        const [day, month, year] = datePart.split('/');
+        const saleDate = new Date(`${year.length === 2 ? '20' + year : year}-${month}-${day}`);
+        return s.user === userName &&
             saleDate.getDate() === today.getDate() &&
             saleDate.getMonth() === today.getMonth() &&
             saleDate.getFullYear() === today.getFullYear();
