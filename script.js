@@ -210,7 +210,10 @@ function showSection(sectionName) {
         case 'stock': updateStockDisplay(); break;
         case 'recipes': updateRecipesDisplay(); break;
         case 'sales': updateSalesButtons(); break;
-        case 'reports': updateReports(); break;
+        case 'reports':
+            // Recargar datos desde Supabase antes de actualizar reportes
+            loadDataFromSupabase().then(() => updateReports());
+            break;
         case 'mySales': updateMySales(); break;
     }
 }
@@ -456,12 +459,12 @@ async function addStockFromModal() {
 const { data: currentStock, error: stockError } = await supabase
     .from('stock')
     .select('quantity')
-    .eq('name', ing)
+    .eq('name', cleanName)
     .single();
 
 
-        if (error && error.code !== 'PGRST116') { // no rows
-            throw error;
+        if (stockError && stockError.code !== 'PGRST116') { // no rows
+            throw stockError;
         }
 
         let newQuantity = quantity;
@@ -487,6 +490,22 @@ const { data: currentStock, error: stockError } = await supabase
             pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined
         };
 
+        // Registrar movimiento de tipo Entrada
+        try {
+            const { error: movementError } = await supabase
+                .from('movements')
+                .insert({
+                    type: 'Entrada',
+                    product_name: cleanName,
+                    quantity: quantity,
+                    description: 'Ingreso de stock',
+                    created_at: new Date().toISOString()
+                });
+            if (movementError) throw movementError;
+            console.log('✅ Movimiento de Entrada registrado');
+        } catch (e) {
+            console.error('❌ Error al registrar movimiento de Entrada:', e);
+        }
         updateStockDisplay();
         updateProductSuggestions();
         closeAddStockModal();
@@ -1008,14 +1027,17 @@ function updateReports() {
         html += `
             <div class="report-section">
                 <h3 class="section-title"><span class="icon">🛒</span> Ventas de Hoy</h3>
-                <table class="sales-header-table"><thead><tr>
-                    <th><span class="icon">🍔</span> Producto</th>
-                    <th><span class="icon">💰</span> Precio</th>
-                    <th><span class="icon">⏱️</span> Hora</th>
-                    <th><span class="icon">🧑‍💼</span> Vendido por</th>
-                </tr></thead></table>
                 <div class="table-wrapper" style="max-height:350px;overflow-y:auto;">
-                    <table class="sales-table"><tbody>
+                    <table class="sales-header-table">
+                        <thead>
+                            <tr>
+                                <th><span class="icon">🍔</span> Producto</th>
+                                <th><span class="icon">💰</span> Precio</th>
+                                <th><span class="icon">⏱️</span> Hora</th>
+                                <th><span class="icon">🧑‍💼</span> Vendido por</th>
+                            </tr>
+                        </thead>
+                        <tbody>
         `;
         allTodaySales.slice().reverse().forEach(s => {
             const time = s.date.split(' ')[1];
@@ -1028,7 +1050,8 @@ function updateReports() {
             html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td><td>${rol} (${s.users.username || ''})</td></tr>`;
         });
         html += `
-                        </tbody></table>
+                        </tbody>
+                    </table>
                 </div>
                 <div class="total-row"><strong>💵 Total General: $${totalGeneral}</strong></div>
             </div>
@@ -1047,9 +1070,8 @@ if (historyContainer) {
     if (totalMovements === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
     } else {
-        let histHtml = '<table class="movement-header-table"><thead><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr></thead></table>';
-        histHtml += '<div class="movement-scroll"><table><tbody>';
-        movements.slice().reverse().forEach(mov => {
+        let histHtml = '<div class="movement-scroll"><table class="movement-header-table"><thead><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr></thead><tbody>';
+        movements.forEach(mov => {
             const escapedProduct = escapeHtml(mov.product);
             const escapedDesc = escapeHtml(mov.description);
             const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
@@ -1202,22 +1224,120 @@ function exportMovementsToExcel() {
         alert('No hay movimientos para exportar.');
         return;
     }
-    // Encabezados igual que la tabla de PDF
-    const headers = ['📅 Fecha', '📊 Tipo', '🥪 Producto', '🔢 Cantidad', '💰 Precio Unit.', '📝 Descripción'];
-    const data = movements.slice(-100).map(mov => [
-        mov.date,
-        mov.type,
-        mov.product,
-        mov.quantity,
-        stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—',
-        mov.description
-    ]);
+    document.getElementById('excelColumnsModal').style.display = 'flex';
+}
+
+function closeExcelColumnsModal() {
+    document.getElementById('excelColumnsModal').style.display = 'none';
+}
+
+function confirmExcelColumns() {
+    const form = document.getElementById('excelColumnsForm');
+    const selected = Array.from(form.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.name);
+    if (selected.length === 0) {
+        alert('Selecciona al menos una columna.');
+        return;
+    }
+    // Definir columnas y encabezados con iconos
+    const columns = [
+        { key: 'fecha', label: '📅 Fecha', get: mov => mov.date },
+        { key: 'tipo', label: '📊 Tipo', get: mov => mov.type },
+        { key: 'producto', label: '🥪 Producto', get: mov => mov.product },
+        { key: 'cantidad', label: '🔢 Cantidad', get: mov => mov.quantity },
+        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—' },
+        { key: 'descripcion', label: '📝 Descripción', get: mov => mov.description }
+    ];
+    const exportCols = columns.filter(col => selected.includes(col.key));
+    const headers = exportCols.map(col => col.label);
+    const data = movements.slice(-100).map(mov => exportCols.map(col => col.get(mov)));
+    // Crear hoja y libro
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+    // Agregar emojis y formato condicional en los datos
+    const styledData = data.map((row, i) => {
+        return row.map((cell, j) => {
+            // Si la columna es tipo, agrega emoji y color
+            if (exportCols[j].key === 'tipo') {
+                if (cell === 'Entrada') return '⬆️ Entrada';
+                if (cell === 'Salida') return '⬇️ Salida';
+            }
+            return cell;
+        });
+    });
+    // Encabezados con iconos
+    const aoa = [headers, ...styledData];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    // Estilos avanzados
+    // Encabezados dorados
+    exportCols.forEach((col, idx) => {
+        const cell = XLSX.utils.encode_cell({ r:0, c:idx });
+        if (!ws[cell]) return;
+        ws[cell].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 13 },
+            fill: { fgColor: { rgb: 'F4D03F' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: { top: { style: "thin", color: { rgb: "B7950B" } }, bottom: { style: "thin", color: { rgb: "B7950B" } } }
+        };
+    });
+    // Filas alternas con fondo suave
+    for (let r = 1; r < aoa.length; r++) {
+        for (let c = 0; c < exportCols.length; c++) {
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if (!ws[cell]) continue;
+            ws[cell].s = ws[cell].s || {};
+            if (r % 2 === 0) {
+                ws[cell].s.fill = { fgColor: { rgb: 'F9E79F' } };
+            } else {
+                ws[cell].s.fill = { fgColor: { rgb: 'FFFFFF' } };
+            }
+            ws[cell].s.alignment = { horizontal: 'center', vertical: 'center' };
+            // Formato condicional para tipo
+            if (exportCols[c].key === 'tipo') {
+                if (ws[cell].v && ws[cell].v.includes('Entrada')) {
+                    ws[cell].s.font = { color: { rgb: '27ae60' }, bold: true };
+                }
+                if (ws[cell].v && ws[cell].v.includes('Salida')) {
+                    ws[cell].s.font = { color: { rgb: 'e74c3c' }, bold: true };
+                }
+            }
+        }
+    }
+    // Ajuste de ancho de columnas (fecha más ancha)
+    ws['!cols'] = exportCols.map(col => {
+        if (col.key === 'fecha') return { wch: 22 };
+        if (col.key === 'producto') return { wpx: 170 };
+        return { wch: Math.max(12, col.label.length + 4) };
+    });
+
+    // Mejorar formato de colores para compatibilidad
+    for (let r = 1; r < aoa.length; r++) {
+        for (let c = 0; c < exportCols.length; c++) {
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if (!ws[cell]) continue;
+            ws[cell].s = ws[cell].s || {};
+            if (r % 2 === 0) {
+                ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: 'F9E79F' } };
+            } else {
+                ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: 'FFFFFF' } };
+            }
+            ws[cell].s.alignment = { horizontal: 'center', vertical: 'center' };
+            // Formato condicional para tipo
+            if (exportCols[c].key === 'tipo') {
+                if (ws[cell].v && ws[cell].v.includes('Entrada')) {
+                    ws[cell].s.font = { color: { rgb: '27AE60' }, bold: true };
+                }
+                if (ws[cell].v && ws[cell].v.includes('Salida')) {
+                    ws[cell].s.font = { color: { rgb: 'E74C3C' }, bold: true };
+                }
+            }
+        }
+    }
+    // Filtros automáticos
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r:0, c:0 }, e: { r:aoa.length-1, c:exportCols.length-1 } }) };
     XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
     const fileName = `Danny's_Burger_Movimientos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    showAlert('success', '✅ Excel exportado correctamente');
+    closeExcelColumnsModal();
+    showAlert('success', '✅ Excel PRO exportado correctamente');
 }
 
 // === Exportar a PDF ===
@@ -1273,7 +1393,7 @@ function exportToPDF() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${movements.slice(-50).map(mov => `
+                    ${movements.map(mov => `
                         <tr>
                             <td>${mov.date}</td>
                             <td style="color:${mov.type === 'Entrada' ? '#27ae60' : '#e74c3c'}; font-weight:bold;">
