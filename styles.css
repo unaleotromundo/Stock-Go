@@ -1,3 +1,40 @@
+/* ===== HISTORIAL DE MOVIMIENTOS SCROLLABLE ===== */
+.movement-scroll {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    margin-bottom: 8px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+.movement-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.movement-scroll th, .movement-scroll td {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+.movement-scroll tr:last-child td {
+    border-bottom: none;
+}
+.arrow-movements-btn {
+    background: var(--accent-gold);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin: 0 4px;
+    transition: background 0.2s;
+}
+.arrow-movements-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 * {
     margin: 0;
     padding: 0;

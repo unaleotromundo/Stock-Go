@@ -1073,22 +1073,19 @@ function updateReports() {
     html += '</div>';
     container.innerHTML = html;
 
-// Historial de movimientos
+// Historial de movimientos con paginación
 const historyContainer = document.getElementById('movementHistory');
 if (historyContainer) {
-    if (movements.length === 0) {
+    const totalMovements = movements.length;
+    if (totalMovements === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
     } else {
-        // ✅ Nueva cabecera con columna de precio unitario
-        let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
-        movements.slice(-20).reverse().forEach(mov => {
+        let histHtml = '<div class="movement-scroll"><table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
+        movements.slice().reverse().forEach(mov => {
             const escapedProduct = escapeHtml(mov.product);
             const escapedDesc = escapeHtml(mov.description);
             const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-            
-            // ✅ Obtener precio unitario del stock, si existe
             const productPrice = stock[mov.product]?.pricePerUnit || 0;
-            
             histHtml += `
                 <tr>
                     <td style="font-size:0.9em;">${mov.date}</td>
@@ -1100,7 +1097,7 @@ if (historyContainer) {
                 </tr>
             `;
         });
-        histHtml += '</table>';
+        histHtml += '</table></div>';
         historyContainer.innerHTML = histHtml;
     }
 }
