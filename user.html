@@ -35,12 +35,25 @@
         </div>
 
         <div class="nav-buttons">
+            <button class="nav-btn" onclick="showSection('stock')">📦 Stock Actual</button>
             <button class="nav-btn active" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('recipes')">🍔 Recetas</button>
             <button class="nav-btn" onclick="showSection('mySales')">📈 Mis Ventas</button>
         </div>
 
         <div class="content">
+            <!-- Stock Actual para Empleados -->
+            <div id="stock" class="section">
+                <div style="text-align: center; margin-bottom: 25px;">
+                    <h2 class="section-title">📦 Stock Actual</h2>
+                    <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
+                    <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
+                        ◆ ◆ ◆
+                    </div>
+                </div>
+                <div id="stockDisplay" class="stock-table-container"></div>
+            </div>
+
             <div id="sales" class="section active">
                 <div style="text-align: center; margin-bottom: 25px;">
                     <h2 class="section-title">💰 Registrar Venta</h2>
@@ -79,8 +92,7 @@
         </div>
     </div>
 
-    <!-- Contenedores ocultos -->
-    <div id="stockDisplay" style="display: none;"></div>
+    <!-- Contenedores ocultos (necesarios para el script.js) -->
     <div id="todaySales" style="display: none;"></div>
     <div id="movementHistory" style="display: none;"></div>
 
@@ -145,7 +157,7 @@
         </div>
     </div>
 
-    <!-- Estilos adicionales para el botón de confirmación -->
+    <!-- Estilos adicionales -->
     <style>
         #confirmFloatingSale:disabled {
             cursor: not-allowed !important;
@@ -259,6 +271,44 @@
             }
         }
     </style>
+
+    <!-- Modales necesarios para la edición de productos -->
+    <!-- Modal para editar producto -->
+    <div id="editProductModal" class="edit-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-modal" onclick="closeEditProductModal()">×</button>
+            <div class="modal-header">
+                <h3>✏️ Editar Producto</h3>
+                <p>Modifica la cantidad, unidad o precio</p>
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductName">Nombre del Producto:</label>
+                <input type="text" id="editProductName" readonly>
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductQuantity">Cantidad:</label>
+                <input type="number" id="editProductQuantity" min="0">
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductUnit">Unidad:</label>
+                <select id="editProductUnit">
+                    <option value="unidades">Unidades</option>
+                    <option value="kg">Kilogramos</option>
+                    <option value="litros">Litros</option>
+                    <option value="gramos">Gramos</option>
+                    <option value="ml">Mililitros</option>
+                </select>
+            </div>
+            <div class="modal-form-group">
+                <label for="editProductPricePerUnit">Precio por Unidad ($):</label>
+                <input type="number" id="editProductPricePerUnit" placeholder="0" min="0" step="0.01">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-gold" onclick="saveEditedProduct()">💾 Guardar Cambios</button>
+                <button class="btn btn-danger" onclick="closeEditProductModal()">❌ Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <datalist id="productSuggestions"></datalist>
     <div id="particles"></div>

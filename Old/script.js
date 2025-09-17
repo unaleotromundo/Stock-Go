@@ -1,3 +1,19 @@
+// Selección rápida de rango de días para exportar
+// Slider para rango de días
+function actualizarLabelFiltroDias() {
+    const slider = document.getElementById('sliderFiltroDias');
+    const label = document.getElementById('labelFiltroDias');
+    const hidden = document.getElementById('filtroDias');
+    let dias = '';
+    switch (slider.value) {
+        case '0': dias = 15; label.textContent = '15 días'; break;
+        case '1': dias = 30; label.textContent = '30 días'; break;
+        case '2': dias = 45; label.textContent = '45 días'; break;
+        case '3': dias = 60; label.textContent = '60 días'; break;
+        case '4': dias = ''; label.textContent = 'Todos'; break;
+    }
+    hidden.value = dias;
+}
 // === Supabase Client ===
 const SUPABASE_URL = 'https://uknsqhlejuxpbnakebdp.supabase.co';
 // ✅ SERVICE ROLE KEY — REAL, SIN ESPACIOS, VERIFICADA
@@ -133,18 +149,28 @@ async function loadDataFromSupabase() {
         console.log("💰 Cargando ventas...");
         const { data: salesData, error: salesError } = await supabase
             .from('sales')
-            .select('*') // , users(username)');
+            .select('*, users(username)'); // Incluye el username del usuario
         if (salesError) throw salesError;
         sales = [];
         if (salesData) {
-            sales = salesData.map(s => ({
-                date: new Date(s.created_at).toLocaleString('es-AR'),
-                product: s.product_name,
-                price: s.price,
-                user: s.user_id
-                //,
-               // user: s.users.username  
-            }));
+            sales = salesData.map(s => {
+                // Formato: 'YYYY-MM-DD HH:MM:SS'
+                const createdAt = new Date(s.created_at);
+                const year = createdAt.getFullYear();
+                const month = String(createdAt.getMonth() + 1).padStart(2, '0');
+                const day = String(createdAt.getDate()).padStart(2, '0');
+                const hours = String(createdAt.getHours()).padStart(2, '0');
+                const minutes = String(createdAt.getMinutes()).padStart(2, '0');
+                const seconds = String(createdAt.getSeconds()).padStart(2, '0');
+                const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                return {
+                    date: formattedDate,
+                    product: s.product_name,
+                    price: s.price,
+                    user: s.user_id,
+                    users: s.users || { username: '' }
+                };
+            });
         }
         console.log("✅ Ventas cargadas:", sales.length);
 
@@ -200,8 +226,14 @@ function showSection(sectionName) {
         case 'stock': updateStockDisplay(); break;
         case 'recipes': updateRecipesDisplay(); break;
         case 'sales': updateSalesButtons(); break;
-        case 'reports': updateReports(); break;
-        case 'mySales': updateMySales(); break;
+        case 'reports':
+            // Recargar datos desde Supabase antes de actualizar reportes
+            loadDataFromSupabase().then(() => updateReports());
+            break;
+        case 'mySales':
+            // Recargar datos antes de mostrar Mis Ventas
+            loadDataFromSupabase().then(() => updateMySales());
+            break;
     }
 }
 
@@ -446,12 +478,12 @@ async function addStockFromModal() {
 const { data: currentStock, error: stockError } = await supabase
     .from('stock')
     .select('quantity')
-    .eq('name', ing)
+    .eq('name', cleanName)
     .single();
 
 
-        if (error && error.code !== 'PGRST116') { // no rows
-            throw error;
+        if (stockError && stockError.code !== 'PGRST116') { // no rows
+            throw stockError;
         }
 
         let newQuantity = quantity;
@@ -477,6 +509,22 @@ const { data: currentStock, error: stockError } = await supabase
             pricePerUnit: pricePerUnit > 0 ? pricePerUnit : undefined
         };
 
+        // Registrar movimiento de tipo Entrada
+        try {
+            const { error: movementError } = await supabase
+                .from('movements')
+                .insert({
+                    type: 'Entrada',
+                    product_name: cleanName,
+                    quantity: quantity,
+                    description: 'Ingreso de stock',
+                    created_at: new Date().toISOString()
+                });
+            if (movementError) throw movementError;
+            console.log('✅ Movimiento de Entrada registrado');
+        } catch (e) {
+            console.error('❌ Error al registrar movimiento de Entrada:', e);
+        }
         updateStockDisplay();
         updateProductSuggestions();
         closeAddStockModal();
@@ -747,7 +795,13 @@ function updateSalesButtons() {
 
         } else {
             button.disabled = true;
-            button.innerHTML = `❌<br><small>Sin stock</small>`;
+            button.innerHTML = `
+                <div class="button-content">
+                    ❌<br><strong>$${recipe.price}</strong><br>
+                    <span class="combo-name">${escapeHtml(name)}</span>
+                    <small style="color:#e74c3c;display:block;">Sin stock</small>
+                </div>
+            `;
         }
 
         container.appendChild(button);
@@ -969,17 +1023,21 @@ function updateConfirmButtonProgress(step, total) {
 function updateReports() {
     const today = new Date();
     const allTodaySales = sales.filter(s => {
-        const [datePart] = s.date.split(' ');
-        const [day, month, year] = datePart.split('/');
-        const saleDate = new Date(
-            `${year.length === 2 ? '20' + year : year}-${month}-${day}`
-        );
+        // ✅ Las fechas vienen desde Supabase como: "2025-04-05 10:30:22.123"
+        const [datePart, timePart] = s.date.split(' '); // Separa fecha y hora
+        const [year, month, day] = datePart.split('-'); // ✅ Ahora usamos guiones, no barras
+
+        // Crear objeto Date válido
+        const saleDate = new Date(`${year}-${month}-${day}T${timePart}`);
+
+        // Comparar solo día, mes, año
         return (
             saleDate.getDate() === today.getDate() &&
             saleDate.getMonth() === today.getMonth() &&
             saleDate.getFullYear() === today.getFullYear()
         );
     });
+
     const adminSales = allTodaySales.filter(s => s.users.username  === 'Administrador');
     const userSales = allTodaySales.filter(s => s.users.username   === 'Empleado');
     const container = document.getElementById('todaySales');
@@ -988,93 +1046,61 @@ function updateReports() {
     // ✅ Estilo mejorado con clases CSS
     let html = '<div class="sales-report-container">';
 
-    // ✅ Tabla de ventas del administrador
-    if (adminSales.length > 0) {
-        const totalAdmin = adminSales.reduce((sum, s) => sum + s.price, 0);
+    // ✅ Tabla única de ventas de hoy con columna "Vendido por"
+    if (allTodaySales.length > 0) {
+        const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
         html += `
             <div class="report-section">
-                <h3 class="section-title"><span class="icon">💼</span> Ventas del Administrador</h3>
-                <div class="table-wrapper">
-                    <table class="sales-table">
+                <h3 class="section-title"><span class="icon">🛒</span> Ventas de Hoy</h3>
+                <div class="table-wrapper" style="max-height:350px;overflow-y:auto;">
+                    <table class="sales-header-table">
                         <thead>
                             <tr>
                                 <th><span class="icon">🍔</span> Producto</th>
                                 <th><span class="icon">💰</span> Precio</th>
                                 <th><span class="icon">⏱️</span> Hora</th>
+                                <th><span class="icon">🧑‍💼</span> Vendido por</th>
                             </tr>
                         </thead>
                         <tbody>
         `;
-        adminSales.forEach(s => {
+        allTodaySales.slice().reverse().forEach(s => {
             const time = s.date.split(' ')[1];
-            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
+            let rol = 'Empleado';
+            if (s.users && s.users.username) {
+                if (s.users.username.toLowerCase().includes('admin')) {
+                    rol = 'Administrador';
+                }
+            }
+            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td><td>${rol} (${s.users.username || ''})</td></tr>`;
         });
         html += `
                         </tbody>
                     </table>
                 </div>
-                <div class="total-row"><strong>Total: $${totalAdmin}</strong></div>
+                <div class="total-row"><strong>💵 Total General: $${totalGeneral}</strong></div>
             </div>
         `;
-    }
-
-    // ✅ Tabla de ventas del empleado
-    if (userSales.length > 0) {
-        const totalUser = userSales.reduce((sum, s) => sum + s.price, 0);
-        html += `
-            <div class="report-section">
-                <h3 class="section-title"><span class="icon">👷</span> Ventas del Empleado</h3>
-                <div class="table-wrapper">
-                    <table class="sales-table">
-                        <thead>
-                            <tr>
-                                <th><span class="icon">🍔</span> Producto</th>
-                                <th><span class="icon">💰</span> Precio</th>
-                                <th><span class="icon">⏱️</span> Hora</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-        `;
-        userSales.forEach(s => {
-            const time = s.date.split(' ')[1];
-            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td></tr>`;
-        });
-        html += `
-                        </tbody>
-                    </table>
-                </div>
-                <div class="total-row"><strong>Total: $${totalUser}</strong></div>
-            </div>
-        `;
-    }
-
-    // ✅ Total general
-    const totalGeneral = allTodaySales.reduce((sum, s) => sum + s.price, 0);
-    if (allTodaySales.length === 0) {
-        html += '<p class="no-sales">No hay ventas hoy 📊</p>';
     } else {
-        html += `<p class="total-general"><strong>💵 Total General: $${totalGeneral}</strong></p>`;
+        html += '<p class="no-sales">No hay ventas hoy 📊</p>';
     }
 
     html += '</div>';
     container.innerHTML = html;
 
-// Historial de movimientos
+// Historial de movimientos con paginación
 const historyContainer = document.getElementById('movementHistory');
 if (historyContainer) {
-    if (movements.length === 0) {
+    const totalMovements = movements.length;
+    if (totalMovements === 0) {
         historyContainer.innerHTML = '<p>No hay movimientos 📋</p>';
     } else {
-        // ✅ Nueva cabecera con columna de precio unitario
-        let histHtml = '<table><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr>';
-        movements.slice(-20).reverse().forEach(mov => {
+        let histHtml = '<div class="movement-scroll"><table class="movement-header-table"><thead><tr><th>📅 Fecha</th><th>📊 Tipo</th><th>🥪 Producto</th><th>🔢 Cantidad</th><th>💰 Precio Unit.</th><th>📝 Descripción</th></tr></thead><tbody>';
+        movements.forEach(mov => {
             const escapedProduct = escapeHtml(mov.product);
             const escapedDesc = escapeHtml(mov.description);
             const color = mov.type === 'Entrada' ? '#27ae60' : '#e74c3c';
-            
-            // ✅ Obtener precio unitario del stock, si existe
             const productPrice = stock[mov.product]?.pricePerUnit || 0;
-            
             histHtml += `
                 <tr>
                     <td style="font-size:0.9em;">${mov.date}</td>
@@ -1086,7 +1112,7 @@ if (historyContainer) {
                 </tr>
             `;
         });
-        histHtml += '</table>';
+        histHtml += '</tbody></table></div>';
         historyContainer.innerHTML = histHtml;
     }
 }
@@ -1217,59 +1243,153 @@ function confirmClearAllData() {
     }
 }
 
-// === Exportar a Excel ===
-function exportToExcel() {
+// === Exportar movimientos a Excel (simple) ===
+function exportMovementsToExcel() {
     if (movements.length === 0) {
         alert('No hay movimientos para exportar.');
         return;
     }
+    document.getElementById('excelColumnsModal').style.display = 'flex';
+    // Establecer fechas por defecto
+    setTimeout(() => {
+        if (movements.length > 0) {
+            const primerFecha = movements[0].date.split(' ')[0];
+            const ultimaFecha = movements[movements.length-1].date.split(' ')[0];
+            document.getElementById('fechaInicio').value = primerFecha;
+            document.getElementById('fechaFin').value = ultimaFecha;
+        }
+    }, 100);
+}
 
+function closeExcelColumnsModal() {
+    document.getElementById('excelColumnsModal').style.display = 'none';
+}
+
+function confirmExcelColumns() {
+    const form = document.getElementById('excelColumnsForm');
+    // Tomar columnas seleccionadas (si quieres exportar todas, puedes ignorar los checkboxes)
+    const selected = Array.from(form.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.name);
+    if (selected.length === 0) {
+        alert('Selecciona al menos una columna.');
+        return;
+    }
+    // Definir columnas y encabezados con iconos
+    const columns = [
+        { key: 'fecha', label: '📅 Fecha', get: mov => mov.date },
+        { key: 'tipo', label: '📊 Tipo', get: mov => mov.type },
+        { key: 'producto', label: '🥪 Producto', get: mov => mov.product },
+        { key: 'cantidad', label: '🔢 Cantidad', get: mov => mov.quantity },
+        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—' },
+        { key: 'descripcion', label: '📝 Descripción', get: mov => mov.description }
+    ];
+    const exportCols = columns.filter(col => selected.includes(col.key));
+    const headers = exportCols.map(col => col.label);
+    // Filtrar por rango de días si está seleccionado
+    let movimientosFiltrados = movements;
+    const filtroDias = document.getElementById('filtroDias').value;
+    if (filtroDias) {
+        const hoy = new Date();
+        movimientosFiltrados = movements.filter(mov => {
+            const fechaMov = mov.date.split(' ')[0];
+            const partes = fechaMov.split('-');
+            const fecha = new Date(Number(partes[0]), Number(partes[1])-1, Number(partes[2]));
+            const diff = (hoy - fecha) / (1000*60*60*24);
+            return diff <= filtroDias;
+        });
+    }
+    if (movimientosFiltrados.length === 0) {
+        alert('No hay movimientos para exportar en ese rango.');
+        return;
+    }
+    const data = movimientosFiltrados.map(mov => exportCols.map(col => col.get(mov)));
+    // Crear hoja y libro
     const wb = XLSX.utils.book_new();
-
-    const stockData = [["Producto", "Cantidad", "Unidad", "Precio Unitario"]];
-    for (let [name, data] of Object.entries(stock)) {
-        stockData.push([name, data.quantity, data.unit, data.pricePerUnit || 0]);
+    // Agregar emojis y formato condicional en los datos
+    const styledData = data.map((row, i) => {
+        return row.map((cell, j) => {
+            // Si la columna es tipo, agrega emoji y color
+            if (exportCols[j].key === 'tipo') {
+                if (cell === 'Entrada') return '⬆️ Entrada';
+                if (cell === 'Salida') return '⬇️ Salida';
+            }
+            return cell;
+        });
+    });
+    // Encabezados con iconos
+    const aoa = [headers, ...styledData];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    // Estilos avanzados
+    // Encabezados dorados
+    exportCols.forEach((col, idx) => {
+        const cell = XLSX.utils.encode_cell({ r:0, c:idx });
+        if (!ws[cell]) return;
+        ws[cell].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 13 },
+            fill: { fgColor: { rgb: 'F4D03F' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+            border: { top: { style: "thin", color: { rgb: "B7950B" } }, bottom: { style: "thin", color: { rgb: "B7950B" } } }
+        };
+    });
+    // Filas alternas con fondo suave
+    for (let r = 1; r < aoa.length; r++) {
+        for (let c = 0; c < exportCols.length; c++) {
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if (!ws[cell]) continue;
+            ws[cell].s = ws[cell].s || {};
+            if (r % 2 === 0) {
+                ws[cell].s.fill = { fgColor: { rgb: 'F9E79F' } };
+            } else {
+                ws[cell].s.fill = { fgColor: { rgb: 'FFFFFF' } };
+            }
+            ws[cell].s.alignment = { horizontal: 'center', vertical: 'center' };
+            // Formato condicional para tipo
+            if (exportCols[c].key === 'tipo') {
+                if (ws[cell].v && ws[cell].v.includes('Entrada')) {
+                    ws[cell].s.font = { color: { rgb: '27ae60' }, bold: true };
+                }
+                if (ws[cell].v && ws[cell].v.includes('Salida')) {
+                    ws[cell].s.font = { color: { rgb: 'e74c3c' }, bold: true };
+                }
+            }
+        }
     }
-    const wsStock = XLSX.utils.aoa_to_sheet(stockData);
-    XLSX.utils.book_append_sheet(wb, wsStock, "Stock");
+    // Ajuste de ancho de columnas (fecha más ancha)
+    ws['!cols'] = exportCols.map(col => {
+        if (col.key === 'fecha') return { wch: 22 };
+        if (col.key === 'producto') return { wpx: 170 };
+        return { wch: Math.max(12, col.label.length + 4) };
+    });
 
-    const recipesData = [["Receta", "Precio", "Ingredientes"]];
-    for (let [name, recipe] of Object.entries(recipes)) {
-        const ingredients = Object.entries(recipe.ingredients).map(([ing, qty]) => `${qty} ${ing}`).join(", ");
-        recipesData.push([name, recipe.price, ingredients]);
+    // Mejorar formato de colores para compatibilidad
+    for (let r = 1; r < aoa.length; r++) {
+        for (let c = 0; c < exportCols.length; c++) {
+            const cell = XLSX.utils.encode_cell({ r, c });
+            if (!ws[cell]) continue;
+            ws[cell].s = ws[cell].s || {};
+            if (r % 2 === 0) {
+                ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: 'F9E79F' } };
+            } else {
+                ws[cell].s.fill = { patternType: "solid", fgColor: { rgb: 'FFFFFF' } };
+            }
+            ws[cell].s.alignment = { horizontal: 'center', vertical: 'center' };
+            // Formato condicional para tipo
+            if (exportCols[c].key === 'tipo') {
+                if (ws[cell].v && ws[cell].v.includes('Entrada')) {
+                    ws[cell].s.font = { color: { rgb: '27AE60' }, bold: true };
+                }
+                if (ws[cell].v && ws[cell].v.includes('Salida')) {
+                    ws[cell].s.font = { color: { rgb: 'E74C3C' }, bold: true };
+                }
+            }
+        }
     }
-    const wsRecipes = XLSX.utils.aoa_to_sheet(recipesData);
-    XLSX.utils.book_append_sheet(wb, wsRecipes, "Recetas");
-
-    const today = new Date();
-    const todaySales = sales.filter(s => {
-        const [datePart] = s.date.split(' ');
-        const [day, month, year] = datePart.split('/');
-        const saleDate = new Date(`${year.length === 2 ? '20' + year : year}-${month}-${day}`);
-        return (
-            saleDate.getDate() === today.getDate() &&
-            saleDate.getMonth() === today.getMonth() &&
-            saleDate.getFullYear() === today.getFullYear()
-        );
-    });
-    const salesData = [["Fecha", "Hora", "Producto", "Precio", "Usuario"]];
-    todaySales.forEach(s => {
-        const [date, time] = s.date.split(' ');
-        salesData.push([date, time, s.product, s.price, s.user]);
-    });
-    const wsSales = XLSX.utils.aoa_to_sheet(salesData);
-    XLSX.utils.book_append_sheet(wb, wsSales, "Ventas Hoy");
-
-    const historyData = [["Fecha", "Tipo", "Producto", "Cantidad", "Descripción"]];
-    movements.slice(-100).forEach(mov => {
-        historyData.push([mov.date, mov.type, mov.product, mov.quantity, mov.description]);
-    });
-    const wsHistory = XLSX.utils.aoa_to_sheet(historyData);
-    XLSX.utils.book_append_sheet(wb, wsHistory, "Movimientos");
-
-    const fileName = `Danny's_Burger_Reporte_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
+    // Filtros automáticos
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r:0, c:0 }, e: { r:aoa.length-1, c:exportCols.length-1 } }) };
+    XLSX.utils.book_append_sheet(wb, ws, "Movimientos");
+    const fileName = `Danny's_Burger_Movimientos_${new Date().toLocaleDateString('es-AR').replace(/\//g,'-')}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    showAlert('success', '✅ Excel exportado correctamente');
+    closeExcelColumnsModal();
+    showAlert('success', '✅ Excel PRO exportado correctamente');
 }
 
 // === Exportar a PDF ===
@@ -1325,7 +1445,7 @@ function exportToPDF() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${movements.slice(-50).map(mov => `
+                    ${movements.map(mov => `
                         <tr>
                             <td>${mov.date}</td>
                             <td style="color:${mov.type === 'Entrada' ? '#27ae60' : '#e74c3c'}; font-weight:bold;">
@@ -1360,13 +1480,18 @@ function updateMySales() {
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
     const today = new Date();
     const myTodaySales = sales.filter(s => {
-        const [datePart] = s.date.split(' ');
-        const [day, month, year] = datePart.split('/');
-        const saleDate = new Date(`${year.length === 2 ? '20' + year : year}-${month}-${day}`);
-        return s.user === userName &&
+        // s.date: 'YYYY-MM-DD HH:MM:SS'
+        if (!s.date) return false;
+        const [datePart, timePart] = s.date.split(' ');
+        const [year, month, day] = datePart.split('-');
+        const saleDate = new Date(`${year}-${month}-${day}T${timePart}`);
+        return s.users && s.users.username === userName &&
             saleDate.getDate() === today.getDate() &&
             saleDate.getMonth() === today.getMonth() &&
             saleDate.getFullYear() === today.getFullYear();
+    }).sort((a, b) => {
+        // Ordenar por fecha descendente (más reciente primero)
+        return new Date(b.date) - new Date(a.date);
     });
 
     if (myTodaySales.length === 0) {
