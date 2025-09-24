@@ -980,28 +980,58 @@ function updateFloatingCart() {
         const itemTotal = recipe.price * qty;
         total += itemTotal;
         const item = document.createElement('div');
-        item.style.margin = '6px 0'; item.style.padding = '8px';
-        item.style.background = 'var(--card-bg)'; item.style.borderRadius = '8px';
-        item.style.fontSize = '0.9em'; item.style.display = 'flex'; item.style.justifyContent = 'space-between';
-item.innerHTML = `
-    <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-        🍔 ×${qty} ${escapeHtml(name)}
-    </span>
-    <input type="number" 
-           class="cart-price-input" 
-           value="${itemTotal}" 
-           min="0" 
-           step="0.01"
-           data-name="${escapeHtml(name)}"
-           style="width: 70px; text-align: right; background: var(--card-bg); color: var(--accent-gold); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; font-weight: bold;">
-    <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
-            data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
-`;        floatingCartItems.appendChild(item);
+        item.style.margin = '6px 0';
+        item.style.padding = '8px';
+        item.style.background = 'var(--card-bg)';
+        item.style.borderRadius = '8px';
+        item.style.fontSize = '0.9em';
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        item.style.alignItems = 'center';
+
+        item.innerHTML = `
+            <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                🍔 ×${qty} ${escapeHtml(name)}
+            </span>
+            <input type="number" 
+                   class="cart-price-input" 
+                   value="${itemTotal}" 
+                   min="0" 
+                   step="0.01"
+                   data-name="${escapeHtml(name)}"
+                   data-qty="${qty}"
+                   style="width: 70px; text-align: right; background: transparent; color: var(--accent-gold); border: none; font-weight: bold; font-size: 1em; padding: 0; margin: 0 8px; -moz-appearance: textfield; appearance: textfield;">
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
+                    data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
+        `;
+        floatingCartItems.appendChild(item);
     });
     floatingTotal.textContent = `$${total}`;
     floatingCart.style.display = 'flex';
-}
 
+    // Agregar listeners a los inputs para actualizar el total en tiempo real
+    document.querySelectorAll('.cart-price-input').forEach(input => {
+        input.addEventListener('input', function() {
+            let val = parseFloat(this.value);
+            if (isNaN(val) || val < 0) val = 0;
+            this.value = val;
+
+            // Recalcular total general
+            let newTotal = 0;
+            document.querySelectorAll('.cart-price-input').forEach(inp => {
+                newTotal += parseFloat(inp.value) || 0;
+            });
+            floatingTotal.textContent = `$${newTotal}`;
+        });
+
+        // Evitar flechas del teclado (opcional, para limpieza)
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                e.preventDefault();
+            }
+        });
+    });
+}
 // === Quitar uno del carrito ===
 function removeOneFromSelection(name) {
     if (selectedSales[name] > 1) {
