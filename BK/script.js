@@ -983,20 +983,15 @@ function updateFloatingCart() {
         item.style.margin = '6px 0'; item.style.padding = '8px';
         item.style.background = 'var(--card-bg)'; item.style.borderRadius = '8px';
         item.style.fontSize = '0.9em'; item.style.display = 'flex'; item.style.justifyContent = 'space-between';
-item.innerHTML = `
-    <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-        🍔 ×${qty} ${escapeHtml(name)}
-    </span>
-    <input type="number" 
-           class="cart-price-input" 
-           value="${itemTotal}" 
-           min="0" 
-           step="0.01"
-           data-name="${escapeHtml(name)}"
-           style="width: 70px; text-align: right; background: var(--card-bg); color: var(--accent-gold); border: 1px solid var(--border-color); border-radius: 4px; padding: 4px 6px; font-weight: bold;">
-    <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
-            data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
-`;        floatingCartItems.appendChild(item);
+        item.innerHTML = `
+            <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                🍔 ×${qty} ${escapeHtml(name)}
+            </span>
+            <span style="color: var(--accent-gold); margin: 0 8px;">$${itemTotal}</span>
+            <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
+                    data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
+        `;
+        floatingCartItems.appendChild(item);
     });
     floatingTotal.textContent = `$${total}`;
     floatingCart.style.display = 'flex';
@@ -1019,14 +1014,6 @@ async function confirmSelectedSales() {
         alert('Error: Supabase no está disponible.');
         return;
     }
-// Validar que todos los precios sean válidos
-const invalidInputs = document.querySelectorAll('.cart-price-input[value=""], .cart-price-input[value="0"]');
-if (invalidInputs.length > 0) {
-    showAlert('danger', '❌ Todos los precios deben ser mayores a 0.');
-    confirmButton.disabled = false;
-    confirmButton.textContent = originalText;
-    return;
-}
     if (Object.keys(selectedSales).length === 0) {
         showAlert('warning', '⚠️ El carrito está vacío');
         return;
@@ -1052,20 +1039,12 @@ if (invalidInputs.length > 0) {
                 throw new Error(`Receta "${recipeName}" no encontrada`);
             }
             for (let i = 0; i < qty; i++) {
-// Obtener el precio modificado desde el input del carrito
-const cartPriceInput = document.querySelector(`.cart-price-input[data-name="${escapeHtml(recipeName)}"]`);
-const totalPrice = cartPriceInput ? parseFloat(cartPriceInput.value) : recipe.price;
-const pricePerUnit = qty > 0 ? (totalPrice / qty) : recipe.price;
-
-// Registrar una venta por unidad (manteniendo compatibilidad con reportes)
-for (let i = 0; i < qty; i++) {
-    salesData.push({
-        product_name: recipeName,
-        price: pricePerUnit, // ← Precio unitario modificado
-        user_id: userId,
-        created_at: new Date().toISOString()
-    });
-}
+                salesData.push({
+                    product_name: recipeName,
+                    price: recipe.price,
+                    user_id: userId,
+                    created_at: new Date().toISOString()
+                });
                 for (const [ingredientName, neededPerUnit] of Object.entries(recipe.ingredients)) {
                     const currentReduction = stockUpdates.get(ingredientName) || 0;
                     stockUpdates.set(ingredientName, currentReduction + neededPerUnit);
