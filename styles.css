@@ -1,74 +1,3 @@
-/* Cabecera fija para ventas de hoy */
-.sales-header-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0;
-    background: var(--card-bg);
-    border-radius: 8px 8px 0 0;
-}
-.sales-header-table th {
-    padding: 6px 8px;
-    text-align: left;
-    border-bottom: 2px solid var(--border-color);
-    background: var(--card-bg);
-    position: sticky;
-    top: 0;
-    z-index: 2;
-}
-/* Cabecera fija para historial de movimientos */
-.movement-header-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 0;
-    background: var(--card-bg);
-    border-radius: 8px 8px 0 0;
-}
-.movement-header-table th {
-    padding: 6px 8px;
-    text-align: left;
-    border-bottom: 2px solid var(--border-color);
-    background: var(--card-bg);
-    position: sticky;
-    top: 0;
-    z-index: 2;
-}
-/* ===== HISTORIAL DE MOVIMIENTOS SCROLLABLE ===== */
-.movement-scroll {
-    max-height: 350px;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--card-bg);
-    margin-bottom: 8px;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-}
-.movement-scroll table {
-    width: 100%;
-    border-collapse: collapse;
-}
-.movement-scroll th, .movement-scroll td {
-    padding: 6px 8px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-.movement-scroll tr:last-child td {
-    border-bottom: none;
-}
-.arrow-movements-btn {
-    background: var(--accent-gold);
-    border: none;
-    border-radius: 6px;
-    padding: 6px 12px;
-    font-size: 1.2em;
-    cursor: pointer;
-    margin: 0 4px;
-    transition: background 0.2s;
-}
-.arrow-movements-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 * {
     margin: 0;
     padding: 0;
@@ -106,13 +35,13 @@
     --secondary-bg: #ffffff;      /* Fondo tarjetas */
     --card-bg: #ffffff;           /* Fondo cards */
 
-    --text-primary: #151d25;      /* Texto oscuro */
-    --text-secondary: #0a0c0e;    /* Texto secundario */
+    --text-primary: #2c3e50;      /* Texto oscuro */
+    --text-secondary: #6c757d;    /* Texto secundario */
 
     --accent-gold: #d4a574;       /* Dorado tierra (versión clara) */
     --accent-gold-hover: #c89456; /* Dorado más oscuro */
 
-    --border-color: #383b3d;      /* Bordes claros */
+    --border-color: #dee2e6;      /* Bordes claros */
     --shadow: rgba(0, 0, 0, 0.1); /* Sombra suave */
 }
 
@@ -152,7 +81,7 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20'><defs><pattern id='grain' width='100' height='20' patternUnits='userSpaceOnUse'><circle cx='10' cy='10' r='1.5' fill='%23f4d03f' opacity='0.1'/><circle cx='30' cy='5' r='1' fill='%23f4d03f' opacity='0.15'/><circle cx='50' cy='15' r='1.2' fill='%23f4d03f' opacity='0.1'/><circle cx='70' cy='8' r='0.8' fill='%23f4d03f' opacity='0.2'/><circle cx='90' cy='12' r='1.3' fill='%23f4d03f' opacity='0.12'/></pattern></defs><rect width='100' height='20' fill='url(%23grain)'/></svg>") repeat;
+    background: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
     pointer-events: none;
 }
 
@@ -720,20 +649,12 @@ tr:hover {
 }
 
 .close-modal:hover {
-    /* === Colores de texto en tablas de reportes según tema === */
-    [data-theme="dark"] .sales-header-table th,
     background: #c0392b;
     transform: scale(1.1);
 }
-        color: #fff !important;
-    }
-
-    [data-theme="light"] .sales-header-table th,
 
 .modal-form-group {
     margin-bottom: 20px;
-        color: #111 !important;
-    }
 }
 
 .modal-form-group label {
@@ -1216,7 +1137,6 @@ tr:hover {
     align-items: center;
     gap: 8px;
 }
-/* Agregado para reforzar textos oscuros en modo claro */
 
 .sales-report h3::before {
     content: '';
@@ -1259,7 +1179,7 @@ tr:hover {
 .sales-report td {
     padding: 12px 15px;
     border-bottom: 1px solid #333;
-    color: #c9c7c7;
+    color: #e0e0e0;
     font-size: 0.95em;
 }
 
@@ -1286,13 +1206,4 @@ tr:hover {
     background: #1a1a1a;
     border-radius: 5px;
     text-align: left;
-}
-[data-theme="dark"] .sales-report td,
-[data-theme="dark"] .sales-report .time {
-  color: #fff !important;
-}
-
-[data-theme="light"] .sales-report td,
-[data-theme="light"] .sales-report .time {
-  color: #111 !important;
 }
