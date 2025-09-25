@@ -992,7 +992,7 @@ async function confirmSelectedSales() {
     }
 }
 // === Proceder con la venta (con o sin método de pago) ===
-async function proceedWithSaleFallback() {
+async function proceedWithSale() {
     const confirmButton = document.getElementById('confirmFloatingSale');
     const originalText = confirmButton.textContent;
     confirmButton.disabled = true;
