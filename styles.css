@@ -1208,7 +1208,7 @@ tr:hover {
     text-align: left;
 }
 .movement-scroll {
-    max-height: 250px; /* ≈ 7 líneas */
+    max-height: 300px; /* ≈ 7 líneas */
     overflow-y: auto;
     border: 1px solid var(--border-color);
     border-radius: 8px;
