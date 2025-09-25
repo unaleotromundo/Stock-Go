@@ -988,7 +988,7 @@ async function confirmSelectedSales() {
         modal.style.display = 'flex';
     } else {
         // Si no existe el modal, proceder sin método (fallback)
-        await proceedWithSaleFallback();
+        await proceedWithSale();
     }
 }
 // === Proceder con la venta (con o sin método de pago) ===
