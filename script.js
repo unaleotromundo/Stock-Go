@@ -8,7 +8,8 @@ function exportSalesToExcel() {
         { key: 'fecha', label: '📅 Fecha', get: s => s.date },
         { key: 'producto', label: '🍔 Producto', get: s => s.product },
         { key: 'precio', label: '💰 Precio', get: s => s.price },
-        { key: 'usuario', label: '🧑‍💼 Vendido por', get: s => s.users?.username || s.user || '—' }
+        { key: 'usuario', label: '🧑‍💼 Vendido por', get: s => s.users?.username || s.user || '—' },
+        { key: 'metodo_pago', label: '💳 Método', get: s => s.payment_method || '—' }
     ];
     const headers = columns.map(col => col.label);
     const data = sales.map(s => columns.map(col => col.get(s)));
@@ -128,7 +129,8 @@ let recipes = {};
 let sales = [];
 let movements = [];
 let selectedSales = {};
-let modifiedUnitPrices = {}; // ← NUEVA: precios unitarios modificados en esta venta
+let modifiedUnitPrices = {}; // ← Precios unitarios modificados en esta venta
+let selectedPaymentMethod = null; // ← Método de pago seleccionado
 
 // === Referencias al carrito flotante ===
 let floatingCart, floatingCartItems, floatingTotal, closeFloatingCart, confirmFloatingSale;
@@ -155,7 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Eventos del carrito
     if (closeFloatingCart) {
         closeFloatingCart.onclick = () => {
-            modifiedUnitPrices = {}; // ← Limpiar al cerrar
+            modifiedUnitPrices = {};
             floatingCart.style.display = 'none';
         };
     }
@@ -179,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeEditModal();
             closeEditProductModal();
             if (floatingCart) {
-                modifiedUnitPrices = {}; // ← Limpiar al escapar
+                modifiedUnitPrices = {};
                 floatingCart.style.display = 'none';
             }
         }
@@ -257,6 +259,7 @@ async function loadDataFromSupabase() {
                     product: s.product_name,
                     price: s.price,
                     user: s.user_id,
+                    payment_method: s.payment_method,
                     users: s.users || { username: '' }
                 };
             });
@@ -891,7 +894,6 @@ function updateFloatingCart() {
     }
     let total = 0;
     items.forEach(([name, qty]) => {
-        // Usar precio modificado si existe, sino el original
         const originalUnitPrice = recipes[name].price;
         const unitPrice = modifiedUnitPrices[name] !== undefined ? modifiedUnitPrices[name] : originalUnitPrice;
         const itemTotal = unitPrice * qty;
@@ -910,67 +912,54 @@ function updateFloatingCart() {
             <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 🍔 ×${qty} ${escapeHtml(name)}
             </span>
-<input type="text" 
-       class="cart-price-input" 
-       value="${itemTotal.toFixed(2)}" 
-       inputmode="decimal"
-       pattern="[0-9]*\.?[0-9]*"
-       data-name="${escapeHtml(name)}"
-       data-qty="${qty}"
-       style="width: 70px; text-align: right; background: transparent; color: var(--accent-gold); border: none; font-weight: bold; font-size: 1em; padding: 0; margin: 0 8px;">
+            <input type="text" 
+                   class="cart-price-input" 
+                   value="${itemTotal.toFixed(2)}" 
+                   inputmode="decimal"
+                   pattern="[0-9]*\.?[0-9]*"
+                   data-name="${escapeHtml(name)}"
+                   data-qty="${qty}"
+                   style="width: 70px; text-align: right; background: transparent; color: var(--accent-gold); border: none; font-weight: bold; font-size: 1em; padding: 0; margin: 0 8px;">
             <button class="btn btn-danger" style="padding:4px 8px;font-size:0.8em;"
                     data-action="remove-one" data-name="${escapeHtml(name)}">➖</button>
         `;
         floatingCartItems.appendChild(item);
     });
-    floatingTotal.textContent = `$${total}`;
+    floatingTotal.textContent = `$${total.toFixed(2)}`;
     floatingCart.style.display = 'flex';
 
     // Agregar listeners a los inputs
     document.querySelectorAll('.cart-price-input').forEach(input => {
-input.addEventListener('input', function() {
-    // Permitir solo números, punto y comas (pero convertir comas a puntos)
-    let raw = this.value;
-    // Eliminar todo excepto dígitos y un solo punto
-    raw = raw.replace(/[^0-9.,]/g, '');
-    // Reemplazar primera coma por punto, eliminar comas adicionales
-    let dotSeen = false;
-    let cleaned = '';
-    for (let char of raw) {
-        if (char === ',' || char === '.') {
-            if (!dotSeen) {
-                cleaned += '.';
-                dotSeen = true;
+        input.addEventListener('input', function() {
+            let raw = this.value;
+            raw = raw.replace(/[^0-9.,]/g, '');
+            let dotSeen = false;
+            let cleaned = '';
+            for (let char of raw) {
+                if (char === ',' || char === '.') {
+                    if (!dotSeen) {
+                        cleaned += '.';
+                        dotSeen = true;
+                    }
+                } else {
+                    cleaned += char;
+                }
             }
-        } else {
-            cleaned += char;
-        }
-    }
-    // Convertir a número
-    let val = parseFloat(cleaned);
-    if (isNaN(val) || val < 0) val = 0;
+            let val = parseFloat(cleaned);
+            if (isNaN(val) || val < 0) val = 0;
+            this.value = cleaned || '0';
 
-    // Actualizar valor limpio en el input (sin forzar .00 aún)
-    this.value = cleaned || '0';
+            const name = this.dataset.name;
+            const qty = parseInt(this.dataset.qty) || 1;
+            const newUnitPrice = qty > 0 ? val / qty : 0;
+            modifiedUnitPrices[name] = newUnitPrice;
 
-    // Guardar precio unitario modificado
-    const name = this.dataset.name;
-    const qty = parseInt(this.dataset.qty) || 1;
-    const newUnitPrice = qty > 0 ? val / qty : 0;
-    modifiedUnitPrices[name] = newUnitPrice;
-
-    // Recalcular total general
-    let newTotal = 0;
-    document.querySelectorAll('.cart-price-input').forEach(inp => {
-        let v = parseFloat(inp.value.replace(/[^0-9.]/g, '')) || 0;
-        newTotal += v;
-    });
-    floatingTotal.textContent = `$${newTotal.toFixed(2)}`;
-});
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                e.preventDefault();
-            }
+            let newTotal = 0;
+            document.querySelectorAll('.cart-price-input').forEach(inp => {
+                let v = parseFloat(inp.value.replace(/[^0-9.]/g, '')) || 0;
+                newTotal += v;
+            });
+            floatingTotal.textContent = `$${newTotal.toFixed(2)}`;
         });
     });
 }
@@ -980,36 +969,31 @@ function removeOneFromSelection(name) {
         selectedSales[name]--;
     } else {
         delete selectedSales[name];
-        delete modifiedUnitPrices[name]; // ← Limpiar si se elimina el último
+        delete modifiedUnitPrices[name];
     }
     updateSalesButtons();
     updateFloatingCart();
 }
-// === Confirmar venta optimizada ===
+// === Confirmar venta con modal de método de pago ===
 async function confirmSelectedSales() {
     if (!supabase) {
         alert('Error: Supabase no está disponible.');
         return;
     }
-    // Validar precios
-    const invalidInputs = document.querySelectorAll('.cart-price-input');
-    for (const input of invalidInputs) {
-        const val = parseFloat(input.value);
-        if (isNaN(val) || val <= 0) {
-            showAlert('danger', '❌ Todos los precios deben ser mayores a 0.');
-            const confirmButton = document.getElementById('confirmFloatingSale');
-            if (confirmButton) {
-                confirmButton.disabled = false;
-                confirmButton.innerHTML = '✅ Confirmar Venta';
-            }
-            return;
-        }
-    }
-
     if (Object.keys(selectedSales).length === 0) {
         showAlert('warning', '⚠️ El carrito está vacío');
         return;
     }
+    document.getElementById('paymentMethodModal').style.display = 'flex';
+}
+// === Proceder con la venta después de seleccionar método de pago ===
+async function proceedWithSale() {
+    if (!selectedPaymentMethod) {
+        showAlert('warning', '⚠️ Selecciona un método de pago');
+        return;
+    }
+    closePaymentMethodModal();
+
     const confirmButton = document.getElementById('confirmFloatingSale');
     const originalText = confirmButton.textContent;
     confirmButton.disabled = true;
@@ -1017,6 +1001,7 @@ async function confirmSelectedSales() {
     confirmButton.style.opacity = '0.6';
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
+
     try {
         const salesData = [];
         const movementsData = [];
@@ -1028,7 +1013,6 @@ async function confirmSelectedSales() {
                 throw new Error(`Receta "${recipeName}" no encontrada`);
             }
 
-            // Obtener precio unitario modificado (o usar el original)
             const unitPrice = modifiedUnitPrices[recipeName] !== undefined ? modifiedUnitPrices[recipeName] : recipe.price;
 
             for (let i = 0; i < qty; i++) {
@@ -1036,6 +1020,7 @@ async function confirmSelectedSales() {
                     product_name: recipeName,
                     price: unitPrice,
                     user_id: userId,
+                    payment_method: selectedPaymentMethod,
                     created_at: new Date().toISOString()
                 });
             }
@@ -1057,7 +1042,8 @@ async function confirmSelectedSales() {
         console.log('📋 Operaciones preparadas:', {
             ventas: salesData.length,
             movimientos: movementsData.length,
-            productos_a_actualizar: stockUpdates.size
+            productos_a_actualizar: stockUpdates.size,
+            metodo_pago: selectedPaymentMethod
         });
 
         for (const [ingredientName, totalNeeded] of stockUpdates) {
@@ -1096,7 +1082,7 @@ async function confirmSelectedSales() {
         const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
         const totalProducts = Object.keys(selectedSales).length;
         selectedSales = {};
-        modifiedUnitPrices = {}; // ← Limpiar al confirmar
+        modifiedUnitPrices = {};
         updateSalesButtons();
         updateStockDisplay();
         updateReports();
@@ -1106,7 +1092,7 @@ async function confirmSelectedSales() {
             floatingCart.style.display = 'none';
         }
         showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems`);
-        console.log("✅ Venta confirmada y registrada en Supabase");
+        console.log("✅ Venta confirmada con método:", selectedPaymentMethod);
     } catch (e) {
         console.error('❌ Error al confirmar venta:', e);
         showAlert('danger', `❌ Error: ${e.message}`);
@@ -1116,8 +1102,21 @@ async function confirmSelectedSales() {
             confirmButton.innerHTML = originalText;
             confirmButton.style.opacity = '1';
         }
+        selectedPaymentMethod = null;
     }
 }
+// === Cerrar modal de método de pago ===
+function closePaymentMethodModal() {
+    document.getElementById('paymentMethodModal').style.display = 'none';
+    selectedPaymentMethod = null;
+}
+// === Manejar clic en opción de pago ===
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('payment-option')) {
+        selectedPaymentMethod = e.target.dataset.method;
+        proceedWithSale();
+    }
+});
 // === Función auxiliar para mostrar progreso (opcional) ===
 function updateConfirmButtonProgress(step, total) {
     const confirmButton = document.getElementById('confirmFloatingSale');
@@ -1153,6 +1152,7 @@ function updateReports() {
                             <tr>
                                 <th><span class="icon">🍔</span> Producto</th>
                                 <th><span class="icon">💰</span> Precio</th>
+                                <th><span class="icon">💳</span> Método</th>
                                 <th><span class="icon">⏱️</span> Hora</th>
                                 <th><span class="icon">🧑‍💼</span> Vendido por</th>
                             </tr>
@@ -1161,7 +1161,7 @@ function updateReports() {
         `;
         allTodaySales.slice().reverse().forEach(s => {
             const time = s.date.split(' ')[1];
-            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${time}</td><td>${s.users.username || ''}</td></tr>`;
+            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${s.payment_method || '—'}</td><td>${time}</td><td>${s.users.username || ''}</td></tr>`;
         });
         html += `
                         </tbody>
@@ -1560,12 +1560,14 @@ function updateMySales() {
     let html = '<table style="width:100%; border-collapse: collapse; margin: 10px 0;"><tr>';
     html += '<th style="text-align:left; padding:8px; border-bottom:1px solid #333;">🍔 Producto</th>';
     html += '<th style="text-align:right; padding:8px; border-bottom:1px solid #333;">💰 Precio</th>';
+    html += '<th style="text-align:right; padding:8px; border-bottom:1px solid #333;">💳 Método</th>';
     html += '<th style="text-align:right; padding:8px; border-bottom:1px solid #333;">🕒 Hora</th></tr>';
     myTodaySales.forEach(s => {
         const time = s.date.split(' ')[1];
         html += `<tr>
             <td style="padding:8px; border-bottom:1px solid #333;">${s.product}</td>
             <td style="text-align:right; padding:8px; border-bottom:1px solid #333;">$${s.price}</td>
+            <td style="text-align:right; padding:8px; border-bottom:1px solid #333;">${s.payment_method || '—'}</td>
             <td style="text-align:right; padding:8px; border-bottom:1px solid #333;">${time}</td>
         </tr>`;
     });
