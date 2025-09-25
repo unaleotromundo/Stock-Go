@@ -991,8 +991,16 @@ async function confirmSelectedSales() {
         await proceedWithSale();
     }
 }
-// === Proceder con la venta (con o sin método de pago) ===
+// === Proceder con la venta después de seleccionar método de pago ===
 async function proceedWithSale() {
+    // ✅ Cerrar el modal inmediatamente al hacer clic en un botón
+    closePaymentMethodModal();
+
+    if (!selectedPaymentMethod) {
+        showAlert('warning', '⚠️ Selecciona un método de pago');
+        return;
+    }
+
     const confirmButton = document.getElementById('confirmFloatingSale');
     const originalText = confirmButton.textContent;
     confirmButton.disabled = true;
@@ -1000,6 +1008,7 @@ async function proceedWithSale() {
     confirmButton.style.opacity = '0.6';
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
+
     try {
         const salesData = [];
         const movementsData = [];
@@ -1011,18 +1020,16 @@ async function proceedWithSale() {
                 throw new Error(`Receta "${recipeName}" no encontrada`);
             }
 
-            // Obtener precio unitario (original o modificado)
-            const originalUnitPrice = recipe.price;
-            const unitPrice = modifiedUnitPrices[recipeName] !== undefined ? modifiedUnitPrices[recipeName] : originalUnitPrice;
+            const unitPrice = modifiedUnitPrices[recipeName] !== undefined 
+                ? modifiedUnitPrices[recipeName] 
+                : recipe.price;
 
             for (let i = 0; i < qty; i++) {
                 salesData.push({
                     product_name: recipeName,
                     price: unitPrice,
                     user_id: userId,
-                    // ⚠️ Aquí es donde se guardaría el método de pago
-                    // Pero como no lo tienes, lo omitimos o usamos un valor por defecto
-                    payment_method: selectedPaymentMethod || 'Efectivo', // ← ¡Aquí está la clave!
+                    payment_method: selectedPaymentMethod, // ← ¡Este es el valor que se guarda!
                     created_at: new Date().toISOString()
                 });
             }
@@ -1040,7 +1047,19 @@ async function proceedWithSale() {
             }
         }
 
-        // Guardar en Supabase
+        console.log('📋 Operaciones preparadas:', {
+            ventas: salesData.length,
+            movimientos: movementsData.length,
+            productos_a_actualizar: stockUpdates.size,
+            metodo_pago: selectedPaymentMethod
+        });
+
+        for (const [ingredientName, totalNeeded] of stockUpdates) {
+            if (!stock[ingredientName] || stock[ingredientName].quantity < totalNeeded) {
+                throw new Error(`Stock insuficiente para "${ingredientName}". Disponible: ${stock[ingredientName]?.quantity || 0}, Necesario: ${totalNeeded}`);
+            }
+        }
+
         if (salesData.length > 0) {
             const { error: salesError } = await supabase.from('sales').insert(salesData);
             if (salesError) throw salesError;
@@ -1050,7 +1069,6 @@ async function proceedWithSale() {
             if (movementsError) throw movementsError;
         }
 
-        // Actualizar stock
         const stockPromises = Array.from(stockUpdates.entries()).map(async ([ingredientName, totalUsed]) => {
             const currentQuantity = stock[ingredientName].quantity;
             const newQuantity = currentQuantity - totalUsed;
@@ -1060,10 +1078,10 @@ async function proceedWithSale() {
         });
         await Promise.all(stockPromises);
 
-        // Limpiar y actualizar UI
+        const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
+        const totalProducts = Object.keys(selectedSales).length;
         selectedSales = {};
         modifiedUnitPrices = {};
-        selectedPaymentMethod = null;
         updateSalesButtons();
         updateStockDisplay();
         updateReports();
@@ -1071,8 +1089,8 @@ async function proceedWithSale() {
         updateFloatingCart();
         if (floatingCart) floatingCart.style.display = 'none';
 
-        showAlert('success', '✅ Venta registrada');
-        console.log("✅ Venta confirmada");
+        showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems`);
+        console.log("✅ Venta confirmada con método:", selectedPaymentMethod);
     } catch (e) {
         console.error('❌ Error al confirmar venta:', e);
         showAlert('danger', `❌ Error: ${e.message}`);
@@ -1082,7 +1100,6 @@ async function proceedWithSale() {
             confirmButton.innerHTML = originalText;
             confirmButton.style.opacity = '1';
         }
-   
         selectedPaymentMethod = null;
     }
 }
@@ -1091,15 +1108,200 @@ function closePaymentMethodModal() {
     document.getElementById('paymentMethodModal').style.display = 'none';
     selectedPaymentMethod = null;
 }
-// === Manejar clic en opción de pago ===
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('paymentMethodModal')?.addEventListener('click', function(e) {
+// === SOLUCIÓN: Event listeners para los botones de método de pago ===
+
+// 1. Reemplaza el event listener existente del modal (busca esta sección en tu código)
+const paymentModal = document.getElementById('paymentMethodModal');
+if (paymentModal) {
+    paymentModal.addEventListener('click', function(e) {
+        // Verificar si se clickeó un botón de método de pago
         if (e.target.classList.contains('payment-option')) {
             selectedPaymentMethod = e.target.dataset.method;
-            proceedWithSale();
+            console.log('✅ Método seleccionado:', selectedPaymentMethod); // Para debug
+            proceedWithSale(); // Esto ya cierra el modal dentro de la función
+        }
+        
+        // También manejar el caso de hacer click en el botón de cerrar
+        if (e.target.classList.contains('close-modal') || 
+            e.target.onclick?.toString().includes('closePaymentMethodModal')) {
+            closePaymentMethodModal();
         }
     });
+}
+
+// 2. Alternativa más específica - agrega esto después del DOMContentLoaded:
+document.addEventListener('DOMContentLoaded', function() {
+    // ... tu código existente ...
+    
+    // Event listeners específicos para cada botón de método de pago
+    const efectivoBtn = document.querySelector('[data-method="Efectivo"]');
+    const pedidosyaBtn = document.querySelector('[data-method="PedidosYa"]');
+    const debitoBtn = document.querySelector('[data-method="Débito"]');
+    
+    if (efectivoBtn) {
+        efectivoBtn.addEventListener('click', function() {
+            selectedPaymentMethod = 'Efectivo';
+            console.log('💵 Efectivo seleccionado');
+            proceedWithSale();
+        });
+    }
+    
+    if (pedidosyaBtn) {
+        pedidosyaBtn.addEventListener('click', function() {
+            selectedPaymentMethod = 'PedidosYa';
+            console.log('📱 PedidosYa seleccionado');
+            proceedWithSale();
+        });
+    }
+    
+    if (debitoBtn) {
+        debitoBtn.addEventListener('click', function() {
+            selectedPaymentMethod = 'Débito';
+            console.log('💳 Débito seleccionado');
+            proceedWithSale();
+        });
+    }
 });
+
+// 3. IMPORTANTE: Verifica que proceedWithSale funcione correctamente
+async function proceedWithSale() {
+    // ✅ Cerrar el modal inmediatamente al hacer clic en un botón
+    closePaymentMethodModal();
+
+    if (!selectedPaymentMethod) {
+        showAlert('warning', '⚠️ Selecciona un método de pago');
+        return;
+    }
+
+    console.log('🔄 Procesando venta con método:', selectedPaymentMethod); // Para debug
+
+    const confirmButton = document.getElementById('confirmFloatingSale');
+    const originalText = confirmButton.textContent;
+    confirmButton.disabled = true;
+    confirmButton.innerHTML = '🔄 Procesando...';
+    confirmButton.style.opacity = '0.6';
+    
+    const userId = sessionStorage.getItem('userId');
+    const userName = sessionStorage.getItem('userName') || 'Desconocido';
+
+    try {
+        const salesData = [];
+        const movementsData = [];
+        const stockUpdates = new Map();
+
+        // Preparar datos de venta
+        for (const [recipeName, qty] of Object.entries(selectedSales)) {
+            const recipe = recipes[recipeName];
+            if (!recipe) {
+                throw new Error(`Receta "${recipeName}" no encontrada`);
+            }
+
+            const unitPrice = modifiedUnitPrices[recipeName] !== undefined 
+                ? modifiedUnitPrices[recipeName] 
+                : recipe.price;
+
+            // Crear una entrada por cada cantidad vendida
+            for (let i = 0; i < qty; i++) {
+                salesData.push({
+                    product_name: recipeName,
+                    price: unitPrice,
+                    user_id: userId,
+                    payment_method: selectedPaymentMethod, // ← ¡ESTE ES EL VALOR CLAVE!
+                    created_at: new Date().toISOString()
+                });
+            }
+
+            // Calcular ingredientes necesarios
+            for (const [ingredientName, neededPerUnit] of Object.entries(recipe.ingredients)) {
+                const currentReduction = stockUpdates.get(ingredientName) || 0;
+                stockUpdates.set(ingredientName, currentReduction + (neededPerUnit * qty));
+                
+                movementsData.push({
+                    type: 'Salida',
+                    product_name: ingredientName,
+                    quantity: neededPerUnit * qty,
+                    description: `Venta: ${recipeName} (por ${userName})`,
+                    created_at: new Date().toISOString()
+                });
+            }
+        }
+
+        console.log('📋 Datos preparados:', {
+            ventas: salesData.length,
+            movimientos: movementsData.length,
+            productos_a_actualizar: stockUpdates.size,
+            metodo_pago: selectedPaymentMethod
+        });
+
+        // Verificar stock suficiente
+        for (const [ingredientName, totalNeeded] of stockUpdates) {
+            if (!stock[ingredientName] || stock[ingredientName].quantity < totalNeeded) {
+                throw new Error(`Stock insuficiente para "${ingredientName}". Disponible: ${stock[ingredientName]?.quantity || 0}, Necesario: ${totalNeeded}`);
+            }
+        }
+
+        // Insertar ventas en Supabase
+        if (salesData.length > 0) {
+            const { error: salesError } = await supabase.from('sales').insert(salesData);
+            if (salesError) throw salesError;
+            console.log('✅ Ventas insertadas:', salesData.length);
+        }
+
+        // Insertar movimientos
+        if (movementsData.length > 0) {
+            const { error: movementsError } = await supabase.from('movements').insert(movementsData);
+            if (movementsError) throw movementsError;
+            console.log('✅ Movimientos insertados:', movementsData.length);
+        }
+
+        // Actualizar stock
+        const stockPromises = Array.from(stockUpdates.entries()).map(async ([ingredientName, totalUsed]) => {
+            const currentQuantity = stock[ingredientName].quantity;
+            const newQuantity = currentQuantity - totalUsed;
+            
+            const { error } = await supabase
+                .from('stock')
+                .update({ quantity: newQuantity })
+                .eq('name', ingredientName);
+                
+            if (error) throw error;
+            stock[ingredientName].quantity = newQuantity;
+        });
+        
+        await Promise.all(stockPromises);
+        console.log('✅ Stock actualizado');
+
+        // Limpiar selecciones
+        const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
+        const totalProducts = Object.keys(selectedSales).length;
+        
+        selectedSales = {};
+        modifiedUnitPrices = {};
+        
+        // Actualizar interfaz
+        updateSalesButtons();
+        updateStockDisplay();
+        updateReports();
+        updateFloatingCart();
+        
+        if (floatingCart) floatingCart.style.display = 'none';
+
+        showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems - ${selectedPaymentMethod}`);
+        console.log("✅ Venta confirmada con método:", selectedPaymentMethod);
+        
+    } catch (e) {
+        console.error('❌ Error al confirmar venta:', e);
+        showAlert('danger', `❌ Error: ${e.message}`);
+    } finally {
+        // Restaurar botón
+        if (confirmButton) {
+            confirmButton.disabled = false;
+            confirmButton.innerHTML = originalText;
+            confirmButton.style.opacity = '1';
+        }
+        selectedPaymentMethod = null; // Limpiar método seleccionado
+    }
+}       
 // === Actualizar reportes ===
 function updateReports() {
     const today = new Date();
