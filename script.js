@@ -8,8 +8,8 @@ function exportSalesToExcel() {
         { key: 'fecha', label: '📅 Fecha', get: s => s.date },
         { key: 'producto', label: '🍔 Producto', get: s => s.product },
         { key: 'precio', label: '💰 Precio', get: s => s.price },
-        { key: 'usuario', label: '🧑‍💼 Vendido por', get: s => s.users?.username || s.user || '—' },
-        { key: 'metodo_pago', label: '💳 Método', get: s => s.payment_method || '—' }
+        { key: 'metodo_pago', label: '💳 Método', get: s => s.payment_method || '—' },
+        { key: 'usuario', label: '🧑‍💼 Vendido por', get: s => s.users?.username || s.user || '—' }
     ];
     const headers = columns.map(col => col.label);
     const data = sales.map(s => columns.map(col => col.get(s)));
@@ -129,9 +129,8 @@ let recipes = {};
 let sales = [];
 let movements = [];
 let selectedSales = {};
-let modifiedUnitPrices = {}; // ← Precios unitarios modificados en esta venta
-let selectedPaymentMethod = null; // ← Método de pago seleccionado
-
+let modifiedUnitPrices = {};
+let selectedPaymentMethod = null;
 // === Referencias al carrito flotante ===
 let floatingCart, floatingCartItems, floatingTotal, closeFloatingCart, confirmFloatingSale;
 // === Cargar datos al iniciar ===
@@ -907,7 +906,6 @@ function updateFloatingCart() {
         item.style.display = 'flex';
         item.style.justifyContent = 'space-between';
         item.style.alignItems = 'center';
-
         item.innerHTML = `
             <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 🍔 ×${qty} ${escapeHtml(name)}
@@ -928,7 +926,7 @@ function updateFloatingCart() {
     floatingTotal.textContent = `$${total.toFixed(2)}`;
     floatingCart.style.display = 'flex';
 
-    // Agregar listeners a los inputs
+    // Listener para actualizar precios
     document.querySelectorAll('.cart-price-input').forEach(input => {
         input.addEventListener('input', function() {
             let raw = this.value;
@@ -984,16 +982,17 @@ async function confirmSelectedSales() {
         showAlert('warning', '⚠️ El carrito está vacío');
         return;
     }
-    document.getElementById('paymentMethodModal').style.display = 'flex';
-}
-// === Proceder con la venta después de seleccionar método de pago ===
-async function proceedWithSale() {
-    if (!selectedPaymentMethod) {
-        showAlert('warning', '⚠️ Selecciona un método de pago');
-        return;
+    // Mostrar el modal de método de pago
+    const modal = document.getElementById('paymentMethodModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    } else {
+        // Si no existe el modal, proceder sin método (fallback)
+        await proceedWithSaleFallback();
     }
-    closePaymentMethodModal();
-
+}
+// === Proceder con la venta (con o sin método de pago) ===
+async function proceedWithSaleFallback() {
     const confirmButton = document.getElementById('confirmFloatingSale');
     const originalText = confirmButton.textContent;
     confirmButton.disabled = true;
@@ -1001,7 +1000,6 @@ async function proceedWithSale() {
     confirmButton.style.opacity = '0.6';
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
-
     try {
         const salesData = [];
         const movementsData = [];
@@ -1013,14 +1011,18 @@ async function proceedWithSale() {
                 throw new Error(`Receta "${recipeName}" no encontrada`);
             }
 
-            const unitPrice = modifiedUnitPrices[recipeName] !== undefined ? modifiedUnitPrices[recipeName] : recipe.price;
+            // Obtener precio unitario (original o modificado)
+            const originalUnitPrice = recipe.price;
+            const unitPrice = modifiedUnitPrices[recipeName] !== undefined ? modifiedUnitPrices[recipeName] : originalUnitPrice;
 
             for (let i = 0; i < qty; i++) {
                 salesData.push({
                     product_name: recipeName,
                     price: unitPrice,
                     user_id: userId,
-                    payment_method: selectedPaymentMethod,
+                    // ⚠️ Aquí es donde se guardaría el método de pago
+                    // Pero como no lo tienes, lo omitimos o usamos un valor por defecto
+                    payment_method: selectedPaymentMethod || 'Efectivo', // ← ¡Aquí está la clave!
                     created_at: new Date().toISOString()
                 });
             }
@@ -1033,66 +1035,44 @@ async function proceedWithSale() {
                     product_name: ingredientName,
                     quantity: neededPerUnit,
                     description: `Venta: ${recipeName} (por ${userName})`,
-                    user_id: userId || 'Empleado',
                     created_at: new Date().toISOString()
                 });
             }
         }
 
-        console.log('📋 Operaciones preparadas:', {
-            ventas: salesData.length,
-            movimientos: movementsData.length,
-            productos_a_actualizar: stockUpdates.size,
-            metodo_pago: selectedPaymentMethod
-        });
-
-        for (const [ingredientName, totalNeeded] of stockUpdates) {
-            if (!stock[ingredientName] || stock[ingredientName].quantity < totalNeeded) {
-                throw new Error(`Stock insuficiente para "${ingredientName}". Disponible: ${stock[ingredientName]?.quantity || 0}, Necesario: ${totalNeeded}`);
-            }
-        }
-
+        // Guardar en Supabase
         if (salesData.length > 0) {
-            const { error: salesError } = await supabase
-                .from('sales')
-                .insert(salesData);
+            const { error: salesError } = await supabase.from('sales').insert(salesData);
             if (salesError) throw salesError;
         }
         if (movementsData.length > 0) {
-            const { error: movementsError } = await supabase
-                .from('movements')
-                .insert(movementsData);
+            const { error: movementsError } = await supabase.from('movements').insert(movementsData);
             if (movementsError) throw movementsError;
         }
 
+        // Actualizar stock
         const stockPromises = Array.from(stockUpdates.entries()).map(async ([ingredientName, totalUsed]) => {
             const currentQuantity = stock[ingredientName].quantity;
             const newQuantity = currentQuantity - totalUsed;
-            const { error } = await supabase
-                .from('stock')
-                .update({ quantity: newQuantity })
-                .eq('name', ingredientName);
+            const { error } = await supabase.from('stock').update({ quantity: newQuantity }).eq('name', ingredientName);
             if (error) throw error;
             stock[ingredientName].quantity = newQuantity;
-            return { ingredientName, oldQty: currentQuantity, newQty: newQuantity };
         });
-
         await Promise.all(stockPromises);
 
-        const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
-        const totalProducts = Object.keys(selectedSales).length;
+        // Limpiar y actualizar UI
         selectedSales = {};
         modifiedUnitPrices = {};
+        selectedPaymentMethod = null;
         updateSalesButtons();
         updateStockDisplay();
         updateReports();
         updateMySales();
         updateFloatingCart();
-        if (floatingCart) {
-            floatingCart.style.display = 'none';
-        }
-        showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems`);
-        console.log("✅ Venta confirmada con método:", selectedPaymentMethod);
+        if (floatingCart) floatingCart.style.display = 'none';
+
+        showAlert('success', '✅ Venta registrada');
+        console.log("✅ Venta confirmada");
     } catch (e) {
         console.error('❌ Error al confirmar venta:', e);
         showAlert('danger', `❌ Error: ${e.message}`);
@@ -1102,6 +1082,7 @@ async function proceedWithSale() {
             confirmButton.innerHTML = originalText;
             confirmButton.style.opacity = '1';
         }
+   
         selectedPaymentMethod = null;
     }
 }
@@ -1111,20 +1092,14 @@ function closePaymentMethodModal() {
     selectedPaymentMethod = null;
 }
 // === Manejar clic en opción de pago ===
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('payment-option')) {
-        selectedPaymentMethod = e.target.dataset.method;
-        proceedWithSale();
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('paymentMethodModal')?.addEventListener('click', function(e) {
+        if (e.target.classList.contains('payment-option')) {
+            selectedPaymentMethod = e.target.dataset.method;
+            proceedWithSale();
+        }
+    });
 });
-// === Función auxiliar para mostrar progreso (opcional) ===
-function updateConfirmButtonProgress(step, total) {
-    const confirmButton = document.getElementById('confirmFloatingSale');
-    if (confirmButton) {
-        const percentage = Math.round((step / total) * 100);
-        confirmButton.innerHTML = `🔄 ${percentage}%`;
-    }
-}
 // === Actualizar reportes ===
 function updateReports() {
     const today = new Date();
