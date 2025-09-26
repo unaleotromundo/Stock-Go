@@ -36,7 +36,8 @@ function exportSalesToExcel() {
         }
     }
     ws['!cols'] = columns.map(col => {
-        if (col.key === 'producto') return { wpx: 170 };
+        if (col.key === 'fecha') return { wpx: 120 };
+        if (col.key === 'producto') return { wpx: 130 };
         if (col.key === 'usuario') return { wpx: 140 };
         return { wch: Math.max(12, col.label.length + 4) };
     });
@@ -1361,7 +1362,7 @@ function exportMovementsToExcel() {
         }
     }
     ws['!cols'] = columns.map(col => {
-        if (col.key === 'fecha') return { wch: 22 };
+        if (col.key === 'fecha') return { wpx: 120 };
         if (col.key === 'producto') return { wpx: 170 };
         return { wch: Math.max(12, col.label.length + 4) };
     });
