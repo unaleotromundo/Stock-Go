@@ -1581,28 +1581,36 @@ function updateMySales() {
     </p>`;
     container.innerHTML = html;
 }
-// === Partículas animadas ===
+// === Partículas animadas (versión estable y eficiente) ===
 function createParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
-    const count = window.innerWidth > 768 ? 20 : 8;
-    const create = () => {
+
+    // Limpiar cualquier partícula previa (por si se llama más de una vez)
+    container.innerHTML = '';
+
+    const count = window.innerWidth > 768 ? 30 : 15;
+
+    for (let i = 0; i < count; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
-        const size = Math.random() * 6 + 2;
+        
+        // Tamaño aleatorio
+        const size = Math.random() * 4 + 2;
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
+        
+        // Posición inicial aleatoria en toda la pantalla
         p.style.left = `${Math.random() * 100}vw`;
+        p.style.top = `${Math.random() * 100}vh`;
+        
+        // Duración y retraso de animación aleatorios
+        p.style.animationDuration = `${Math.random() * 20 + 10}s`;
         p.style.animationDelay = `${Math.random() * 5}s`;
-        p.style.animationDuration = `${Math.random() * 10 + 10}s`;
+        
+        // Opacidad base para mejor visibilidad
+        p.style.opacity = '0.6';
+
         container.appendChild(p);
-        setTimeout(() => {
-            if (p.parentElement === container) container.removeChild(p);
-        }, 20000);
-    };
-    for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
-    setInterval(() => {
-        document.querySelectorAll('#particles .particle').forEach(p => p.remove());
-        for (let i = 0; i < count; i++) setTimeout(create, i * 500);
-    }, 30000);
+    }
 }
