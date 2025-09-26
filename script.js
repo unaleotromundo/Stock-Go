@@ -111,9 +111,9 @@ function actualizarLabelFiltroDias() {
     hidden.value = dias;
 }
 // === Supabase Client ===
-const SUPABASE_URL = 'https://uipqtyxnvxaidnralnxq.supabase.co';
+const SUPABASE_URL = 'https://uknsqhlejuxpbnakebdp.supabase.co';
 // ✅ SERVICE ROLE KEY — REAL, SIN ESPACIOS, VERIFICADA
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHF0eXhudnhhaWRucmFsbnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwNjY2MTgsImV4cCI6MjA3MzY0MjYxOH0.BnudMlRfxPIY_jRb049PrpnkJocMcgooYgd4OsTFUrc';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbnNxaGxlanV4cGJuYWtlYmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0Mzg2MDgsImV4cCI6MjA3MzAxNDYwOH0.6QBdfVyZjuGmnSarZ3dvyCnEM06kJfjR7bkvwdoeYEU';
 let supabase;
 // Verificar si el SDK está cargado
 if (typeof window.supabase !== 'undefined') {
