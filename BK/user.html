@@ -320,6 +320,24 @@
     <!-- Scripts finales -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="script.js" defer></script>
+<!-- Modal de Método de Pago -->
+<div id="paymentMethodModal" class="edit-modal" style="display:none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <button class="close-modal" onclick="closePaymentMethodModal()">×</button>
+        <div class="modal-header">
+            <h3>💳 Método de Pago</h3>
+            <p>Selecciona cómo se realizó la venta</p>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; margin: 20px 0;">
+            <button class="btn btn-gold payment-option" data-method="Efectivo">💵 Efectivo</button>
+            <button class="btn payment-option" data-method="PedidosYa">📱 PedidosYa</button>
+            <button class="btn payment-option" data-method="Débito">💳 Débito</button>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-danger" onclick="closePaymentMethodModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
 </body>
 
 </html>
