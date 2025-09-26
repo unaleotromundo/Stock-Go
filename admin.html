@@ -217,33 +217,71 @@
         </div>
     </div>
 
-    <!-- Modal para editar recetas -->
-    <div id="editModal" class="edit-modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeEditModal()">×</button>
-            <div class="modal-header">
-                <h3>✏️ Editar Receta</h3>
-                <p>Modifica los datos y guarda los cambios</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipeName">Nombre del Combo/Receta:</label>
-                <input type="text" id="editRecipeName" placeholder="Nombre de la receta">
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipePrice">Precio de Venta ($):</label>
-                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
-            </div>
-            <div class="modal-form-group">
-                <label>Ingredientes:</label>
-                <div id="editIngredientsList" class="modal-ingredients"></div>
-                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
-                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
+<!-- Modal para editar recetas -->
+<div id="editModal" class="edit-modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeEditModal()">×</button>
+        <div class="modal-header">
+            <h3>✏️ Crear/Editar Receta</h3>
+            <p>Elige un ícono, nombre, precio e ingredientes</p>
+        </div>
+
+        <!-- Selección de ícono -->
+        <div class="modal-form-group">
+            <label>Ícono:</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; justify-content: center;">
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍔" checked>
+                    <div style="font-size: 2em; margin-top: 4px;">🍔</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍟">
+                    <div style="font-size: 2em; margin-top: 4px;">🍟</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🥤">
+                    <div style="font-size: 2em; margin-top: 4px;">🥤</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍕">
+                    <div style="font-size: 2em; margin-top: 4px;">🍕</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🌭">
+                    <div style="font-size: 2em; margin-top: 4px;">🌭</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍱">
+                    <div style="font-size: 2em; margin-top: 4px;">🍱</div>
+                </label>
             </div>
         </div>
+
+        <!-- Nombre -->
+        <div class="modal-form-group">
+            <label for="editRecipeName">Nombre del Combo/Receta:</label>
+            <input type="text" id="editRecipeName" placeholder="Ej: Combo Clásico">
+        </div>
+
+        <!-- Precio -->
+        <div class="modal-form-group">
+            <label for="editRecipePrice">Precio de Venta ($):</label>
+            <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
+        </div>
+
+        <!-- Ingredientes -->
+        <div class="modal-form-group">
+            <label>Ingredientes:</label>
+            <div id="editIngredientsList" class="modal-ingredients"></div>
+            <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
+            <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
+        </div>
     </div>
+</div>
 
     <!-- Modal para editar producto -->
     <div id="editProductModal" class="edit-modal">

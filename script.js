@@ -658,9 +658,9 @@ function updateRecipesDisplay() {
             : '';
         const card = document.createElement('div');
         card.className = 'recipe-card';
-        card.innerHTML = `
-            <div class="burger-icon">🍔</div>
-            <h3>${escapedName}</h3>
+card.innerHTML = `
+    <div class="burger-icon">${recipe.icon || '🍔'}</div>
+    <h3>${escapedName}</h3>
             <div class="price">Precio: $${recipe.price}</div>
             <div class="ingredients"><strong>Ingredientes:</strong><span>${escapeHtml(ingredientsList)}</span></div>
             ${actionsHTML}
@@ -692,8 +692,16 @@ function openAddRecipeModal() {
 function editRecipe(name) {
     currentEditingRecipe = name;
     const recipe = recipes[name];
+    
     document.getElementById('editRecipeName').value = name;
     document.getElementById('editRecipePrice').value = recipe.price;
+    
+    // ✅ Seleccionar el ícono guardado
+    const iconInputs = document.querySelectorAll('input[name="recipeIcon"]');
+    iconInputs.forEach(input => {
+        input.checked = (input.value === (recipe.icon || '🍔'));
+    });
+
     document.getElementById('editIngredientsList').innerHTML = '';
     Object.entries(recipe.ingredients).forEach(([ing, qty]) => addEditIngredient(ing, qty));
     document.getElementById('editModal').classList.add('show');
@@ -719,10 +727,13 @@ async function saveEditedRecipe() {
     }
     const name = document.getElementById('editRecipeName').value.trim();
     const price = parseFloat(document.getElementById('editRecipePrice').value);
+    const icon = document.querySelector('input[name="recipeIcon"]:checked')?.value || '🍔';
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
+    
     if (!name) return alert('Nombre requerido');
     if (isNaN(price) || price <= 0) return alert('Precio inválido');
     if (items.length === 0) return alert('Agrega al menos un ingrediente');
+
     const ingredients = {};
     for (const item of items) {
         const select = item.querySelector('.edit-ingredient-select');
@@ -735,6 +746,7 @@ async function saveEditedRecipe() {
             return alert('Ingrediente o cantidad inválida');
         }
     }
+
     try {
         let recipeId = null;
         if (currentEditingRecipe) {
@@ -746,14 +758,17 @@ async function saveEditedRecipe() {
             if (fetchError) throw fetchError;
             recipeId = existingRecipe.id;
         }
+
         const upsertData = {
             name: name,
             ingredients: ingredients,
-            price: price
+            price: price,
+            icon: icon  // ✅ Guardar el ícono
         };
         if (recipeId !== null) {
             upsertData.id = recipeId;
         }
+
         const { data: savedRecipe, error } = await supabase
             .from('recipes')
             .upsert(upsertData, { onConflict: 'id' })
@@ -761,14 +776,17 @@ async function saveEditedRecipe() {
             .single()
             .throwOnError();
         if (error) throw error;
+
         recipes[name] = { 
             id: savedRecipe.id,
             ingredients, 
-            price 
+            price,
+            icon  // ✅ Guardar en memoria
         };
         if (currentEditingRecipe && currentEditingRecipe !== name) {
             delete recipes[currentEditingRecipe];
         }
+
         closeEditModal();
         showAlert('success', `✅ Receta "${name}" guardada`);
         updateRecipesDisplay();
@@ -779,6 +797,7 @@ async function saveEditedRecipe() {
         alert('Error al guardar. Verifica conexión.');
     }
 }
+
 // === Cerrar modal de receta ===
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('show');
@@ -861,11 +880,11 @@ function updateSalesButtons() {
         const canMake = checkCanMakeRecipe(name);
         const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
         if (canMake && !willExceed) {
-            button.innerHTML = `
-                <div class="button-content">
-                    🍔<br><strong>$${recipe.price}</strong><br>
-                    <span class="combo-name">${escapeHtml(name)}</span>
-                </div>
+button.innerHTML = `
+    <div class="button-content">
+        ${recipe.icon || '🍔'}<br><strong>$${recipe.price}</strong><br>
+        <span class="combo-name">${escapeHtml(name)}</span>
+    </div>
                 <span class="quantity-badge" style="display: none;"></span>
             `;
             button.style.position = 'relative';
