@@ -473,7 +473,8 @@ async function saveEditedProduct() {
         if (difference !== 0) {
             try {
                 const movementType = difference > 0 ? 'Entrada' : 'Salida';
-                const movementDescription = difference > 0 ? 'Ajuste de stock (aumento)' : 'Ajuste de stock (reducción)';
+                const userName = sessionStorage.getItem('userName') || 'Desconocido';
+                const movementDescription = difference > 0 ? `Ajuste de stock (aumento) por ${userName}`: `Ajuste de stock (reducción) por ${userName}`;
                 const { error: movementError } = await supabase
                     .from('movements')
                     .insert({
@@ -1328,7 +1329,7 @@ function exportMovementsToExcel() {
         { key: 'tipo', label: '📊 Tipo', get: mov => mov.type },
         { key: 'producto', label: '🥪 Producto', get: mov => mov.product },
         { key: 'cantidad', label: '🔢 Cantidad', get: mov => mov.quantity },
-        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—' },
+        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? Number(stock[mov.product].pricePerUnit).toFixed(0) : '—' },
         { key: 'descripcion', label: '📝 Descripción', get: mov => mov.description }
     ];
     const headers = columns.map(col => col.label);
