@@ -292,13 +292,20 @@ async function loadDataFromSupabase() {
 // === Cambiar tema ===
 function toggleTheme() {
     const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    body.setAttribute('data-theme', newTheme);
-    const themeIcon = document.getElementById('themeIcon');
-    if (themeIcon) {
-        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    const currentBg = window.getComputedStyle(body).backgroundColor;
+
+    // Detectar si actualmente es oscuro (por color de fondo)
+    const isDark = currentBg === 'rgb(18, 18, 18)' || currentBg.includes('#121212') || currentBg === 'black';
+
+    if (isDark) {
+        body.style.backgroundColor = '#ffffff'; // Modo claro: blanco
+    } else {
+        body.style.backgroundColor = '#121212'; // Modo oscuro: negro
     }
+
+    // Opcional: guardar preferencia si quieres que persista
+    const newTheme = isDark ? 'light' : 'dark';
+    localStorage.setItem('simpleTheme', newTheme);
 }
 // === Mostrar sección activa ===
 function showSection(sectionName) {
