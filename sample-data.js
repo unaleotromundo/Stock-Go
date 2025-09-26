@@ -96,6 +96,38 @@ const sampleData = {
             },
             price: 480 
         },
+        'Simple Burger Sola': {
+            ingredients: {
+                'Pan de queso': 1,
+                'Carne simple 130g': 1,
+                'Cheddar feta': 1,
+                'Cheddar cremoso cda': 1,
+                'Dambo feta grillado': 1,
+                'Mozzarella feta': 1,
+                'Aros de cebolla 30g': 1,
+                'Salsa Dannys cda': 1,
+                'Papel aluminio': 1,
+                'Caja papas': 1,
+                'Bolsa papel': 1
+            },
+            price: 250 
+        },
+        'Simple Cheddar Sola': {
+            ingredients: {
+                'Pan de queso': 1,
+                'Carne simple 130g': 1,
+                'Cheddar feta': 1,
+                'Cheddar cremoso cda': 1,
+                'Dambo feta grillado': 1,
+                'Mozzarella feta': 1,
+                'Aros de cebolla 30g': 1,
+                'Salsa Dannys cda': 1,
+                'Papel aluminio': 1,
+                'Caja papas': 1,
+                'Bolsa papel': 1
+            },
+            price: 350 
+        },
         'Clasic Burger': {
             ingredients: {
                 'Pan de queso': 1,
@@ -186,6 +218,21 @@ const sampleData = {
         },
         'Doble XL': {
             ingredients: {
+                'Pan de queso': 1,
+                'Carne doble 80g': 2,
+                'Cheddar feta': 2,
+                'Cheddar cremoso cda': 2,
+                'Panceta feta': 2,
+                'Papas fritas porción': 1,
+                'Papel aluminio': 1,
+                'Caja papas': 1,
+                'Bolsa papel': 1
+            },
+            price: 310 // ≈ 200% sobre costo (152.08)
+        },
+        'Doble XL + Refresco 600ml': {
+            ingredients: {
+                'Refresco 600ml' : 1,
                 'Pan de queso': 1,
                 'Carne doble 80g': 2,
                 'Cheddar feta': 2,
