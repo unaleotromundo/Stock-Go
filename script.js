@@ -227,16 +227,17 @@ async function loadDataFromSupabase() {
             .select('*')
             .throwOnError();
         if (recipesError) throw recipesError;
-        recipes = {};
-        if (recipesData) {
-            recipesData.forEach(recipe => {
-                recipes[recipe.name] = {
-                    id: recipe.id,
-                    ingredients: recipe.ingredients,
-                    price: recipe.price
-                };
-            });
-        }
+recipes = {};
+if (recipesData) {
+    recipesData.forEach(recipe => {
+        recipes[recipe.name] = {
+            id: recipe.id,
+            ingredients: recipe.ingredients,
+            price: recipe.price,
+            icon: recipe.icon || '🍔'  // ✅ Agregar esta línea
+        };
+    });
+}
         console.log("✅ Recetas cargadas:", recipesData ? recipesData.length : 0, "recetas");
         console.log("💰 Cargando ventas...");
         const { data: salesData, error: salesError } = await supabase
