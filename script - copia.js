@@ -227,23 +227,22 @@ async function loadDataFromSupabase() {
             .select('*')
             .throwOnError();
         if (recipesError) throw recipesError;
-        recipes = {};
-        if (recipesData) {
-            recipesData.forEach(recipe => {
-                recipes[recipe.name] = {
-                    id: recipe.id,
-                    ingredients: recipe.ingredients,
-                    price: recipe.price,
-                    icon: recipe.icon || '🍔'
-                };
-            });
-        }
+recipes = {};
+if (recipesData) {
+    recipesData.forEach(recipe => {
+        recipes[recipe.name] = {
+            id: recipe.id,
+            ingredients: recipe.ingredients,
+            price: recipe.price,
+            icon: recipe.icon || '🍔'  // ✅ Agregar esta línea
+        };
+    });
+}
         console.log("✅ Recetas cargadas:", recipesData ? recipesData.length : 0, "recetas");
         console.log("💰 Cargando ventas...");
         const { data: salesData, error: salesError } = await supabase
             .from('sales')
-            .select('*, users(username)')
-            .eq('eliminado', false); // ← SOLO VENTAS NO ELIMINADAS
+            .select('*, users(username)');
         if (salesError) throw salesError;
         sales = [];
         if (salesData) {
@@ -257,7 +256,6 @@ async function loadDataFromSupabase() {
                 const seconds = String(createdAt.getSeconds()).padStart(2, '0');
                 const formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
                 return {
-                    id: s.id, // ← IMPORTANTE: guardar el ID
                     date: formattedDate,
                     product: s.product_name,
                     price: s.price,
@@ -296,13 +294,16 @@ async function loadDataFromSupabase() {
 function toggleTheme() {
     const body = document.body;
     const currentBg = window.getComputedStyle(body).backgroundColor;
+
     // Detectar si actualmente es oscuro (por color de fondo)
     const isDark = currentBg === 'rgb(18, 18, 18)' || currentBg.includes('#121212') || currentBg === 'black';
+
     if (isDark) {
         body.style.backgroundColor = '#ffffff'; // Modo claro: blanco
     } else {
         body.style.backgroundColor = '#121212'; // Modo oscuro: negro
     }
+
     // Opcional: guardar preferencia si quieres que persista
     const newTheme = isDark ? 'light' : 'dark';
     localStorage.setItem('simpleTheme', newTheme);
@@ -658,9 +659,9 @@ function updateRecipesDisplay() {
             : '';
         const card = document.createElement('div');
         card.className = 'recipe-card';
-        card.innerHTML = `
-            <div class="burger-icon">${recipe.icon || '🍔'}</div>
-            <h3>${escapedName}</h3>
+card.innerHTML = `
+    <div class="burger-icon">${recipe.icon || '🍔'}</div>
+    <h3>${escapedName}</h3>
             <div class="price">Precio: $${recipe.price}</div>
             <div class="ingredients"><strong>Ingredientes:</strong><span>${escapeHtml(ingredientsList)}</span></div>
             ${actionsHTML}
@@ -692,13 +693,16 @@ function openAddRecipeModal() {
 function editRecipe(name) {
     currentEditingRecipe = name;
     const recipe = recipes[name];
+    
     document.getElementById('editRecipeName').value = name;
     document.getElementById('editRecipePrice').value = recipe.price;
+    
     // ✅ Seleccionar el ícono guardado
     const iconInputs = document.querySelectorAll('input[name="recipeIcon"]');
     iconInputs.forEach(input => {
         input.checked = (input.value === (recipe.icon || '🍔'));
     });
+
     document.getElementById('editIngredientsList').innerHTML = '';
     Object.entries(recipe.ingredients).forEach(([ing, qty]) => addEditIngredient(ing, qty));
     document.getElementById('editModal').classList.add('show');
@@ -726,9 +730,11 @@ async function saveEditedRecipe() {
     const price = parseFloat(document.getElementById('editRecipePrice').value);
     const icon = document.querySelector('input[name="recipeIcon"]:checked')?.value || '🍔';
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
+    
     if (!name) return alert('Nombre requerido');
     if (isNaN(price) || price <= 0) return alert('Precio inválido');
     if (items.length === 0) return alert('Agrega al menos un ingrediente');
+
     const ingredients = {};
     for (const item of items) {
         const select = item.querySelector('.edit-ingredient-select');
@@ -741,6 +747,7 @@ async function saveEditedRecipe() {
             return alert('Ingrediente o cantidad inválida');
         }
     }
+
     try {
         let recipeId = null;
         if (currentEditingRecipe) {
@@ -752,15 +759,17 @@ async function saveEditedRecipe() {
             if (fetchError) throw fetchError;
             recipeId = existingRecipe.id;
         }
+
         const upsertData = {
             name: name,
             ingredients: ingredients,
             price: price,
-            icon: icon
+            icon: icon  // ✅ Guardar el ícono
         };
         if (recipeId !== null) {
             upsertData.id = recipeId;
         }
+
         const { data: savedRecipe, error } = await supabase
             .from('recipes')
             .upsert(upsertData, { onConflict: 'id' })
@@ -768,15 +777,17 @@ async function saveEditedRecipe() {
             .single()
             .throwOnError();
         if (error) throw error;
+
         recipes[name] = { 
             id: savedRecipe.id,
             ingredients, 
             price,
-            icon
+            icon  // ✅ Guardar en memoria
         };
         if (currentEditingRecipe && currentEditingRecipe !== name) {
             delete recipes[currentEditingRecipe];
         }
+
         closeEditModal();
         showAlert('success', `✅ Receta "${name}" guardada`);
         updateRecipesDisplay();
@@ -787,6 +798,7 @@ async function saveEditedRecipe() {
         alert('Error al guardar. Verifica conexión.');
     }
 }
+
 // === Cerrar modal de receta ===
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('show');
@@ -869,11 +881,11 @@ function updateSalesButtons() {
         const canMake = checkCanMakeRecipe(name);
         const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
         if (canMake && !willExceed) {
-            button.innerHTML = `
-                <div class="button-content">
-                    ${recipe.icon || '🍔'}<br><strong>$${recipe.price}</strong><br>
-                    <span class="combo-name">${escapeHtml(name)}</span>
-                </div>
+button.innerHTML = `
+    <div class="button-content">
+        ${recipe.icon || '🍔'}<br><strong>$${recipe.price}</strong><br>
+        <span class="combo-name">${escapeHtml(name)}</span>
+    </div>
                 <span class="quantity-badge" style="display: none;"></span>
             `;
             button.style.position = 'relative';
@@ -942,6 +954,7 @@ function updateFloatingCart() {
     });
     floatingTotal.textContent = `$${total.toFixed(2)}`;
     floatingCart.style.display = 'flex';
+
     // Listener para actualizar precios
     document.querySelectorAll('.cart-price-input').forEach(input => {
         input.addEventListener('input', function() {
@@ -962,10 +975,12 @@ function updateFloatingCart() {
             let val = parseFloat(cleaned);
             if (isNaN(val) || val < 0) val = 0;
             this.value = cleaned || '0';
+
             const name = this.dataset.name;
             const qty = parseInt(this.dataset.qty) || 1;
             const newUnitPrice = qty > 0 ? val / qty : 0;
             modifiedUnitPrices[name] = newUnitPrice;
+
             let newTotal = 0;
             document.querySelectorAll('.cart-price-input').forEach(inp => {
                 let v = parseFloat(inp.value.replace(/[^0-9.]/g, '')) || 0;
@@ -1009,10 +1024,12 @@ async function confirmSelectedSales() {
 async function proceedWithSale() {
     // ✅ Cerrar el modal inmediatamente al hacer clic en un botón
     closePaymentMethodModal();
+
     if (!selectedPaymentMethod) {
         showAlert('warning', '⚠️ Selecciona un método de pago');
         return;
     }
+
     const confirmButton = document.getElementById('confirmFloatingSale');
     const originalText = confirmButton.textContent;
     confirmButton.disabled = true;
@@ -1020,27 +1037,32 @@ async function proceedWithSale() {
     confirmButton.style.opacity = '0.6';
     const userId = sessionStorage.getItem('userId');
     const userName = sessionStorage.getItem('userName') || 'Desconocido';
+
     try {
         const salesData = [];
         const movementsData = [];
         const stockUpdates = new Map();
+
         for (const [recipeName, qty] of Object.entries(selectedSales)) {
             const recipe = recipes[recipeName];
             if (!recipe) {
                 throw new Error(`Receta "${recipeName}" no encontrada`);
             }
+
             const unitPrice = modifiedUnitPrices[recipeName] !== undefined 
                 ? modifiedUnitPrices[recipeName] 
                 : recipe.price;
+
             for (let i = 0; i < qty; i++) {
                 salesData.push({
                     product_name: recipeName,
                     price: unitPrice,
                     user_id: userId,
-                    payment_method: selectedPaymentMethod,
+                    payment_method: selectedPaymentMethod, // ← ¡Este es el valor que se guarda!
                     created_at: new Date().toISOString()
                 });
             }
+
             for (const [ingredientName, neededPerUnit] of Object.entries(recipe.ingredients)) {
                 const currentReduction = stockUpdates.get(ingredientName) || 0;
                 stockUpdates.set(ingredientName, currentReduction + neededPerUnit);
@@ -1053,17 +1075,20 @@ async function proceedWithSale() {
                 });
             }
         }
+
         console.log('📋 Operaciones preparadas:', {
             ventas: salesData.length,
             movimientos: movementsData.length,
             productos_a_actualizar: stockUpdates.size,
             metodo_pago: selectedPaymentMethod
         });
+
         for (const [ingredientName, totalNeeded] of stockUpdates) {
             if (!stock[ingredientName] || stock[ingredientName].quantity < totalNeeded) {
                 throw new Error(`Stock insuficiente para "${ingredientName}". Disponible: ${stock[ingredientName]?.quantity || 0}, Necesario: ${totalNeeded}`);
             }
         }
+
         if (salesData.length > 0) {
             const { error: salesError } = await supabase.from('sales').insert(salesData);
             if (salesError) throw salesError;
@@ -1072,6 +1097,7 @@ async function proceedWithSale() {
             const { error: movementsError } = await supabase.from('movements').insert(movementsData);
             if (movementsError) throw movementsError;
         }
+
         const stockPromises = Array.from(stockUpdates.entries()).map(async ([ingredientName, totalUsed]) => {
             const currentQuantity = stock[ingredientName].quantity;
             const newQuantity = currentQuantity - totalUsed;
@@ -1080,6 +1106,7 @@ async function proceedWithSale() {
             stock[ingredientName].quantity = newQuantity;
         });
         await Promise.all(stockPromises);
+
         const totalItems = Object.values(selectedSales).reduce((a, b) => a + b, 0);
         const totalProducts = Object.keys(selectedSales).length;
         selectedSales = {};
@@ -1090,6 +1117,7 @@ async function proceedWithSale() {
         updateMySales();
         updateFloatingCart();
         if (floatingCart) floatingCart.style.display = 'none';
+
         showAlert('success', `✅ Venta registrada: ${totalProducts} productos, ${totalItems} ítems`);
         console.log("✅ Venta confirmada con método:", selectedPaymentMethod);
     } catch (e) {
@@ -1109,14 +1137,19 @@ function closePaymentMethodModal() {
     document.getElementById('paymentMethodModal').style.display = 'none';
 }
 // === SOLUCIÓN: Event listeners para los botones de método de pago ===
+
+// 1. Reemplaza el event listener existente del modal (busca esta sección en tu código)
 const paymentModal = document.getElementById('paymentMethodModal');
 if (paymentModal) {
     paymentModal.addEventListener('click', function(e) {
+        // Verificar si se clickeó un botón de método de pago
         if (e.target.classList.contains('payment-option')) {
             selectedPaymentMethod = e.target.dataset.method;
-            console.log('✅ Método seleccionado:', selectedPaymentMethod);
-            proceedWithSale();
+            console.log('✅ Método seleccionado:', selectedPaymentMethod); // Para debug
+            proceedWithSale(); // Esto ya cierra el modal dentro de la función
         }
+        
+        // También manejar el caso de hacer click en el botón de cerrar
         if (e.target.classList.contains('close-modal') || 
             e.target.onclick?.toString().includes('closePaymentMethodModal')) {
             closePaymentMethodModal();
@@ -1124,31 +1157,6 @@ if (paymentModal) {
     });
 }
 
-// === FUNCIÓN NUEVA: marcar venta como eliminada ===
-async function markSaleAsDeleted(saleId) {
-    if (!supabase) {
-        showAlert('danger', '❌ Supabase no está disponible.');
-        return;
-    }
-    if (!confirm('¿Eliminar esta venta? Se marcará como eliminada y no aparecerá en los reportes.')) {
-        return;
-    }
-    try {
-        const { error } = await supabase
-            .from('sales')
-            .update({ eliminado: true })
-            .eq('id', saleId);
-        if (error) throw error;
-
-        await loadDataFromSupabase();
-        updateReports();
-        updateMySales();
-        showAlert('success', '✅ Venta marcada como eliminada');
-    } catch (e) {
-        console.error('❌ Error al marcar venta como eliminada:', e);
-        showAlert('danger', `❌ Error: ${e.message || 'No se pudo eliminar la venta'}`);
-    }
-}
 
 // === Actualizar reportes ===
 function updateReports() {
@@ -1180,25 +1188,13 @@ function updateReports() {
                                 <th><span class="icon">💳</span> Método</th>
                                 <th><span class="icon">⏱️</span> Hora</th>
                                 <th><span class="icon">🧑‍💼</span> Vendido por</th>
-                                ${sessionStorage.getItem('userRole') === 'admin' ? '<th>Acciones</th>' : ''}
                             </tr>
                         </thead>
                         <tbody>
         `;
         allTodaySales.slice().reverse().forEach(s => {
             const time = s.date.split(' ')[1];
-            const actionsCell = sessionStorage.getItem('userRole') === 'admin'
-                ? `<td><button class="btn btn-danger btn-sm" onclick="markSaleAsDeleted('${s.id}')">🗑️</button></td>`
-                : '';
-            html += `
-                <tr data-sale-id="${s.id}">
-                    <td>${s.product}</td>
-                    <td>$${s.price}</td>
-                    <td>${s.payment_method || '—'}</td>
-                    <td>${time}</td>
-                    <td>${s.users.username || ''}</td>
-                    ${actionsCell}
-                </tr>`;
+            html += `<tr><td>${s.product}</td><td>$${s.price}</td><td>${s.payment_method || '—'}</td><td>${time}</td><td>${s.users.username || ''}</td></tr>`;
         });
         html += `
                         </tbody>
@@ -1618,19 +1614,32 @@ function updateMySales() {
 function createParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
+
+    // Limpiar cualquier partícula previa (por si se llama más de una vez)
     container.innerHTML = '';
+
     const count = window.innerWidth > 768 ? 30 : 15;
+
     for (let i = 0; i < count; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
+        
+        // Tamaño aleatorio
         const size = Math.random() * 4 + 2;
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
+        
+        // Posición inicial aleatoria en toda la pantalla
         p.style.left = `${Math.random() * 100}vw`;
         p.style.top = `${Math.random() * 100}vh`;
+        
+        // Duración y retraso de animación aleatorios
         p.style.animationDuration = `${Math.random() * 20 + 10}s`;
         p.style.animationDelay = `${Math.random() * 5}s`;
+        
+        // Opacidad base para mejor visibilidad
         p.style.opacity = '0.6';
+
         container.appendChild(p);
     }
 }
