@@ -36,7 +36,8 @@ function exportSalesToExcel() {
         }
     }
     ws['!cols'] = columns.map(col => {
-        if (col.key === 'producto') return { wpx: 170 };
+        if (col.key === 'fecha') return { wpx: 120 };
+        if (col.key === 'producto') return { wpx: 130 };
         if (col.key === 'usuario') return { wpx: 140 };
         return { wch: Math.max(12, col.label.length + 4) };
     });
@@ -110,9 +111,9 @@ function actualizarLabelFiltroDias() {
     hidden.value = dias;
 }
 // === Supabase Client ===
-const SUPABASE_URL = 'https://uipqtyxnvxaidnralnxq.supabase.co';
+const SUPABASE_URL = 'https://uknsqhlejuxpbnakebdp.supabase.co';
 // ✅ SERVICE ROLE KEY — REAL, SIN ESPACIOS, VERIFICADA
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpcHF0eXhudnhhaWRucmFsbnhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgwNjY2MTgsImV4cCI6MjA3MzY0MjYxOH0.BnudMlRfxPIY_jRb049PrpnkJocMcgooYgd4OsTFUrc';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVrbnNxaGxlanV4cGJuYWtlYmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc0Mzg2MDgsImV4cCI6MjA3MzAxNDYwOH0.6QBdfVyZjuGmnSarZ3dvyCnEM06kJfjR7bkvwdoeYEU';
 let supabase;
 // Verificar si el SDK está cargado
 if (typeof window.supabase !== 'undefined') {
@@ -226,16 +227,17 @@ async function loadDataFromSupabase() {
             .select('*')
             .throwOnError();
         if (recipesError) throw recipesError;
-        recipes = {};
-        if (recipesData) {
-            recipesData.forEach(recipe => {
-                recipes[recipe.name] = {
-                    id: recipe.id,
-                    ingredients: recipe.ingredients,
-                    price: recipe.price
-                };
-            });
-        }
+recipes = {};
+if (recipesData) {
+    recipesData.forEach(recipe => {
+        recipes[recipe.name] = {
+            id: recipe.id,
+            ingredients: recipe.ingredients,
+            price: recipe.price,
+            icon: recipe.icon || '🍔'  // ✅ Agregar esta línea
+        };
+    });
+}
         console.log("✅ Recetas cargadas:", recipesData ? recipesData.length : 0, "recetas");
         console.log("💰 Cargando ventas...");
         const { data: salesData, error: salesError } = await supabase
@@ -291,13 +293,20 @@ async function loadDataFromSupabase() {
 // === Cambiar tema ===
 function toggleTheme() {
     const body = document.body;
-    const currentTheme = body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    body.setAttribute('data-theme', newTheme);
-    const themeIcon = document.getElementById('themeIcon');
-    if (themeIcon) {
-        themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    const currentBg = window.getComputedStyle(body).backgroundColor;
+
+    // Detectar si actualmente es oscuro (por color de fondo)
+    const isDark = currentBg === 'rgb(18, 18, 18)' || currentBg.includes('#121212') || currentBg === 'black';
+
+    if (isDark) {
+        body.style.backgroundColor = '#ffffff'; // Modo claro: blanco
+    } else {
+        body.style.backgroundColor = '#121212'; // Modo oscuro: negro
     }
+
+    // Opcional: guardar preferencia si quieres que persista
+    const newTheme = isDark ? 'light' : 'dark';
+    localStorage.setItem('simpleTheme', newTheme);
 }
 // === Mostrar sección activa ===
 function showSection(sectionName) {
@@ -465,7 +474,8 @@ async function saveEditedProduct() {
         if (difference !== 0) {
             try {
                 const movementType = difference > 0 ? 'Entrada' : 'Salida';
-                const movementDescription = difference > 0 ? 'Ajuste de stock (aumento)' : 'Ajuste de stock (reducción)';
+                const userName = sessionStorage.getItem('userName') || 'Desconocido';
+                const movementDescription = difference > 0 ? `Ajuste de stock (aumento) por ${userName}`: `Ajuste de stock (reducción) por ${userName}`;
                 const { error: movementError } = await supabase
                     .from('movements')
                     .insert({
@@ -649,9 +659,9 @@ function updateRecipesDisplay() {
             : '';
         const card = document.createElement('div');
         card.className = 'recipe-card';
-        card.innerHTML = `
-            <div class="burger-icon">🍔</div>
-            <h3>${escapedName}</h3>
+card.innerHTML = `
+    <div class="burger-icon">${recipe.icon || '🍔'}</div>
+    <h3>${escapedName}</h3>
             <div class="price">Precio: $${recipe.price}</div>
             <div class="ingredients"><strong>Ingredientes:</strong><span>${escapeHtml(ingredientsList)}</span></div>
             ${actionsHTML}
@@ -683,8 +693,16 @@ function openAddRecipeModal() {
 function editRecipe(name) {
     currentEditingRecipe = name;
     const recipe = recipes[name];
+    
     document.getElementById('editRecipeName').value = name;
     document.getElementById('editRecipePrice').value = recipe.price;
+    
+    // ✅ Seleccionar el ícono guardado
+    const iconInputs = document.querySelectorAll('input[name="recipeIcon"]');
+    iconInputs.forEach(input => {
+        input.checked = (input.value === (recipe.icon || '🍔'));
+    });
+
     document.getElementById('editIngredientsList').innerHTML = '';
     Object.entries(recipe.ingredients).forEach(([ing, qty]) => addEditIngredient(ing, qty));
     document.getElementById('editModal').classList.add('show');
@@ -710,10 +728,13 @@ async function saveEditedRecipe() {
     }
     const name = document.getElementById('editRecipeName').value.trim();
     const price = parseFloat(document.getElementById('editRecipePrice').value);
+    const icon = document.querySelector('input[name="recipeIcon"]:checked')?.value || '🍔';
     const items = document.querySelectorAll('#editIngredientsList .modal-ingredient-item');
+    
     if (!name) return alert('Nombre requerido');
     if (isNaN(price) || price <= 0) return alert('Precio inválido');
     if (items.length === 0) return alert('Agrega al menos un ingrediente');
+
     const ingredients = {};
     for (const item of items) {
         const select = item.querySelector('.edit-ingredient-select');
@@ -726,6 +747,7 @@ async function saveEditedRecipe() {
             return alert('Ingrediente o cantidad inválida');
         }
     }
+
     try {
         let recipeId = null;
         if (currentEditingRecipe) {
@@ -737,14 +759,17 @@ async function saveEditedRecipe() {
             if (fetchError) throw fetchError;
             recipeId = existingRecipe.id;
         }
+
         const upsertData = {
             name: name,
             ingredients: ingredients,
-            price: price
+            price: price,
+            icon: icon  // ✅ Guardar el ícono
         };
         if (recipeId !== null) {
             upsertData.id = recipeId;
         }
+
         const { data: savedRecipe, error } = await supabase
             .from('recipes')
             .upsert(upsertData, { onConflict: 'id' })
@@ -752,14 +777,17 @@ async function saveEditedRecipe() {
             .single()
             .throwOnError();
         if (error) throw error;
+
         recipes[name] = { 
             id: savedRecipe.id,
             ingredients, 
-            price 
+            price,
+            icon  // ✅ Guardar en memoria
         };
         if (currentEditingRecipe && currentEditingRecipe !== name) {
             delete recipes[currentEditingRecipe];
         }
+
         closeEditModal();
         showAlert('success', `✅ Receta "${name}" guardada`);
         updateRecipesDisplay();
@@ -770,6 +798,7 @@ async function saveEditedRecipe() {
         alert('Error al guardar. Verifica conexión.');
     }
 }
+
 // === Cerrar modal de receta ===
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('show');
@@ -852,11 +881,11 @@ function updateSalesButtons() {
         const canMake = checkCanMakeRecipe(name);
         const willExceed = selectedSales[name] && wouldExceedStock(name, selectedSales[name]);
         if (canMake && !willExceed) {
-            button.innerHTML = `
-                <div class="button-content">
-                    🍔<br><strong>$${recipe.price}</strong><br>
-                    <span class="combo-name">${escapeHtml(name)}</span>
-                </div>
+button.innerHTML = `
+    <div class="button-content">
+        ${recipe.icon || '🍔'}<br><strong>$${recipe.price}</strong><br>
+        <span class="combo-name">${escapeHtml(name)}</span>
+    </div>
                 <span class="quantity-badge" style="display: none;"></span>
             `;
             button.style.position = 'relative';
@@ -1320,7 +1349,7 @@ function exportMovementsToExcel() {
         { key: 'tipo', label: '📊 Tipo', get: mov => mov.type },
         { key: 'producto', label: '🥪 Producto', get: mov => mov.product },
         { key: 'cantidad', label: '🔢 Cantidad', get: mov => mov.quantity },
-        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? `$${Number(stock[mov.product].pricePerUnit).toFixed(2)}` : '—' },
+        { key: 'precio', label: '💰 Precio Unit.', get: mov => stock[mov.product]?.pricePerUnit !== undefined ? Number(stock[mov.product].pricePerUnit).toFixed(0) : '—' },
         { key: 'descripcion', label: '📝 Descripción', get: mov => mov.description }
     ];
     const headers = columns.map(col => col.label);
@@ -1361,7 +1390,7 @@ function exportMovementsToExcel() {
         }
     }
     ws['!cols'] = columns.map(col => {
-        if (col.key === 'fecha') return { wch: 22 };
+        if (col.key === 'fecha') return { wpx: 120 };
         if (col.key === 'producto') return { wpx: 170 };
         return { wch: Math.max(12, col.label.length + 4) };
     });
@@ -1581,28 +1610,36 @@ function updateMySales() {
     </p>`;
     container.innerHTML = html;
 }
-// === Partículas animadas ===
+// === Partículas animadas (versión estable y eficiente) ===
 function createParticles() {
     const container = document.getElementById('particles');
     if (!container) return;
-    const count = window.innerWidth > 768 ? 20 : 8;
-    const create = () => {
+
+    // Limpiar cualquier partícula previa (por si se llama más de una vez)
+    container.innerHTML = '';
+
+    const count = window.innerWidth > 768 ? 30 : 15;
+
+    for (let i = 0; i < count; i++) {
         const p = document.createElement('div');
         p.classList.add('particle');
-        const size = Math.random() * 6 + 2;
+        
+        // Tamaño aleatorio
+        const size = Math.random() * 4 + 2;
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
+        
+        // Posición inicial aleatoria en toda la pantalla
         p.style.left = `${Math.random() * 100}vw`;
+        p.style.top = `${Math.random() * 100}vh`;
+        
+        // Duración y retraso de animación aleatorios
+        p.style.animationDuration = `${Math.random() * 20 + 10}s`;
         p.style.animationDelay = `${Math.random() * 5}s`;
-        p.style.animationDuration = `${Math.random() * 10 + 10}s`;
+        
+        // Opacidad base para mejor visibilidad
+        p.style.opacity = '0.6';
+
         container.appendChild(p);
-        setTimeout(() => {
-            if (p.parentElement === container) container.removeChild(p);
-        }, 20000);
-    };
-    for (let i = 0; i < count; i++) setTimeout(create, i * 1000);
-    setInterval(() => {
-        document.querySelectorAll('#particles .particle').forEach(p => p.remove());
-        for (let i = 0; i < count; i++) setTimeout(create, i * 500);
-    }, 30000);
+    }
 }

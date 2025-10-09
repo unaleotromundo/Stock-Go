@@ -4,7 +4,6 @@
     <!-- Favicon estándar -->
 <link rel="icon" type="image/x-icon" href="favicon.png">
 <!-- Android/Chrome -->
-<link rel="manifest" href="/site.webmanifest">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danny's Burger - Admin</title>
@@ -53,7 +52,7 @@
 
         <div class="nav-buttons">
             <button class="nav-btn active" onclick="showSection('stock')">📦 Stock Actual</button>
-            <button class="nav-btn" onclick="showSection('recipes')">🍽️ Recetas/Combos</button>
+            <button class="nav-btn" onclick="showSection('recipes')">🍽️ Menú</button>
             <button class="nav-btn" onclick="showSection('sales')">💰 Ventas</button>
             <button class="nav-btn" onclick="showSection('reports')">📊 Reportes</button>
         </div>
@@ -73,10 +72,10 @@
                     + AGREGAR producto
                 </button>
 
-                <button class="btn" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;"
+                <!--<button class="btn" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;"
                         onclick="loadSampleData()">
                     🍔 Cargar Datos de Ejemplo
-                </button>
+                </button>-->
 
                 <div id="stockDisplay" class="stock-table-container"></div>
             </div>
@@ -84,7 +83,7 @@
             <!-- Recetas/Combos -->
             <div id="recipes" class="section">
                 <div style="text-align: center; margin-bottom: 25px;">
-                    <h2 class="section-title">🍔 Recetas y Combos</h2>
+                    <h2 class="section-title">🍔 Menú</h2>
                     <div style="width: 40px; height: 2px; background: #f4d03f; margin: 8px auto;"></div>
                     <div style="display: flex; gap: 8px; justify-content: center; color: #f4d03f; font-size: 0.9em;">
                         ◆ ◆ ◆
@@ -122,14 +121,15 @@
                     <div id="movementHistory"></div>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 20px; padding: 0 20px;">
-                    <!-- Botón "Limpiar" achicado y a la izquierda -->
-                    <button class="btn btn-danger" 
-                            style="padding: 8px; font-size: 0.9em; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
-                            onclick="confirmClearAllData()"
-                            title="Limpiar todos los datos">
-                        🗑️
-                    </button>
 
+<!--
+<button class="btn btn-danger" 
+        style="padding: 8px; font-size: 0.9em; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
+        onclick="confirmClearAllData()"
+        title="Limpiar todos los datos">
+    🗑️
+</button>
+--> 
                     <!-- Texto "Exportar a Excel:" -->
                     <span style="font-weight: bold; color: var(--text-color); white-space: nowrap; margin: 0 10px;">
                         Exportar a Excel:
@@ -218,33 +218,71 @@
         </div>
     </div>
 
-    <!-- Modal para editar recetas -->
-    <div id="editModal" class="edit-modal">
-        <div class="modal-content">
-            <button class="close-modal" onclick="closeEditModal()">×</button>
-            <div class="modal-header">
-                <h3>✏️ Editar Receta</h3>
-                <p>Modifica los datos y guarda los cambios</p>
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipeName">Nombre del Combo/Receta:</label>
-                <input type="text" id="editRecipeName" placeholder="Nombre de la receta">
-            </div>
-            <div class="modal-form-group">
-                <label for="editRecipePrice">Precio de Venta ($):</label>
-                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
-            </div>
-            <div class="modal-form-group">
-                <label>Ingredientes:</label>
-                <div id="editIngredientsList" class="modal-ingredients"></div>
-                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
-                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
+<!-- Modal para editar recetas -->
+<div id="editModal" class="edit-modal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeEditModal()">×</button>
+        <div class="modal-header">
+            <h3>✏️ Crear/Editar Receta</h3>
+            <p>Elige un ícono, nombre, precio e ingredientes</p>
+        </div>
+
+        <!-- Selección de ícono -->
+        <div class="modal-form-group">
+            <label>Ícono:</label>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; justify-content: center;">
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍔" checked>
+                    <div style="font-size: 2em; margin-top: 4px;">🍔</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍟">
+                    <div style="font-size: 2em; margin-top: 4px;">🍟</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🥤">
+                    <div style="font-size: 2em; margin-top: 4px;">🥤</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍕">
+                    <div style="font-size: 2em; margin-top: 4px;">🍕</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🌭">
+                    <div style="font-size: 2em; margin-top: 4px;">🌭</div>
+                </label>
+                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                    <input type="radio" name="recipeIcon" value="🍱">
+                    <div style="font-size: 2em; margin-top: 4px;">🍱</div>
+                </label>
             </div>
         </div>
+
+        <!-- Nombre -->
+        <div class="modal-form-group">
+            <label for="editRecipeName">Nombre del Combo/Receta:</label>
+            <input type="text" id="editRecipeName" placeholder="Ej: Combo Clásico">
+        </div>
+
+        <!-- Precio -->
+        <div class="modal-form-group">
+            <label for="editRecipePrice">Precio de Venta ($):</label>
+            <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
+        </div>
+
+        <!-- Ingredientes -->
+        <div class="modal-form-group">
+            <label>Ingredientes:</label>
+            <div id="editIngredientsList" class="modal-ingredients"></div>
+            <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
+            <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
+        </div>
     </div>
+</div>
 
     <!-- Modal para editar producto -->
     <div id="editProductModal" class="edit-modal">
@@ -361,7 +399,7 @@
         </div>
     </div>
 </div>
-
+<div id="particles"></div>
     <!-- ✅ SCRIPTS FINALES — ORDEN CORRECTO -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="sample-data.js"></script>

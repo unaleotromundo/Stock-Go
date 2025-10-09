@@ -81,8 +81,16 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><pattern id="grain" width="100" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="%23f4d03f" opacity="0.1"/><circle cx="30" cy="5" r="1" fill="%23f4d03f" opacity="0.15"/><circle cx="50" cy="15" r="1.2" fill="%23f4d03f" opacity="0.1"/><circle cx="70" cy="8" r="0.8" fill="%23f4d03f" opacity="0.2"/><circle cx="90" cy="12" r="1.3" fill="%23f4d03f" opacity="0.12"/></pattern></defs><rect width="100" height="20" fill="url(%23grain)"/></svg>') repeat;
     pointer-events: none;
+    /* Opcional: animación suave de desplazamiento */
+    animation: animateHeaderGrain 15s linear infinite;
+    background-size: 100px 20px;
+}
+
+@keyframes animateHeaderGrain {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100px; }
 }
 
 .logo-section {
@@ -518,7 +526,7 @@ body {
     content: '';
     width: 20px;
     height: 20px;
-    background: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="%23f4d03f"/></svg>') no-repeat center;
+background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="%23f4d03f"/></svg>') no-repeat center;
     background-size: contain;
     border-radius: 50%;
 }
@@ -972,64 +980,6 @@ tr:hover {
     box-shadow: 0 0 6px rgba(184, 141, 79, 0.4);
 }
 
-// === FONDO ESTRELLADO DINÁMICO ===
-(function() {
-    const createStars = () => {
-        const starryBg = document.createElement('div');
-        starryBg.className = 'starry-bg';
-        document.body.appendChild(starryBg);
-
-        const count = window.innerWidth > 768 ? 100 : 50;
-        for (let i = 0; i < count; i++) {
-            const star = document.createElement('div');
-            star.className = 'star';
-
-            // Tamaño aleatorio
-            const size = Math.random() * 3 + 1;
-            star.style.width = `${size}px`;
-            star.style.height = `${size}px`;
-
-            // Posición aleatoria
-            star.style.left = `${Math.random() * 100}%`;
-            star.style.top = `${Math.random() * 100}%`;
-
-            // Animación con delay y duración aleatorios
-            const delay = Math.random() * 5;
-            const duration = Math.random() * 3 + 2;
-            star.style.animationDelay = `${delay}s`;
-            star.style.animationDuration = `${duration}s`;
-
-            starryBg.appendChild(star);
-        }
-
-        return starryBg;
-    };
-
-    const starryBg = createStars();
-    let inactivityTimer = null;
-
-    const pauseStars = () => {
-        starryBg.classList.add('paused');
-    };
-
-    const resumeStars = () => {
-        starryBg.classList.remove('paused');
-    };
-
-    const resetInactivityTimer = () => {
-        if (inactivityTimer) clearTimeout(inactivityTimer);
-        pauseStars();
-        inactivityTimer = setTimeout(resumeStars, 2000); // 2 segundos de inactividad
-    };
-
-    // Detectar interacción del usuario
-    ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll', 'wheel'].forEach(event => {
-        document.addEventListener(event, resetInactivityTimer, { passive: true });
-    });
-
-    // Iniciar animado
-    resumeStars();
-})();
 /* Suavizar transición al pausar/reanudar */
 .star {
     transition: opacity 0.5s ease, transform 0.5s ease;
@@ -1142,7 +1092,7 @@ tr:hover {
     content: '';
     width: 20px;
     height: 20px;
-    background: url('image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="%23f4d03f"/></svg>') no-repeat center;
+background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="%23f4d03f"/></svg>') no-repeat center;
     background-size: contain;
     border-radius: 50%;
 }
@@ -1207,6 +1157,7 @@ tr:hover {
     border-radius: 5px;
     text-align: left;
 }
+
 .movement-scroll {
     max-height: 300px; /* ≈ 7 líneas */
     overflow-y: auto;
