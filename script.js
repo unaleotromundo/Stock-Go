@@ -550,6 +550,7 @@ async function removeProduct(name) {
         }
     }
 }
+
 // === Abrir modal para agregar stock ===
 function openAddStockModal() {
     document.getElementById('productNameModal').value = '';
@@ -1105,6 +1106,68 @@ async function proceedWithSale() {
         selectedPaymentMethod = null;
     }
 }
+// === Cargar y mostrar Top 10 Productos Más Vendidos ===
+async function loadTopProducts() {
+    const container = document.getElementById('topProductsTable');
+    if (!container) return;
+
+    try {
+        // Ejecutar la consulta equivalente en Supabase
+        const {  data, error } = await supabase
+            .from('sales')
+            .select('product_name')
+            .eq('eliminado', false); // Solo ventas activas
+
+        if (error) throw error;
+
+        // Contar ocurrencias por producto
+        const counts = {};
+        data.forEach(sale => {
+            const name = sale.product_name || 'Producto sin nombre';
+            counts[name] = (counts[name] || 0) + 1;
+        });
+
+        // Ordenar y tomar los top 10
+        const top10 = Object.entries(counts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        // Renderizar tabla
+        if (top10.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #ccc;">No hay ventas registradas</p>';
+            return;
+        }
+
+        let html = `
+            <table class="top-products-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <thead>
+                    <tr>
+                        <th style="text-align: center; padding: 10px; background: var(--card-bg); border-bottom: 2px solid var(--accent-gold);">#</th>
+                        <th style="text-align: left; padding: 10px; background: var(--card-bg); border-bottom: 2px solid var(--accent-gold);">Producto</th>
+                        <th style="text-align: center; padding: 10px; background: var(--card-bg); border-bottom: 2px solid var(--accent-gold);">Ventas</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        top10.forEach(([product, count], index) => {
+            html += `
+                <tr>
+                    <td style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border-color);">${index + 1}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid var(--border-color);">${escapeHtml(product)}</td>
+                    <td style="text-align: center; padding: 10px; border-bottom: 1px solid var(--border-color);">${count}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error('Error al cargar top productos:', err);
+        container.innerHTML = '<p style="color: #ff6b6b; text-align: center;">❌ Error al cargar el ranking</p>';
+    }
+}
 // === Cerrar modal de método de pago ===
 function closePaymentMethodModal() {
     document.getElementById('paymentMethodModal').style.display = 'none';
@@ -1246,7 +1309,8 @@ async function renderSalesChartInReport() {
         ctx.fillText('❌ Error al cargar datos', canvas.width / 2, canvas.height / 2);
     }
 }
-
+// ✅ Cargar el Top 10 de productos más vendidos
+loadTopProducts();
 function getMonthShortName(monthIndex) {
     const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return months[monthIndex];
@@ -1719,6 +1783,7 @@ function updateMySales() {
     </p>`;
     container.innerHTML = html;
 }
+
 // === Partículas animadas (versión estable y eficiente) ===
 function createParticles() {
     const container = document.getElementById('particles');
