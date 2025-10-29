@@ -2,16 +2,17 @@
 <html lang="es">
 <head>
     <!-- Favicon estándar -->
-<link rel="icon" type="image/x-icon" href="favicon.png">
-<!-- Android/Chrome -->
+    <link rel="icon" type="image/x-icon" href="favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danny's Burger - Admin</title>
     <link rel="stylesheet" href="styles.css">
     
-    <!-- Librerías para exportar -->
+    <!-- Librerías externas -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <!-- ✅ Chart.js para gráficas (obligatorio) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body data-theme="dark">
@@ -73,11 +74,6 @@
                     + AGREGAR producto
                 </button>
 
-                <!--<button class="btn" style="background: linear-gradient(135deg, #9b59b6, #8e44ad); color: white; width: 100%; padding: 15px; font-size: 1.1em; border-radius: 10px; margin-bottom: 20px;"
-                        onclick="loadSampleData()">
-                    🍔 Cargar Datos de Ejemplo
-                </button>-->
-
                 <div id="stockDisplay" class="stock-table-container"></div>
             </div>
 
@@ -114,23 +110,25 @@
             <div id="reports" class="section">
                 <h2>📊 Reportes</h2>
                 <div class="vintage-decoration">◇ ◆ ◇</div>
+                
                 <div class="sales-report">
                     <div id="todaySales"></div>
                 </div>
+                
                 <div class="sales-report">
                     <h3>📋 Historial de Movimientos de Stock</h3>
                     <div id="movementHistory"></div>
                 </div>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 20px; padding: 0 20px;">
 
-<!--
-<button class="btn btn-danger" 
-        style="padding: 8px; font-size: 0.9em; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"
-        onclick="confirmClearAllData()"
-        title="Limpiar todos los datos">
-    🗑️
-</button>
---> 
+                <!-- ✅ GRÁFICA INTEGRADA: Ventas Mensuales -->
+                <div class="sales-report">
+                    <h3>📈 Ventas Mensuales</h3>
+                    <div style="height: 420px; margin-top: 15px;">
+                        <canvas id="salesChartCanvas"></canvas>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center; margin-top: 20px; padding: 0 20px;">
                     <!-- Texto "Exportar a Excel:" -->
                     <span style="font-weight: bold; color: var(--text-color); white-space: nowrap; margin: 0 10px;">
                         Exportar a Excel:
@@ -148,46 +146,12 @@
                             💰 Ventas
                         </button>
                     </div>
-<!-- Botón para ver gráfica de ventas mensuales -->
-<button class="btn btn-gold" 
-        style="padding: 8px 12px; font-size: 0.9em; white-space: nowrap; margin-top: 15px;"
-        onclick="openSalesChartModal()">
-    📈 Grafico
-</button>
-                </div>            </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Modal para seleccionar columnas de exportación a Excel -->
-    <div id="excelColumnsModal" class="edit-modal" style="display:none;">
-        <div class="modal-content" style="max-width: 400px;">
-            <button class="close-modal" onclick="closeExcelColumnsModal()">×</button>
-            <div class="modal-header">
-                <h3>📊 Exportar a Excel</h3>
-                <p>Elige el rango de fechas y las columnas que quieres exportar:</p>
-            </div>
-            <form id="excelColumnsForm">
-                <div style="margin-bottom:10px;">
-                    <label for="sliderFiltroDias"><strong>Filtrar últimos días:</strong></label>
-                    <div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
-                        <input type="range" id="sliderFiltroDias" min="0" max="4" value="4" style="width:120px;" oninput="actualizarLabelFiltroDias()">
-                        <span id="labelFiltroDias">Todos</span>
-                    </div>
-                    <input type="hidden" id="filtroDias" name="filtroDias" value="">
-                </div>
-                <label><input type="checkbox" name="fecha" checked> <span>📅 Fecha</span></label><br>
-                <label><input type="checkbox" name="tipo" checked> <span>📊 Tipo</span></label><br>
-                <label><input type="checkbox" name="producto" checked> <span>🥪 Producto</span></label><br>
-                <label><input type="checkbox" name="cantidad" checked> <span>🔢 Cantidad</span></label><br>
-                <label><input type="checkbox" name="precio" checked> <span>💰 Precio Unit.</span></label><br>
-                <label><input type="checkbox" name="descripcion" checked> <span>📝 Descripción</span></label><br>
-                <div class="modal-actions" style="margin-top:15px;">
-                    <button type="button" class="btn btn-gold" onclick="confirmExcelColumns()">Exportar</button>
-                    <button type="button" class="btn btn-danger" onclick="closeExcelColumnsModal()">Cancelar</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <!-- === MODALES (sin cambios) === -->
     <!-- Modal para Cargar Stock -->
     <div id="addStockModal" class="edit-modal">
         <div class="modal-content" style="max-width: 500px;">
@@ -225,71 +189,62 @@
         </div>
     </div>
 
-<!-- Modal para editar recetas -->
-<div id="editModal" class="edit-modal">
-    <div class="modal-content">
-        <button class="close-modal" onclick="closeEditModal()">×</button>
-        <div class="modal-header">
-            <h3>✏️ Crear/Editar Receta</h3>
-            <p>Elige un ícono, nombre, precio e ingredientes</p>
-        </div>
-
-        <!-- Selección de ícono -->
-        <div class="modal-form-group">
-            <label>Ícono:</label>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; justify-content: center;">
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🍔" checked>
-                    <div style="font-size: 2em; margin-top: 4px;">🍔</div>
-                </label>
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🍟">
-                    <div style="font-size: 2em; margin-top: 4px;">🍟</div>
-                </label>
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🥤">
-                    <div style="font-size: 2em; margin-top: 4px;">🥤</div>
-                </label>
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🍕">
-                    <div style="font-size: 2em; margin-top: 4px;">🍕</div>
-                </label>
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🌭">
-                    <div style="font-size: 2em; margin-top: 4px;">🌭</div>
-                </label>
-                <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
-                    <input type="radio" name="recipeIcon" value="🍱">
-                    <div style="font-size: 2em; margin-top: 4px;">🍱</div>
-                </label>
+    <!-- Modal para editar recetas -->
+    <div id="editModal" class="edit-modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeEditModal()">×</button>
+            <div class="modal-header">
+                <h3>✏️ Crear/Editar Receta</h3>
+                <p>Elige un ícono, nombre, precio e ingredientes</p>
+            </div>
+            <div class="modal-form-group">
+                <label>Ícono:</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; justify-content: center;">
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🍔" checked>
+                        <div style="font-size: 2em; margin-top: 4px;">🍔</div>
+                    </label>
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🍟">
+                        <div style="font-size: 2em; margin-top: 4px;">🍟</div>
+                    </label>
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🥤">
+                        <div style="font-size: 2em; margin-top: 4px;">🥤</div>
+                    </label>
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🍕">
+                        <div style="font-size: 2em; margin-top: 4px;">🍕</div>
+                    </label>
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🌭">
+                        <div style="font-size: 2em; margin-top: 4px;">🌭</div>
+                    </label>
+                    <label style="cursor: pointer; text-align: center; flex: 1; min-width: 60px;">
+                        <input type="radio" name="recipeIcon" value="🍱">
+                        <div style="font-size: 2em; margin-top: 4px;">🍱</div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-form-group">
+                <label for="editRecipeName">Nombre del Combo/Receta:</label>
+                <input type="text" id="editRecipeName" placeholder="Ej: Combo Clásico">
+            </div>
+            <div class="modal-form-group">
+                <label for="editRecipePrice">Precio de Venta ($):</label>
+                <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
+            </div>
+            <div class="modal-form-group">
+                <label>Ingredientes:</label>
+                <div id="editIngredientsList" class="modal-ingredients"></div>
+                <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
+                <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
             </div>
         </div>
-
-        <!-- Nombre -->
-        <div class="modal-form-group">
-            <label for="editRecipeName">Nombre del Combo/Receta:</label>
-            <input type="text" id="editRecipeName" placeholder="Ej: Combo Clásico">
-        </div>
-
-        <!-- Precio -->
-        <div class="modal-form-group">
-            <label for="editRecipePrice">Precio de Venta ($):</label>
-            <input type="number" id="editRecipePrice" placeholder="0" min="0" step="0.01">
-        </div>
-
-        <!-- Ingredientes -->
-        <div class="modal-form-group">
-            <label>Ingredientes:</label>
-            <div id="editIngredientsList" class="modal-ingredients"></div>
-            <button type="button" class="btn" onclick="addEditIngredient()">+ Agregar Ingrediente</button>
-        </div>
-
-        <div class="modal-actions">
-            <button class="btn btn-gold" onclick="saveEditedRecipe()">💾 Guardar Cambios</button>
-            <button class="btn btn-danger" onclick="closeEditModal()">❌ Cancelar</button>
-        </div>
     </div>
-</div>
 
     <!-- Modal para editar producto -->
     <div id="editProductModal" class="edit-modal">
@@ -325,6 +280,56 @@
                 <button class="btn btn-gold" onclick="saveEditedProduct()">💾 Guardar Cambios</button>
                 <button class="btn btn-danger" onclick="closeEditProductModal()">❌ Cancelar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal de Método de Pago -->
+    <div id="paymentMethodModal" class="edit-modal" style="display:none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <button class="close-modal" onclick="closePaymentMethodModal()">×</button>
+            <div class="modal-header">
+                <h3>💳 Método de Pago</h3>
+                <p>Selecciona cómo se realizó la venta</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin: 20px 0;">
+                <button class="btn btn-gold payment-option" data-method="Efectivo">💵 Efectivo</button>
+                <button class="btn btn-green payment-option" data-method="PedidosYa">📱 PedidosYa</button>
+                <button class="btn btn-gold payment-option" data-method="Débito">💳 Débito</button>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="closePaymentMethodModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleccionar columnas de exportación a Excel -->
+    <div id="excelColumnsModal" class="edit-modal" style="display:none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="close-modal" onclick="closeExcelColumnsModal()">×</button>
+            <div class="modal-header">
+                <h3>📊 Exportar a Excel</h3>
+                <p>Elige el rango de fechas y las columnas que quieres exportar:</p>
+            </div>
+            <form id="excelColumnsForm">
+                <div style="margin-bottom:10px;">
+                    <label for="sliderFiltroDias"><strong>Filtrar últimos días:</strong></label>
+                    <div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
+                        <input type="range" id="sliderFiltroDias" min="0" max="4" value="4" style="width:120px;" oninput="actualizarLabelFiltroDias()">
+                        <span id="labelFiltroDias">Todos</span>
+                    </div>
+                    <input type="hidden" id="filtroDias" name="filtroDias" value="">
+                </div>
+                <label><input type="checkbox" name="fecha" checked> <span>📅 Fecha</span></label><br>
+                <label><input type="checkbox" name="tipo" checked> <span>📊 Tipo</span></label><br>
+                <label><input type="checkbox" name="producto" checked> <span>🥪 Producto</span></label><br>
+                <label><input type="checkbox" name="cantidad" checked> <span>🔢 Cantidad</span></label><br>
+                <label><input type="checkbox" name="precio" checked> <span>💰 Precio Unit.</span></label><br>
+                <label><input type="checkbox" name="descripcion" checked> <span>📝 Descripción</span></label><br>
+                <div class="modal-actions" style="margin-top:15px;">
+                    <button type="button" class="btn btn-gold" onclick="confirmExcelColumns()">Exportar</button>
+                    <button type="button" class="btn btn-danger" onclick="closeExcelColumnsModal()">Cancelar</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -387,43 +392,11 @@
             ">✅ Confirmar Venta</button>
         </div>
     </div>
-    <div id="particles"></div>
-<!-- Modal para Gráfica de Ventas Mensuales -->
-<div id="salesChartModal" class="edit-modal" style="display:none;">
-    <div class="modal-content" style="max-width: 800px; padding: 20px; text-align: center;">
-        <button class="close-modal" onclick="closeSalesChartModal()">×</button>
-        <h3>📈 Ventas Mensuales</h3>
-        <p>Últimos 12 meses</p>
-        <canvas id="salesChartCanvas" width="700" height="400"></canvas>
-        <div class="modal-actions" style="margin-top: 20px;">
-            <button class="btn btn-danger" onclick="closeSalesChartModal()">Cerrar</button>
-        </div>
-    </div>
-</div>
-<!-- Modal de Método de Pago -->
-<div id="paymentMethodModal" class="edit-modal" style="display:none;">
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        <button class="close-modal" onclick="closePaymentMethodModal()">×</button>
-        <div class="modal-header">
-            <h3>💳 Método de Pago</h3>
-            <p>Selecciona cómo se realizó la venta</p>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 12px; margin: 20px 0;">
-            <button class="btn btn-gold payment-option" data-method="Efectivo">💵 Efectivo</button>
-            <button class="btn btn-green payment-option" data-method="PedidosYa">📱 PedidosYa</button>
-            <button class="btn btn-gold payment-option" data-method="Débito">💳 Débito</button>
-        </div>
-        <div class="modal-actions">
-            <button class="btn btn-danger" onclick="closePaymentMethodModal()">Cancelar</button>
-        </div>
-    </div>
-</div>
 
-<div id="particles"></div>
-    <!-- ✅ SCRIPTS FINALES — ORDEN CORRECTO -->
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <div id="particles"></div>
+
+    <!-- Scripts finales -->
     <script src="sample-data.js"></script>
     <script src="script.js" defer></script>
 </body>
-
 </html>
