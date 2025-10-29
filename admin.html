@@ -12,6 +12,7 @@
     <!-- Librerías para exportar -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body data-theme="dark">
     <!-- Protección de acceso -->
@@ -147,6 +148,12 @@
                             💰 Ventas
                         </button>
                     </div>
+<!-- Botón para ver gráfica de ventas mensuales -->
+<button class="btn btn-gold" 
+        style="padding: 8px 12px; font-size: 0.9em; white-space: nowrap; margin-top: 15px;"
+        onclick="openSalesChartModal()">
+    📈 Grafico
+</button>
                 </div>            </div>
         </div>
     </div>
@@ -381,6 +388,18 @@
         </div>
     </div>
     <div id="particles"></div>
+<!-- Modal para Gráfica de Ventas Mensuales -->
+<div id="salesChartModal" class="edit-modal" style="display:none;">
+    <div class="modal-content" style="max-width: 800px; padding: 20px; text-align: center;">
+        <button class="close-modal" onclick="closeSalesChartModal()">×</button>
+        <h3>📈 Ventas Mensuales</h3>
+        <p>Últimos 12 meses</p>
+        <canvas id="salesChartCanvas" width="700" height="400"></canvas>
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="btn btn-danger" onclick="closeSalesChartModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
 <!-- Modal de Método de Pago -->
 <div id="paymentMethodModal" class="edit-modal" style="display:none;">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
@@ -399,6 +418,7 @@
         </div>
     </div>
 </div>
+
 <div id="particles"></div>
     <!-- ✅ SCRIPTS FINALES — ORDEN CORRECTO -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>

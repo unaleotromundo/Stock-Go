@@ -1564,6 +1564,7 @@ function exportToPDF() {
                 window.onload = function() {
                     html2pdf().from(document.body).save();
                 };
+
             <\/script>
         </body>
         </html>
@@ -1634,3 +1635,124 @@ function createParticles() {
         container.appendChild(p);
     }
 }
+
+// =============== GRÁFICA DE VENTAS MENSUALES ===============
+
+let salesChart = null;
+
+function openSalesChartModal() {
+    document.getElementById('salesChartModal').style.display = 'flex';
+    loadSalesChartData();
+}
+
+function closeSalesChartModal() {
+    document.getElementById('salesChartModal').style.display = 'none';
+    if (salesChart) {
+        salesChart.destroy();
+        salesChart = null;
+    }
+}
+
+async function loadSalesChartData() {
+    try {
+        const { data: sales, error } = await supabase
+            .from('sales')
+            .select('created_at, price');
+
+        if (error) {
+            console.error('Error al cargar ventas:', error);
+            showAlert('danger', '❌ Error al cargar datos de ventas');
+            return;
+        }
+
+        const monthlySales = {};
+        const now = new Date();
+        const twelveMonthsAgo = new Date();
+        twelveMonthsAgo.setMonth(now.getMonth() - 12);
+        twelveMonthsAgo.setDate(1); // Normalizamos al primer día
+
+        sales.forEach(sale => {
+            const date = new Date(sale.created_at);
+            if (isNaN(date.getTime()) || date < twelveMonthsAgo) return;
+
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            monthlySales[monthKey] = (monthlySales[monthKey] || 0) + (parseFloat(sale.price) || 0);
+        });
+
+        const labels = [];
+        const values = [];
+
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            d.setDate(1);
+            const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = `${getMonthShortName(d.getMonth())} ${d.getFullYear().toString().slice(-2)}`;
+            labels.push(monthLabel);
+            values.push(monthlySales[monthKey] || 0);
+        }
+
+        renderSalesChart(labels, values);
+    } catch (err) {
+        console.error('Error en loadSalesChartData:', err);
+        showAlert('danger', '❌ Error al procesar los datos');
+    }
+}
+
+function getMonthShortName(monthIndex) {
+    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return months[monthIndex];
+}
+
+function renderSalesChart(labels, values) {
+    const ctx = document.getElementById('salesChartCanvas').getContext('2d');
+
+    if (salesChart) {
+        salesChart.destroy();
+    }
+
+    salesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Ventas Totales ($)',
+                data: values,
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Total: $${parseFloat(context.raw).toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Monto ($)' }
+                },
+                x: {
+                    title: { display: true, text: 'Mes' }
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+// ✅ Exponer funciones globalmente para que funcionen con onclick=""
+window.openSalesChartModal = openSalesChartModal;
+window.closeSalesChartModal = closeSalesChartModal;
