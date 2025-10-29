@@ -1148,25 +1148,22 @@ async function markSaleAsDeleted(saleId) {
         showAlert('danger', `❌ Error: ${e.message || 'No se pudo eliminar la venta'}`);
     }
 }
-// =============== GRÁFICA DE VENTAS MENSUALES (INTEGRADA) ===============
+
+// =============== GRÁFICA DE VENTAS MENSUALES (INTEGRADA CON TOTALES) ===============
 async function renderSalesChartInReport() {
     const canvas = document.getElementById('salesChartCanvas');
     if (!canvas) return;
 
     try {
-        // Usamos la variable global `sales` que ya tiene los datos procesados
         const monthlySales = {};
         const now = new Date();
         const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1);
 
         sales.forEach(sale => {
-            // Parsear la fecha desde el formato ya existente en `sale.date`
             const [datePart] = sale.date.split(' ');
             const [year, month, day] = datePart.split('-').map(Number);
-            const saleDate = new Date(year, month - 1, day); // mes es 0-indexado
-
+            const saleDate = new Date(year, month - 1, day);
             if (isNaN(saleDate.getTime()) || saleDate < twelveMonthsAgo) return;
-
             const monthKey = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
             monthlySales[monthKey] = (monthlySales[monthKey] || 0) + (parseFloat(sale.price) || 0);
         });
@@ -1207,6 +1204,19 @@ async function renderSalesChartInReport() {
                                 return `Total: $${parseFloat(context.raw).toFixed(2)}`;
                             }
                         }
+                    },
+                    // ✅ Mostrar valores encima de las barras
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: function(value) {
+                            return value > 0 ? `$${value.toFixed(2)}` : '';
+                        },
+                        font: {
+                            weight: 'bold',
+                            size: 12
+                        },
+                        color: '#f4d03f'
                     }
                 },
                 scales: {
@@ -1222,7 +1232,8 @@ async function renderSalesChartInReport() {
                     duration: 800,
                     easing: 'easeInOutQuart'
                 }
-            }
+            },
+            plugins: [ChartDataLabels] // ← Requiere el plugin
         });
 
     } catch (err) {
