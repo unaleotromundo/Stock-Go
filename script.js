@@ -1242,7 +1242,12 @@ async function renderSalesChartInReport() {
         }
 
         if (salesChart) salesChart.destroy();
-
+        // 💡 SOLUCIÓN: CÁLCULO DEL MÁXIMO DEL EJE Y
+        const maxValue = Math.max(...values);
+        // 1. Añadir 10% de padding extra (multiplicar por 1.10).
+        // 2. Redondear al siguiente múltiplo de 1000 con Math.ceil() para tener ticks más limpios.
+        const yAxisMax = Math.ceil(maxValue * 1.10 / 1000) * 1000;
+        
         const ctx = canvas.getContext('2d');
         salesChart = new Chart(ctx, {
             type: 'bar',
@@ -1285,7 +1290,9 @@ async function renderSalesChartInReport() {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        title: { display: true, text: 'Monto ($)' }
+                        title: { display: true, text: 'Monto ($)' },
+                        // 🛑 APLICACIÓN DE LA SOLUCIÓN
+                        max: yAxisMax
                     },
                     x: {
                         title: { display: true, text: 'Mes' }
