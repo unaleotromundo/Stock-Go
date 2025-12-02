@@ -1,0 +1,22 @@
+{
+  "name": "Danny's Burger - Sistema de Gestión",
+  "short_name": "Danny's Burger",
+  "description": "Sistema de gestión de stock y ventas",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#f4d03f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

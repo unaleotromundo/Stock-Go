@@ -4,7 +4,13 @@
     <!-- Favicon estándar -->
 <link rel="icon" type="image/x-icon" href="favicon.png">
 <!-- Android/Chrome -->
-<link rel="manifest" href="/site.webmanifest">
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f4d03f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Danny's Burger">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danny's Burger - Login</title>
@@ -145,6 +151,65 @@ function createParticles() {
 
         document.addEventListener('DOMContentLoaded', createParticles);
     </script>
+<!-- PWA Install -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(reg => console.log('✅ Service Worker registrado'))
+    .catch(err => console.log('❌ Error:', err));
+}
+
+// Botón de instalación
+let deferredPrompt;
+const installButton = document.createElement('button');
+installButton.textContent = '📲 Instalar App';
+installButton.style.cssText = `
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #f4d03f, #f7dc6f);
+  color: #1a1a1a;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(244, 208, 63, 0.4);
+  z-index: 9999;
+  display: none;
+  font-size: 0.95em;
+  transition: all 0.3s ease;
+`;
+installButton.onmouseover = () => {
+  installButton.style.transform = 'translateY(-3px)';
+  installButton.style.boxShadow = '0 6px 20px rgba(244, 208, 63, 0.5)';
+};
+installButton.onmouseout = () => {
+  installButton.style.transform = 'translateY(0)';
+  installButton.style.boxShadow = '0 4px 15px rgba(244, 208, 63, 0.4)';
+};
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installButton.style.display = 'block';
+  document.body.appendChild(installButton);
+});
+
+installButton.addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  console.log(outcome === 'accepted' ? '✅ Instalado' : '❌ Cancelado');
+  deferredPrompt = null;
+  installButton.style.display = 'none';
+});
+
+window.addEventListener('appinstalled', () => {
+  console.log('🎉 App instalada exitosamente');
+  installButton.style.display = 'none';
+});
+</script>
 </body>
 
 </html>

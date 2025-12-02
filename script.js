@@ -390,7 +390,7 @@ function updateStockDisplay() {
                 <td>$${totalPrice > 0 ? totalPrice.toFixed(2) : '—'}</td>
                 <td class="actions">
                     <button class="edit-btn" data-action="edit-product" data-name="${escapedName}" title="Editar producto">✏️</button>
-                    ${isUserAdmin ? `<button class="delete-btn" data-action="delete-product" data-name="${escapedName}" title="Eliminar producto">🗑️</button>` : ''}
+                    ${isUserAdmin ? /* `<button class="delete-btn" data-action="delete-product" data-name="${escapedName}" title="Eliminar producto">🗑️</button>` */ '' : ''}
                 </td>
             </tr>`;
     }
@@ -1259,29 +1259,32 @@ async function renderSalesChartInReport() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return `Total: $${parseFloat(context.raw).toFixed(2)}`;
-                            }
-                        }
-                    },
-                    // ✅ Mostrar valores encima de las barras
-                    datalabels: {
-                        anchor: 'end',
-                        align: 'top',
-                        formatter: function(value) {
-                            return value > 0 ? `$${value.toFixed(2)}` : '';
-                        },
-                        font: {
-                            weight: 'bold',
-                            size: 12
-                        },
-                        color: '#f4d03f'
-                    }
-                },
+plugins: {
+    datalabels: {
+        anchor: 'end', // Posiciona el texto en la punta de la barra
+        align: 'top',  // Lo alinea arriba
+        offset: 4,     // Añade un pequeño espacio para evitar tocar la barra
+        padding: { top: 2, right: 4, bottom: 2, left: 4 }, // Padding interno
+        borderRadius: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)', // Fondo blanco semitransparente
+        color: '#1a1a1a', // Texto oscuro para contraste
+        font: {
+            weight: 'bold',
+            size: 12
+        },
+        formatter: function(value) {
+            if (value === 0) return '';
+            const formatted = new Intl.NumberFormat('es-AR', {
+                style: 'currency',
+                currency: 'ARS',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(value);
+            return formatted;
+        },
+        clip: true // Evita que se salga del canvas
+    }
+},
                 scales: {
                     y: {
                         beginAtZero: true,
