@@ -1,22 +1,25 @@
 const CACHE_NAME = 'dannys-burger-v1';
 const urlsToCache = [
-  '/index.html',
-  '/admin.html',
-  '/user.html',
-  '/styles.css',
-  '/script.js',
-  '/favicon.png'
+  './',
+  './index.html',
+  './admin.html',
+  './user.html',
+  './styles.css',
+  './script.js',
+  './favicon.png'
 ];
 
-// Instalación
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => {
+        console.log('✅ Cache abierto');
+        return cache.addAll(urlsToCache);
+      })
+      .catch(err => console.error('❌ Error al cachear:', err))
   );
 });
 
-// Activación
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -31,10 +34,10 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch
 self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => response || fetch(event.request))
+      .catch(() => caches.match('./index.html'))
   );
 });
